@@ -50,7 +50,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .search-wrap { max-width: 700px; margin: 0 auto; display: flex; gap: 0; background: var(--charcoal-3); border: 1px solid var(--charcoal-4); border-radius: var(--radius); overflow: hidden; position: relative; }
 .search-wrap input, .search-wrap select { background: transparent; border: none; outline: none; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 14px 16px; }
 .search-wrap input { flex: 1; }
-.search-wrap select { border-left: 1px solid var(--charcoal-4); color: var(--charcoal-6); cursor: pointer; min-width: 160px; }
+.search-wrap select { border-left: 1px solid var(--charcoal-4); color: var(--charcoal-6); cursor: pointer; min-width: 160px; appearance: none; -webkit-appearance: none; padding-right: 32px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .search-wrap select option { background: var(--charcoal-3); }
 .search-wrap .btn { border-radius: 0; padding: 14px 24px; }
 .stats-bar { display: flex; justify-content: center; gap: 3rem; padding: 2rem; background: var(--charcoal); border-bottom: 1px solid var(--charcoal-3); flex-wrap: wrap; }
@@ -64,7 +64,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .directory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
 .directory-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.04em; }
 .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--charcoal-3); }
-.filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; }
+.filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 32px 8px 12px; border-radius: var(--radius); cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .filters select option { background: var(--charcoal-2); }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .tradesman-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
@@ -122,6 +122,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--charcoal-6); margin-bottom: 6px; }
 .form-input, .form-select, .form-textarea { width: 100%; background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 11px 14px; border-radius: var(--radius); outline: none; transition: border-color 0.15s; }
+.form-select { appearance: none; -webkit-appearance: none; padding-right: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
 .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--amber); }
 .form-select option { background: var(--charcoal-2); }
 .form-textarea { min-height: 120px; resize: vertical; }
@@ -300,7 +301,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <h2>Rankings</h2>
         <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;">Based purely on verified client reviews — not paid placement.</div>
       </div>
-      <select id="rank-trade-filter" onchange="renderRankings()" style="background:var(--charcoal-2);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;">
+      <select id="rank-trade-filter" onchange="renderRankings()" style="background:var(--charcoal-2);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 32px 8px 12px;border-radius:var(--radius);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%2710%27 viewBox=%270 0 10 10%27%3E%3Cpolygon points=%270,2 10,2 5,8%27 fill=%27%23A8A29E%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;">
         <option value="">All Trades</option>
       </select>
     </div>
