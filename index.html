@@ -372,6 +372,17 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <h3>Credentials</h3>
       <div class="form-group"><label class="form-label">Certifications / Registrations</label><input class="form-input" id="f-creds" placeholder="e.g. ECSA Registered, NHBRC Member, COC Issuer"><div class="form-hint">Separate multiple credentials with commas</div></div>
       <div class="form-group"><label class="form-label">Years of Experience</label><input class="form-input" id="f-years" type="number" placeholder="e.g. 12"></div>
+      <div class="form-group">
+        <label class="form-label">Upload Certificates / Registration Documents</label>
+        <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.15s;" id="cert-dropzone" onclick="document.getElementById('f-cert-files').click()" ondragover="event.preventDefault();this.style.borderColor='var(--amber)'" ondragleave="this.style.borderColor='var(--charcoal-4)'" ondrop="handleCertDrop(event)">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">📄</div>
+          <div style="font-size:14px;color:var(--charcoal-6);">Click to upload or drag and drop</div>
+          <div style="font-size:12px;color:var(--charcoal-5);margin-top:4px;">PDF, JPG, PNG — max 10MB each</div>
+        </div>
+        <input type="file" id="f-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewCertFiles(this.files)">
+        <div id="f-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
+        <div class="form-hint">Clients will be able to view these on your profile — uploads complete when you publish your listing.</div>
+      </div>
     </div>
     <div class="form-card">
       <h3>Choose Your Plan</h3>
@@ -707,6 +718,36 @@ function renderRankings() {
         <div class="rank-score">${starsHTML(l.avg)} ${l.avg.toFixed(1)} (${l.reviews.length})</div>
       </div>
     </div>`).join('')||'<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>';
+}
+
+let certFiles = [];
+
+function previewCertFiles(files) {
+  certFiles = [...certFiles, ...Array.from(files)];
+  renderCertPreview();
+}
+
+function handleCertDrop(e) {
+  e.preventDefault();
+  document.getElementById('cert-dropzone').style.borderColor = 'var(--charcoal-4)';
+  previewCertFiles(e.dataTransfer.files);
+}
+
+function renderCertPreview() {
+  const el = document.getElementById('f-cert-preview');
+  if (!el) return;
+  el.innerHTML = certFiles.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;">
+      <span style="font-size:18px;">${f.type.includes('pdf') ? '📄' : '🖼️'}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+      <span style="font-size:12px;color:var(--charcoal-6);">${(f.size/1024/1024).toFixed(1)}MB</span>
+      <span style="cursor:pointer;color:var(--charcoal-6);font-size:16px;" onclick="removeCertFile(${i})">✕</span>
+    </div>`).join('');
+}
+
+function removeCertFile(i) {
+  certFiles.splice(i, 1);
+  renderCertPreview();
 }
 
 function handleTradeSelect() {

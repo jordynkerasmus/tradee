@@ -100,6 +100,23 @@ async function renderDashboard() {
       <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${listing.description || ''}</textarea></div>
       <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${listing.credentials ? listing.credentials.join(', ') : ''}"><div class="form-hint">Separate with commas</div></div>
       <div class="form-group"><label class="form-label">Years Experience</label><input class="form-input" id="edit-years" type="number" value="${listing.years_experience || 0}"></div>
+      <div class="form-group">
+        <label class="form-label">Upload New Certificates</label>
+        <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;" onclick="document.getElementById('edit-cert-files').click()">
+          <div style="font-size:14px;color:var(--charcoal-6);">📄 Click to upload PDF, JPG or PNG</div>
+        </div>
+        <input type="file" id="edit-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewEditCerts(this.files)">
+        <div id="edit-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
+        ${listing.certificate_urls && listing.certificate_urls.length ? `
+        <div style="margin-top:1rem;">
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded Certificates</div>
+          ${listing.certificate_urls.map((url, i) => `
+            <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;margin-bottom:6px;">
+              <span style="font-size:18px;">${url.includes('.pdf') ? '📄' : '🖼️'}</span>
+              <a href="${url}" target="_blank" style="flex:1;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Certificate ${i + 1}</a>
+            </div>`).join('')}
+        </div>` : ''}
+      </div>
     </div>
 
     <div class="form-card">
@@ -167,13 +184,40 @@ window.saveListing = async function (id) {
   const credsRaw = document.getElementById('edit-creds').value.trim()
   const years_experience = parseInt(document.getElementById('edit-years').value) || 0
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
+
+  // Upload any new certificates
+  const newFiles = window.editCertFiles || []
+  const { data: existing } = await supabase.from('listings').select('certificate_urls').eq('id', id).single()
+  const certificate_urls = existing?.certificate_urls || []
+  for (const file of newFiles) {
+    const path = `${currentUser.id}/${Date.now()}-${file.name}`
+    const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
+      certificate_urls.push(urlData.publicUrl)
+    }
+  }
+  window.editCertFiles = []
+
   const { error } = await supabase.from('listings').update({
-    name, contact_name, callout, rate, description, credentials, years_experience, tier: editTier
+    name, contact_name, callout, rate, description, credentials, years_experience, tier: editTier, certificate_urls
   }).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving: ' + error.message); return }
   toast('Listing updated!')
   await loadListings()
   renderDashboard()
+}
+
+window.previewEditCerts = function (files) {
+  window.editCertFiles = [...(window.editCertFiles || []), ...Array.from(files)]
+  const el = document.getElementById('edit-cert-preview')
+  if (!el) return
+  el.innerHTML = (window.editCertFiles || []).map((f, i) => `
+    <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;">
+      <span>${f.type.includes('pdf') ? '📄' : '🖼️'}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+      <span style="font-size:12px;color:var(--charcoal-6);">${(f.size/1024/1024).toFixed(1)}MB</span>
+    </div>`).join('')
 }
 
 window.deleteListing = async function (id) {
@@ -354,6 +398,14 @@ window.openProfile = async function (id) {
   const credsHTML = l.credentials && l.credentials.length
     ? l.credentials.map(c => `<div class="cred-item"><div class="cred-icon">✓</div><span>${c}</span></div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No credentials listed yet.</p>'
+  const certsHTML = l.certificate_urls && l.certificate_urls.length
+    ? l.certificate_urls.map((url, i) => `
+        <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:10px 14px;text-decoration:none;transition:background 0.15s;" onmouseover="this.style.background='var(--charcoal-4)'" onmouseout="this.style.background='var(--charcoal-3)'">
+          <span style="font-size:20px;">${url.includes('.pdf') ? '📄' : '🖼️'}</span>
+          <span style="font-size:14px;color:var(--amber);">View Certificate ${i + 1}</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--charcoal-6);">↗ Open</span>
+        </a>`).join('')
+    : ''
   const reviewsHTML = reviews.length
     ? reviews.map(r => `<div class="review-item"><div class="review-header"><span class="reviewer-name">${r.reviewer_name}</span><span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}</span></div><div class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</div><p class="review-text">${r.review_text}</p></div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>'
@@ -395,6 +447,7 @@ window.openProfile = async function (id) {
     <div class="profile-section">
       <div class="section-title">Credentials & Certifications</div>
       <div class="cred-list">${credsHTML}</div>
+      ${certsHTML ? `<div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px;">${certsHTML}</div>` : ''}
     </div>
     <div class="profile-section">
       <div class="section-title">Client Reviews (${reviews.length})</div>
@@ -501,9 +554,22 @@ window.submitListing = async function () {
     userId = data.user?.id ?? null
   }
 
+  // Upload certificate files if any
+  const certFileInput = document.getElementById('f-cert-files')
+  const certFiles = window.certFiles || []
+  const certificate_urls = []
+  for (const file of certFiles) {
+    const path = `${userId}/${Date.now()}-${file.name}`
+    const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
+      certificate_urls.push(urlData.publicUrl)
+    }
+  }
+
   const { error } = await supabase.from('listings').insert({
     name, contact_name, trade, province, city, callout, rate, description, credentials, years_experience, tier: selectedTier,
-    user_id: userId
+    user_id: userId, certificate_urls
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
