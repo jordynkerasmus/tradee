@@ -101,6 +101,10 @@ async function renderDashboard() {
         <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="edit-contact" value="${listing.contact_name || ''}"></div>
       </div>
       <div class="form-row">
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="edit-phone" value="${listing.phone || ''}"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-email" type="email" value="${listing.email || ''}"></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" type="number" value="${listing.callout}"></div>
         <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" type="number" value="${listing.rate}"></div>
       </div>
@@ -206,8 +210,10 @@ window.saveListing = async function (id) {
   }
   window.editCertFiles = []
 
+  const phone = document.getElementById('edit-phone')?.value.trim() || ''
+  const email = document.getElementById('edit-email')?.value.trim() || ''
   const { error } = await supabase.from('listings').update({
-    name, contact_name, callout, rate, description, credentials, years_experience, tier: editTier, certificate_urls
+    name, contact_name, phone, email, callout, rate, description, credentials, years_experience, tier: editTier, certificate_urls
   }).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving: ' + error.message); return }
   toast('Listing updated!')
@@ -527,9 +533,17 @@ function featuredCardHTML(l) {
       <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
       <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
     </div>
-    <div class="card-area">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
+    ${l.phone || l.email ? `
+    <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid rgba(245,158,11,0.2);border-bottom:1px solid rgba(245,158,11,0.2);margin-bottom:0.75rem;">
+      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
+      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
+    </div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="card-area" style="border-top:none;padding-top:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
     </div>
   </div>`
 }
@@ -537,7 +551,8 @@ function featuredCardHTML(l) {
 function cardHTML(l) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviewCount = l.reviews ? l.reviews.length : 0
-  return `<div class="tradesman-card" onclick="openProfile(${l.id})">
+  const cityStr = l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')
+  return `<div class="tradesman-card">
     <div class="card-header">
       <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
@@ -556,9 +571,17 @@ function cardHTML(l) {
       <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
       <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
     </div>
-    <div class="card-area">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
+    ${l.phone || l.email ? `
+    <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid var(--charcoal-3);border-bottom:1px solid var(--charcoal-3);margin-bottom:0.75rem;">
+      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
+      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
+    </div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="card-area" style="border-top:none;padding-top:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        ${cityStr}, ${l.province}
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
     </div>
   </div>`
 }
@@ -768,6 +791,7 @@ window.submitListing = async function () {
   const password = document.getElementById('f-password').value
   const contact_name = document.getElementById('f-name').value.trim()
   const name = document.getElementById('f-business').value.trim() || contact_name
+  const phone = document.getElementById('f-phone')?.value.trim() || ''
   const trade = getSelectedTrade()
   const province = document.getElementById('f-province').value
   const city = document.getElementById('f-city').value.trim()
@@ -805,7 +829,7 @@ window.submitListing = async function () {
 
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const { error } = await supabase.from('listings').insert({
-    name, contact_name, trade, province, city: cities[0] || city, cities, callout, rate, description, credentials, years_experience, tier: selectedTier,
+    name, contact_name, phone, email, trade, province, city: cities[0] || city, cities, callout, rate, description, credentials, years_experience, tier: selectedTier,
     user_id: userId, certificate_urls
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
