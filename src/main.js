@@ -83,7 +83,12 @@ async function renderDashboard() {
         <div class="profile-name">${listing.name}</div>
         ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${listing.contact_name}</div>` : ''}
         <div class="profile-trade">${listing.trade}</div>
-        <div class="card-badges">${tierBadge(listing.tier)}</div>
+        <div class="card-badges" style="margin-bottom:12px;">${tierBadge(listing.tier)}</div>
+        <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${window.location.origin}/profile/${listing.id}</span>
+          <button class="btn btn-primary btn-sm" onclick="copyProfileLink(${listing.id})">🔗 Copy Link</button>
+        </div>
+        <div style="font-size:12px;color:var(--charcoal-6);margin-top:6px;">Share this link with your clients so they can find and review you.</div>
       </div>
     </div>
 
@@ -393,6 +398,8 @@ window.openProfile = async function (id) {
     .single()
   if (error || !l) return
   currentProfile = l
+  // Update URL without reloading
+  window.history.pushState({}, '', `/profile/${id}`)
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviews = l.reviews || []
   const credsHTML = l.credentials && l.credentials.length
@@ -410,7 +417,7 @@ window.openProfile = async function (id) {
     ? reviews.map(r => `<div class="review-item"><div class="review-header"><span class="reviewer-name">${r.reviewer_name}</span><span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}</span></div><div class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</div><p class="review-text">${r.review_text}</p></div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>'
   document.getElementById('profile-content').innerHTML = `
-    <div class="profile-back" onclick="showPage('directory')">← Back to Directory</div>
+    <div class="profile-back" onclick="goBack()">← Back to Directory</div>
     <div class="profile-hero">
       <div class="profile-avatar">${initials(l.name)}</div>
       <div style="flex:1;">
@@ -427,7 +434,8 @@ window.openProfile = async function (id) {
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
-          <button class="btn btn-outline btn-sm" onclick="showPage('directory')">← Back</button>
+          <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">🔗 Share Profile</button>
+          <button class="btn btn-outline btn-sm" onclick="goBack()">← Back</button>
         </div>
       </div>
     </div>
@@ -457,6 +465,20 @@ window.openProfile = async function (id) {
       </div>
     </div>`
   showPage('profile')
+}
+
+window.copyProfileLink = function (id) {
+  const url = `${window.location.origin}/profile/${id}`
+  navigator.clipboard.writeText(url).then(() => {
+    toast('Profile link copied! Send it to your clients.')
+  }).catch(() => {
+    prompt('Copy this link and send it to your clients:', url)
+  })
+}
+
+window.goBack = function () {
+  window.history.pushState({}, '', '/')
+  window.showPage('directory')
 }
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
@@ -581,10 +603,21 @@ window.submitListing = async function () {
   setTimeout(() => window.showPage('dashboard'), 1500)
 }
 
+// ── URL Routing ───────────────────────────────────────────────────────────────
+function handleRoute() {
+  const path = window.location.pathname
+  const match = path.match(/^\/profile\/(\d+)$/)
+  if (match) {
+    window.openProfile(parseInt(match[1]))
+  }
+}
+
+window.addEventListener('popstate', handleRoute)
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 selectTier('free')
 initAuth()
-loadListings()
+loadListings().then(() => handleRoute())
 
 document.getElementById('star-select').addEventListener('mouseover', e => {
   if (e.target.tagName === 'LABEL') {
