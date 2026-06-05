@@ -860,12 +860,20 @@ function closeCityDropdownOutside(e) {
 function renderCityList(province) {
   const list = document.getElementById('f-city-list');
   if (!list) return;
-  const cities = province && PROVINCE_CITIES[province] ? PROVINCE_CITIES[province] : Object.values(PROVINCE_CITIES).flat().sort();
-  list.innerHTML = cities.map(c => `
+  const baseCities = province && PROVINCE_CITIES[province] ? PROVINCE_CITIES[province] : Object.values(PROVINCE_CITIES).flat().sort();
+  const customCities = selectedCities.filter(c => !baseCities.includes(c));
+  const allCities = [...baseCities, ...customCities];
+  list.innerHTML = allCities.map(c => `
     <label style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:4px;cursor:pointer;font-size:14px;transition:background 0.1s;" onmouseover="this.style.background='var(--charcoal-3)'" onmouseout="this.style.background='transparent'">
       <input type="checkbox" value="${c}" ${selectedCities.includes(c) ? 'checked' : ''} onchange="toggleCity('${c}')" style="accent-color:var(--amber);width:16px;height:16px;">
-      ${c}
-    </label>`).join('');
+      ${c}${!baseCities.includes(c) ? ' <span style="font-size:10px;color:var(--amber);margin-left:4px;">(custom)</span>' : ''}
+    </label>`).join('') + `
+  <div style="border-top:1px solid var(--charcoal-3);margin-top:6px;padding-top:6px;">
+    <div style="display:flex;gap:6px;padding:4px 8px;">
+      <input id="f-city-new-input" type="text" placeholder="Add a town / city…" style="flex:1;background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border-radius:var(--radius);outline:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomCity()}" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--charcoal-4)'">
+      <button onclick="addCustomCity()" style="background:var(--amber);color:var(--charcoal);border:none;border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">＋ Add</button>
+    </div>
+  </div>`;
 }
 
 function toggleCity(city) {
@@ -875,6 +883,25 @@ function toggleCity(city) {
     selectedCities.push(city);
   }
   updateCityLabel();
+}
+
+function addCustomCity() {
+  const input = document.getElementById('f-city-new-input');
+  if (!input) return;
+  const city = input.value.trim();
+  if (!city) return;
+  if (!selectedCities.includes(city)) {
+    selectedCities.push(city);
+    // Add to hero dropdown
+    const heroCity = document.getElementById('hero-city');
+    if (heroCity && ![...heroCity.options].some(o => o.value === city)) {
+      heroCity.appendChild(new Option(city, city));
+    }
+  }
+  input.value = '';
+  updateCityLabel();
+  const province = document.getElementById('f-province') ? document.getElementById('f-province').value : '';
+  renderCityList(province);
 }
 
 function updateCityLabel() {
