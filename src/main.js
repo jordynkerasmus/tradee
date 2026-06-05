@@ -794,16 +794,16 @@ window.submitListing = async function () {
   const phone = document.getElementById('f-phone')?.value.trim() || ''
   const trade = getSelectedTrade()
   const province = document.getElementById('f-province').value
-  const city = document.getElementById('f-city').value.trim()
+  const city = selectedCities.length > 0 ? selectedCities[0] : ''
   const callout = parseInt(document.getElementById('f-callout').value) || 0
   const rate = parseInt(document.getElementById('f-rate').value) || 0
   const description = document.getElementById('f-desc').value.trim()
-  const credsRaw = document.getElementById('f-creds').value.trim()
-  const years_experience = parseInt(document.getElementById('f-years').value) || 0
+  const credsRaw = document.getElementById('f-creds')?.value.trim() || ''
+  const years_experience = parseInt(document.getElementById('f-years')?.value) || 0
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
   if (!email || !password) { toast('Please enter your email and password.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
-  if (!name || !trade || !province || !city) { toast('Please fill in name, trade, province and city.'); return }
+  if (!name || !trade || !province || selectedCities.length === 0) { toast('Please fill in name, trade, province and at least one city.'); return }
   if (!rate) { toast('Please enter your hourly rate.'); return }
   if (!description) { toast('Please add a business description.'); return }
 
@@ -834,7 +834,8 @@ window.submitListing = async function () {
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
-  ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-city', 'f-callout', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+  ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-callout', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+  selectedCities = []; updateCityLabel()
   document.getElementById('f-trade').value = ''
   document.getElementById('f-province').value = ''
   selectTier('free')
