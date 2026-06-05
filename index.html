@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tradee — Find Trusted Tradesmen in SA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --amber: #F59E0B;
+  --amber-dark: #B45309;
+  --amber-light: #FEF3C7;
+  --charcoal: #1C1917;
+  --charcoal-2: #292524;
+  --charcoal-3: #3D3935;
+  --charcoal-4: #57534E;
+  --charcoal-5: #78716C;
+  --charcoal-6: #A8A29E;
+  --charcoal-7: #D6D3D1;
+  --charcoal-8: #F5F5F4;
+  --white: #FFFDF9;
+  --danger: #EF4444;
+  --success: #22C55E;
+  --radius: 6px;
+  --radius-lg: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', sans-serif; background: var(--charcoal); color: var(--white); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.08em; color: var(--amber); text-decoration: none; cursor: pointer; }
+.nav-logo span { color: var(--white); }
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a { color: var(--charcoal-6); text-decoration: none; font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.15s; cursor: pointer; }
+.nav-links a:hover, .nav-links a.active { color: var(--amber); }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; text-decoration: none; letter-spacing: 0.02em; }
+.btn-primary { background: var(--amber); color: var(--charcoal); }
+.btn-primary:hover { background: #FCD34D; }
+.btn-outline { background: transparent; color: var(--white); border: 1px solid var(--charcoal-4); }
+.btn-outline:hover { border-color: var(--amber); color: var(--amber); }
+.btn-sm { padding: 7px 14px; font-size: 13px; }
+.page { display: none; }
+.page.active { display: block; }
+.hero { background: var(--charcoal-2); padding: 6rem 2rem 5rem; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(245,158,11,0.03) 20px, rgba(245,158,11,0.03) 21px); }
+.hero-eyebrow { display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 0.15em; color: var(--amber); text-transform: uppercase; margin-bottom: 1.5rem; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); padding: 5px 14px; border-radius: 3px; }
+.hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 8rem); letter-spacing: 0.06em; line-height: 0.9; margin-bottom: 1.5rem; position: relative; }
+.hero h1 .accent { color: var(--amber); }
+.hero-sub { font-size: 1.1rem; color: var(--charcoal-6); max-width: 520px; margin: 0 auto 2.5rem; }
+.search-wrap { max-width: 700px; margin: 0 auto; display: flex; gap: 0; background: var(--charcoal-3); border: 1px solid var(--charcoal-4); border-radius: var(--radius); overflow: hidden; position: relative; }
+.search-wrap input, .search-wrap select { background: transparent; border: none; outline: none; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 14px 16px; }
+.search-wrap input { flex: 1; }
+.search-wrap select { border-left: 1px solid var(--charcoal-4); color: var(--charcoal-6); cursor: pointer; min-width: 160px; }
+.search-wrap select option { background: var(--charcoal-3); }
+.search-wrap .btn { border-radius: 0; padding: 14px 24px; }
+.stats-bar { display: flex; justify-content: center; gap: 3rem; padding: 2rem; background: var(--charcoal); border-bottom: 1px solid var(--charcoal-3); flex-wrap: wrap; }
+.stat-item { text-align: center; }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--amber); letter-spacing: 0.04em; display: block; }
+.stat-label { font-size: 12px; color: var(--charcoal-6); text-transform: uppercase; letter-spacing: 0.08em; }
+.trade-cats { padding: 2rem; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 900px; margin: 0 auto; }
+.trade-pill { padding: 8px 18px; border: 1px solid var(--charcoal-4); border-radius: 100px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--charcoal-6); letter-spacing: 0.02em; }
+.trade-pill:hover, .trade-pill.active { background: var(--amber); border-color: var(--amber); color: var(--charcoal); }
+.directory-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+.directory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.directory-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.04em; }
+.filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--charcoal-3); }
+.filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; }
+.filters select option { background: var(--charcoal-2); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+.tradesman-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.tradesman-card:hover { border-color: var(--amber); transform: translateY(-2px); }
+.tradesman-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--amber); opacity: 0; transition: opacity 0.2s; }
+.tradesman-card:hover::before { opacity: 1; }
+.card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 1rem; }
+.card-avatar { width: 52px; height: 52px; border-radius: var(--radius); background: var(--charcoal-3); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--amber); letter-spacing: 0.04em; flex-shrink: 0; }
+.card-avatar.premium-av { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); }
+.card-name { font-weight: 600; font-size: 1rem; line-height: 1.3; }
+.card-trade { font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-top: 2px; }
+.card-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+.badge-verified { background: rgba(34,197,94,0.15); color: #4ADE80; border: 1px solid rgba(34,197,94,0.2); }
+.badge-premium { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+.badge-free { background: var(--charcoal-3); color: var(--charcoal-6); border: 1px solid var(--charcoal-4); }
+.card-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 0.75rem; }
+.stars { color: var(--amber); font-size: 14px; }
+.rating-num { font-weight: 600; font-size: 14px; }
+.rating-count { font-size: 12px; color: var(--charcoal-6); }
+.card-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+.info-label { font-size: 11px; color: var(--charcoal-6); text-transform: uppercase; letter-spacing: 0.06em; }
+.info-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; color: var(--white); margin-top: 2px; }
+.card-area { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--charcoal-6); padding-top: 0.75rem; border-top: 1px solid var(--charcoal-3); }
+.profile-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+.profile-back { display: inline-flex; align-items: center; gap: 8px; color: var(--charcoal-6); font-size: 14px; cursor: pointer; margin-bottom: 2rem; transition: color 0.15s; }
+.profile-back:hover { color: var(--amber); }
+.profile-hero { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 2rem; display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 1.5rem; }
+.profile-avatar { width: 90px; height: 90px; border-radius: var(--radius); background: var(--charcoal-3); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--amber); flex-shrink: 0; }
+.profile-name { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; line-height: 1; margin-bottom: 4px; }
+.profile-trade { color: var(--amber); text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.profile-rating-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.profile-rating-big { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--amber); letter-spacing: 0.04em; line-height: 1; }
+.profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-box { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius); padding: 1rem 1.25rem; text-align: center; }
+.stat-box .value { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 500; color: var(--amber); display: block; }
+.stat-box .label { font-size: 12px; color: var(--charcoal-6); margin-top: 2px; }
+.profile-section { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.06em; color: var(--charcoal-6); margin-bottom: 1rem; text-transform: uppercase; }
+.cred-list { display: flex; flex-direction: column; gap: 10px; }
+.cred-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.cred-icon { width: 32px; height: 32px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--amber); font-size: 16px; flex-shrink: 0; }
+.review-list { display: flex; flex-direction: column; gap: 1rem; }
+.review-item { background: var(--charcoal-3); border-radius: var(--radius); padding: 1rem 1.25rem; }
+.review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.reviewer-name { font-weight: 600; font-size: 14px; }
+.review-date { font-size: 12px; color: var(--charcoal-6); }
+.review-stars { color: var(--amber); font-size: 13px; margin-bottom: 6px; }
+.review-text { font-size: 14px; color: var(--charcoal-7); line-height: 1.5; }
+.form-page { max-width: 680px; margin: 0 auto; padding: 2rem; }
+.form-page h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+.form-page .subtitle { color: var(--charcoal-6); margin-bottom: 2rem; }
+.form-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 1.5rem; }
+.form-card h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; font-size: 1.2rem; color: var(--charcoal-6); text-transform: uppercase; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--charcoal-3); }
+.form-group { margin-bottom: 1rem; }
+.form-label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--charcoal-6); margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea { width: 100%; background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 11px 14px; border-radius: var(--radius); outline: none; transition: border-color 0.15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--amber); }
+.form-select option { background: var(--charcoal-2); }
+.form-textarea { min-height: 120px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-hint { font-size: 12px; color: var(--charcoal-6); margin-top: 4px; }
+.tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.tier-card { border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; transition: all 0.15s; position: relative; }
+.tier-card:hover { border-color: var(--charcoal-5); }
+.tier-card.selected { border-color: var(--amber); background: rgba(245,158,11,0.05); }
+.tier-card.featured { border-color: var(--amber); }
+.tier-card .popular-tag { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); background: var(--amber); color: var(--charcoal); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 12px; border-radius: 0 0 6px 6px; }
+.tier-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.06em; margin-bottom: 4px; }
+.tier-price { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 500; color: var(--amber); margin-bottom: 4px; }
+.tier-price span { font-size: 12px; color: var(--charcoal-6); font-weight: 400; }
+.tier-desc { font-size: 12px; color: var(--charcoal-6); margin-bottom: 1rem; }
+.tier-features { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.tier-features li { font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+.tier-features .tick { color: var(--success); }
+.tier-features .cross { color: var(--charcoal-5); }
+.rankings-wrap { max-width: 800px; margin: 0 auto; padding: 2rem; }
+.rankings-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2rem; }
+.rankings-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.04em; }
+.rank-list { display: flex; flex-direction: column; gap: 1rem; }
+.rank-item { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.15s; }
+.rank-item:hover { border-color: var(--amber); }
+.rank-item:nth-child(1) { border-color: #F59E0B; }
+.rank-item:nth-child(2) { border-color: #94A3B8; }
+.rank-item:nth-child(3) { border-color: #B45309; }
+.rank-num { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; min-width: 40px; text-align: center; }
+.rank-item:nth-child(1) .rank-num { color: #F59E0B; }
+.rank-item:nth-child(2) .rank-num { color: #94A3B8; }
+.rank-item:nth-child(3) .rank-num { color: #B45309; }
+.rank-info { flex: 1; }
+.rank-name { font-weight: 600; }
+.rank-trade { font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.06em; }
+.rank-bar-wrap { width: 140px; }
+.rank-bar { height: 4px; background: var(--charcoal-4); border-radius: 2px; overflow: hidden; }
+.rank-bar-fill { height: 100%; background: var(--amber); border-radius: 2px; }
+.rank-score { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--amber); margin-top: 4px; }
+#toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--charcoal-2); border: 1px solid var(--amber); color: var(--white); padding: 12px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500; opacity: 0; transform: translateY(10px); transition: all 0.25s; z-index: 9999; }
+#toast.show { opacity: 1; transform: translateY(0); }
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--charcoal-6); }
+.empty-state h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.04em; color: var(--charcoal-5); margin-bottom: 0.5rem; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); border-radius: var(--radius-lg); padding: 2rem; max-width: 480px; width: 100%; position: relative; }
+.modal-box h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.04em; margin-bottom: 1rem; }
+.modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--charcoal-6); font-size: 1.5rem; cursor: pointer; line-height: 1; }
+.review-form { display: flex; flex-direction: column; gap: 12px; }
+.review-form input, .review-form textarea { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: var(--radius); outline: none; width: 100%; }
+.review-form textarea { min-height: 90px; resize: vertical; }
+.star-select { display: flex; gap: 8px; margin: 4px 0; }
+.star-select label { font-size: 24px; cursor: pointer; color: var(--charcoal-5); transition: color 0.1s; }
+.star-select input[type="radio"] { display: none; }
+.star-select label:hover, .star-select label.lit { color: var(--amber); }
+@media (max-width: 640px) {
+  .tier-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .profile-hero { flex-direction: column; }
+  .profile-stats { grid-template-columns: 1fr 1fr; }
+  .nav-links { gap: 1rem; }
+  .hero h1 { font-size: 3.5rem; }
+  .stats-bar { gap: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="showPage('home')"><span>TRA</span>DEE</div>
+  <div class="nav-links">
+    <a onclick="showPage('directory')" id="nav-directory">Directory</a>
+    <a onclick="showPage('rankings')" id="nav-rankings">Rankings</a>
+    <button class="btn btn-primary btn-sm" onclick="showPage('list')">List Your Business</button>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-eyebrow">South Africa's Trade Directory</div>
+    <h1>FIND THE<br><span class="accent">RIGHT</span><br>TRADESMAN</h1>
+    <p class="hero-sub">Verified electricians, plumbers, builders and more — browse, compare, and book with confidence.</p>
+    <div class="search-wrap">
+      <select id="hero-search" style="flex:1;border-left:none;">
+        <option value="">All Trades</option>
+        <option>Air Conditioning</option>
+        <option>Appliance Repair</option>
+        <option>Builder / Contractor</option>
+        <option>Carpenter</option>
+        <option>Electrician</option>
+        <option>Handyman</option>
+        <option>Landscaper</option>
+        <option>Painter</option>
+        <option>Pest Control</option>
+        <option>Plumber</option>
+        <option>Pool Service</option>
+        <option>Roofer</option>
+        <option>Security</option>
+        <option>Tiler</option>
+        <option>Welder</option>
+        <option>Other</option>
+      </select>
+      <select id="hero-province">
+        <option value="">All Provinces</option>
+        <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
+        <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
+        <option>North West</option><option>Free State</option><option>Northern Cape</option>
+      </select>
+      <button class="btn btn-primary" onclick="heroSearch()">Search</button>
+    </div>
+  </div>
+  <div class="stats-bar" id="home-stats"></div>
+  <div style="padding:2rem 0 0;text-align:center;">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--charcoal-6);margin-bottom:1rem;">Browse by trade</div>
+    <div class="trade-cats" id="trade-cats"></div>
+  </div>
+  <div class="directory-wrap">
+    <div class="directory-header">
+      <h2>Featured Listings</h2>
+      <a onclick="showPage('directory')" style="font-size:13px;color:var(--amber);cursor:pointer;">View all →</a>
+    </div>
+    <div class="card-grid" id="home-cards"></div>
+  </div>
+</div>
+
+<!-- DIRECTORY -->
+<div id="page-directory" class="page">
+  <div class="directory-wrap">
+    <div class="directory-header">
+      <div>
+        <h2 id="dir-title">All Tradesmen</h2>
+        <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;" id="dir-count"></div>
+      </div>
+    </div>
+    <div class="filters">
+      <select id="filter-trade" onchange="applyFilters()"><option value="">All Trades</option></select>
+      <select id="filter-province" onchange="applyFilters()">
+        <option value="">All Provinces</option>
+        <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
+        <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
+        <option>North West</option><option>Free State</option><option>Northern Cape</option>
+      </select>
+      <select id="filter-tier" onchange="applyFilters()">
+        <option value="">All Tiers</option>
+        <option value="premium">Premium</option><option value="verified">Verified</option><option value="free">Free</option>
+      </select>
+      <select id="filter-sort" onchange="applyFilters()">
+        <option value="rating">Sort: Top Rated</option>
+        <option value="callout">Sort: Lowest Call-out</option>
+        <option value="rate">Sort: Lowest Rate</option>
+        <option value="reviews">Sort: Most Reviews</option>
+      </select>
+    </div>
+    <div class="card-grid" id="dir-cards"></div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="page-profile" class="page">
+  <div class="profile-container" id="profile-content"></div>
+</div>
+
+<!-- RANKINGS -->
+<div id="page-rankings" class="page">
+  <div class="rankings-wrap">
+    <div class="rankings-header">
+      <div>
+        <h2>Rankings</h2>
+        <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;">Based purely on verified client reviews — not paid placement.</div>
+      </div>
+      <select id="rank-trade-filter" onchange="renderRankings()" style="background:var(--charcoal-2);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;">
+        <option value="">All Trades</option>
+      </select>
+    </div>
+    <div class="rank-list" id="rank-list"></div>
+  </div>
+</div>
+
+<!-- LIST YOUR BUSINESS -->
+<div id="page-list" class="page">
+  <div class="form-page">
+    <h2>List Your Business</h2>
+    <p class="subtitle">Join hundreds of tradesmen across South Africa. Get discovered, build your reputation, and grow your client base.</p>
+    <div class="form-card">
+      <h3>Personal Details</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="f-name" placeholder="e.g. Sipho Dlamini"></div>
+        <div class="form-group"><label class="form-label">Trade / Specialty</label>
+          <select class="form-select" id="f-trade" onchange="handleTradeSelect()">
+            <option value="">Select trade…</option>
+            <option>Air Conditioning</option>
+            <option>Appliance Repair</option>
+            <option>Builder / Contractor</option>
+            <option>Carpenter</option>
+            <option>Electrician</option>
+            <option>Handyman</option>
+            <option>Landscaper</option>
+            <option>Painter</option>
+            <option>Pest Control</option>
+            <option>Plumber</option>
+            <option>Pool Service</option>
+            <option>Roofer</option>
+            <option>Security</option>
+            <option>Tiler</option>
+            <option>Welder</option>
+            <option value="__new__">＋ Add new trade…</option>
+          </select>
+          <input class="form-input" id="f-trade-new" placeholder="e.g. Solar Installer" style="display:none;margin-top:8px;" oninput="syncNewTrade()">
+          <div class="form-hint" id="f-trade-new-hint" style="display:none;">This trade will be added to the directory when you publish.</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="f-phone" placeholder="+27 82 000 0000"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-email" placeholder="you@example.com" type="email"></div>
+      </div>
+    </div>
+    <div class="form-card">
+      <h3>Business Info</h3>
+      <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="f-business" placeholder="e.g. Themba Electrical Services"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Province</label>
+          <select class="form-select" id="f-province">
+            <option value="">Select province…</option>
+            <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
+            <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
+            <option>North West</option><option>Free State</option><option>Northern Cape</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">City / Area</label><input class="form-input" id="f-city" placeholder="e.g. Sandton, Johannesburg"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="f-callout" type="number" placeholder="e.g. 350"><div class="form-hint">Enter 0 if no call-out fee</div></div>
+        <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="f-rate" type="number" placeholder="e.g. 650"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe your services, experience, areas covered, etc."></textarea></div>
+    </div>
+    <div class="form-card">
+      <h3>Credentials</h3>
+      <div class="form-group"><label class="form-label">Certifications / Registrations</label><input class="form-input" id="f-creds" placeholder="e.g. ECSA Registered, NHBRC Member, COC Issuer"><div class="form-hint">Separate multiple credentials with commas</div></div>
+      <div class="form-group"><label class="form-label">Years of Experience</label><input class="form-input" id="f-years" type="number" placeholder="e.g. 12"></div>
+    </div>
+    <div class="form-card">
+      <h3>Choose Your Plan</h3>
+      <div class="tier-grid">
+        <div class="tier-card" id="tier-free" onclick="selectTier('free')">
+          <div class="tier-name">Free</div>
+          <div class="tier-price">R0<span>/mo</span></div>
+          <div class="tier-desc">Get started with a basic listing</div>
+          <ul class="tier-features">
+            <li><span class="tick">✓</span> Basic profile page</li>
+            <li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="cross">✗</span> Priority ranking</li>
+            <li><span class="cross">✗</span> Verified badge</li>
+            <li><span class="cross">✗</span> Featured placement</li>
+          </ul>
+        </div>
+        <div class="tier-card featured" id="tier-verified" onclick="selectTier('verified')">
+          <div class="popular-tag">Most Popular</div>
+          <div class="tier-name">Verified</div>
+          <div class="tier-price">R149<span>/mo</span></div>
+          <div class="tier-desc">Stand out with a verified badge</div>
+          <ul class="tier-features">
+            <li><span class="tick">✓</span> Basic profile page</li>
+            <li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="tick">✓</span> Priority ranking</li>
+            <li><span class="tick">✓</span> Verified badge</li>
+            <li><span class="cross">✗</span> Featured placement</li>
+          </ul>
+        </div>
+        <div class="tier-card" id="tier-premium" onclick="selectTier('premium')">
+          <div class="tier-name">Premium</div>
+          <div class="tier-price">R399<span>/mo</span></div>
+          <div class="tier-desc">Maximum visibility and leads</div>
+          <ul class="tier-features">
+            <li><span class="tick">✓</span> Basic profile page</li>
+            <li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="tick">✓</span> Priority ranking</li>
+            <li><span class="tick">✓</span> Verified badge</li>
+            <li><span class="tick">✓</span> Featured placement</li>
+          </ul>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--charcoal-6);margin-top:-0.5rem;">* Pricing is indicative for demo purposes</div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="submitListing()">Publish My Listing →</button>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeReviewModal()">×</button>
+    <h3>Leave a Review</h3>
+    <div class="review-form">
+      <div>
+        <div class="form-label" style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:6px;">Your Name</div>
+        <input id="r-name" placeholder="e.g. Thabo M.">
+      </div>
+      <div>
+        <div class="form-label" style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:6px;">Rating</div>
+        <div class="star-select" id="star-select">
+          <input type="radio" name="stars" id="s1" value="1"><label for="s1">★</label>
+          <input type="radio" name="stars" id="s2" value="2"><label for="s2">★</label>
+          <input type="radio" name="stars" id="s3" value="3"><label for="s3">★</label>
+          <input type="radio" name="stars" id="s4" value="4"><label for="s4">★</label>
+          <input type="radio" name="stars" id="s5" value="5" checked><label for="s5">★</label>
+        </div>
+      </div>
+      <div>
+        <div class="form-label" style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:6px;">Review</div>
+        <textarea id="r-text" placeholder="Describe the work done and your experience…"></textarea>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SAMPLE = [
+  {id:1,name:'Themba Electrical',trade:'Electrician',province:'Gauteng',city:'Sandton, Johannesburg',callout:300,rate:750,desc:'Licensed master electrician with 15+ years in residential and commercial installations. ECSA registered. COC issuer. Available 24/7 for emergencies.',creds:['ECSA Registered','COC Issuer','City & Guilds Certified'],years:15,reviews:[{name:'Karen D.',stars:5,date:'May 2025',text:"Themba was professional, fast and tidy. Had our DB board replaced within hours. Highly recommend!"},{name:'Sipho M.',stars:5,date:'Apr 2025',text:"Fixed an issue 3 other electricians couldn't diagnose. Brilliant."}],tier:'premium',sample:true},
+  {id:2,name:'Cape Plumb Pro',trade:'Plumber',province:'Western Cape',city:'Claremont, Cape Town',callout:350,rate:680,desc:'Family-run plumbing business serving the Southern Suburbs for over a decade. Burst pipes, geysers, reticulation, drainage. Fully insured.',creds:['PIRB Registered','SAQCC Gas Certified'],years:11,reviews:[{name:'Annika P.',stars:5,date:'May 2025',text:"Arrived within 2 hours of calling. Very reasonable pricing and no surprises on the invoice."},{name:'James O.',stars:4,date:'Mar 2025',text:"Good work on the geyser replacement."}],tier:'verified',sample:true},
+  {id:3,name:'Durban Build Co.',trade:'Builder / Contractor',province:'KwaZulu-Natal',city:'Umhlanga, Durban',callout:0,rate:850,desc:'Full-scope building contractors. Extensions, renovations, new builds. NHBRC enrolled. Project management included in all contracts.',creds:['NHBRC Enrolled','CIDB Grade 4 CE'],years:18,reviews:[{name:'Priya N.',stars:5,date:'Apr 2025',text:"Built our double-storey extension on time and on budget. Exceptional."}],tier:'premium',sample:true},
+  {id:4,name:'Handy Hassan',trade:'Handyman',province:'Gauteng',city:'Pretoria East',callout:200,rate:400,desc:'No job too small. Fixing, patching, painting, assembling — you name it. Available weekends.',creds:[],years:6,reviews:[{name:'Ronel V.',stars:4,date:'May 2025',text:"Quick, friendly and affordable. Will call again."}],tier:'free',sample:true},
+  {id:5,name:'BrightCoat Painters',trade:'Painter',province:'Western Cape',city:'Bellville, Cape Town',callout:0,rate:520,desc:'Interior and exterior painting specialists. Clean lines, quality finishes, no mess. Portfolio available on request.',creds:['Master Painters SA'],years:9,reviews:[{name:'Denise F.',stars:5,date:'May 2025',text:"Transformed our living room completely. Highly professional."},{name:'Mark T.',stars:4,date:'Feb 2025',text:"Great work, punctual and cleaned up thoroughly."}],tier:'verified',sample:true},
+  {id:6,name:'Roof Shield SA',trade:'Roofer',province:'Gauteng',city:'Midrand',callout:500,rate:900,desc:'Waterproofing, IBR, tile and corrugated roofing solutions. Emergency leak repairs. 5-year workmanship warranty.',creds:['IWF Waterproofing Certified','NRCS Approved'],years:14,reviews:[{name:'Theo B.',stars:5,date:'Apr 2025',text:"Fixed a persistent leak that had been a nightmare. Could not be happier."}],tier:'premium',sample:true}
+];
+
+let listings = [...SAMPLE];
+let currentProfile = null;
+let selectedTier = 'free';
+let reviewingId = null;
+let filterTrade = '', filterProvince = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = '';
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  const el = document.getElementById('nav-'+name);
+  if (el) el.classList.add('active');
+  window.scrollTo(0,0);
+  if (name==='home') renderHome();
+  if (name==='directory') renderDirectory();
+  if (name==='rankings') renderRankings();
+}
+
+function starsHTML(n) { const f=Math.round(n); return '★'.repeat(f)+'☆'.repeat(5-f); }
+function initials(name) { return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function fmtRand(n) { return n===0?'Free':'R'+n; }
+function tierBadge(tier) {
+  if (tier==='premium') return '<span class="badge badge-premium">Premium</span>';
+  if (tier==='verified') return '<span class="badge badge-verified">Verified</span>';
+  return '<span class="badge badge-free">Free</span>';
+}
+function toast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function avgRating(l) { return l.reviews.length ? l.reviews.reduce((s,r)=>s+r.stars,0)/l.reviews.length : 0; }
+
+function renderHome() {
+  const total=listings.length, totalReviews=listings.reduce((s,l)=>s+l.reviews.length,0), totalTrades=[...new Set(listings.map(l=>l.trade))].length;
+  document.getElementById('home-stats').innerHTML=`
+    <div class="stat-item"><span class="stat-num">${total}</span><span class="stat-label">Tradesmen Listed</span></div>
+    <div class="stat-item"><span class="stat-num">${totalTrades}</span><span class="stat-label">Trade Categories</span></div>
+    <div class="stat-item"><span class="stat-num">${totalReviews}</span><span class="stat-label">Verified Reviews</span></div>
+    <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">Provinces Covered</span></div>`;
+  const allTrades=[...new Set(listings.map(l=>l.trade))].sort();
+  document.getElementById('trade-cats').innerHTML=allTrades.map(t=>`<div class="trade-pill" onclick="filterByTrade('${t}')">${t}</div>`).join('');
+  const featured=listings.filter(l=>l.tier==='premium').slice(0,3).concat(listings.filter(l=>l.tier==='verified').slice(0,3)).slice(0,6);
+  document.getElementById('home-cards').innerHTML=featured.map(cardHTML).join('');
+}
+
+function filterByTrade(trade) { filterTrade=trade; document.getElementById('filter-trade').value=trade; showPage('directory'); }
+function heroSearch() { filterTrade=document.getElementById('hero-search').value; filterProvince=document.getElementById('hero-province').value; document.getElementById('filter-province').value=filterProvince; showPage('directory'); }
+
+function populateTradeFilter() {
+  const trades=[...new Set(listings.map(l=>l.trade))].sort();
+  const opts=trades.map(t=>`<option value="${t}">${t}</option>`).join('');
+  document.getElementById('filter-trade').innerHTML='<option value="">All Trades</option>'+opts;
+  document.getElementById('rank-trade-filter').innerHTML='<option value="">All Trades</option>'+opts;
+  document.getElementById('filter-trade').value=filterTrade;
+}
+
+function applyFilters() {
+  filterTrade=document.getElementById('filter-trade').value;
+  filterProvince=document.getElementById('filter-province').value;
+  filterTierVal=document.getElementById('filter-tier').value;
+  filterSort=document.getElementById('filter-sort').value;
+  renderDirectory();
+}
+
+function renderDirectory() {
+  populateTradeFilter();
+  document.getElementById('filter-province').value=filterProvince;
+  document.getElementById('filter-tier').value=filterTierVal;
+  document.getElementById('filter-sort').value=filterSort;
+  const tierOrder={premium:0,verified:1,free:2};
+  let filtered=listings.filter(l=>{
+    if (filterTrade && l.trade!==filterTrade) return false;
+    if (filterProvince && l.province!==filterProvince) return false;
+    if (filterTierVal && l.tier!==filterTierVal) return false;
+    if (dirSearchTerm) { const term=dirSearchTerm.toLowerCase(); if (!l.name.toLowerCase().includes(term) && !l.trade.toLowerCase().includes(term) && !l.desc.toLowerCase().includes(term)) return false; }
+    return true;
+  }).sort((a,b)=>{
+    const td=tierOrder[a.tier]-tierOrder[b.tier]; if (td!==0) return td;
+    if (filterSort==='rating') return avgRating(b)-avgRating(a);
+    if (filterSort==='callout') return a.callout-b.callout;
+    if (filterSort==='rate') return a.rate-b.rate;
+    if (filterSort==='reviews') return b.reviews.length-a.reviews.length;
+    return 0;
+  });
+  const titleParts=[];
+  if (dirSearchTerm) titleParts.push(`"${dirSearchTerm}"`);
+  if (filterTrade) titleParts.push(filterTrade);
+  if (filterProvince) titleParts.push(filterProvince);
+  document.getElementById('dir-title').textContent=titleParts.length?titleParts.join(' — '):'All Tradesmen';
+  document.getElementById('dir-count').textContent=`${filtered.length} listing${filtered.length!==1?'s':''}`;
+  document.getElementById('dir-cards').innerHTML=filtered.length?filtered.map(cardHTML).join(''):`<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`;
+  dirSearchTerm='';
+}
+
+function cardHTML(l) {
+  const rating=avgRating(l), rd=rating>0?rating.toFixed(1):'—';
+  return `<div class="tradesman-card" onclick="openProfile(${l.id})">
+    <div class="card-header">
+      <div class="card-avatar ${l.tier==='premium'?'premium-av':''}">${initials(l.name)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="card-name">${l.name}</div>
+        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
+        <div class="card-trade">${l.trade}</div>
+        <div class="card-badges">${tierBadge(l.tier)}</div>
+      </div>
+    </div>
+    <div class="card-rating">
+      <span class="stars">${starsHTML(rating)}</span>
+      <span class="rating-num">${rd}</span>
+      <span class="rating-count">(${l.reviews.length} review${l.reviews.length!==1?'s':''})</span>
+    </div>
+    <div class="card-info">
+      <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
+      <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
+    </div>
+    <div class="card-area">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      ${l.city}, ${l.province}
+    </div>
+  </div>`;
+}
+
+function openProfile(id) {
+  const l=listings.find(x=>x.id===id); if (!l) return;
+  currentProfile=l;
+  const rating=avgRating(l), rd=rating>0?rating.toFixed(1):'—';
+  const credsHTML=l.creds.length?l.creds.map(c=>`<div class="cred-item"><div class="cred-icon">✓</div><span>${c}</span></div>`).join(''):'<p style="color:var(--charcoal-6);font-size:14px;">No credentials listed yet.</p>';
+  const reviewsHTML=l.reviews.length?l.reviews.map(r=>`<div class="review-item"><div class="review-header"><span class="reviewer-name">${r.name}</span><span class="review-date">${r.date}</span></div><div class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div><p class="review-text">${r.text}</p></div>`).join(''):'<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>';
+  document.getElementById('profile-content').innerHTML=`
+    <div class="profile-back" onclick="showPage('directory')">← Back to Directory</div>
+    <div class="profile-hero">
+      <div class="profile-avatar">${initials(l.name)}</div>
+      <div style="flex:1;">
+        <div class="profile-name">${l.name}</div>
+        ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${l.contact_name}</div>` : ''}
+        <div class="profile-trade">${l.trade}</div>
+        <div class="card-badges" style="margin-bottom:12px;">${tierBadge(l.tier)}</div>
+        <div class="profile-rating-row">
+          <span class="profile-rating-big">${rd}</span>
+          <div>
+            <div class="stars" style="font-size:18px;">${starsHTML(rating)}</div>
+            <div style="font-size:12px;color:var(--charcoal-6);">${l.reviews.length} review${l.reviews.length!==1?'s':''}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
+          <button class="btn btn-outline btn-sm" onclick="showPage('directory')">← Back</button>
+        </div>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat-box"><span class="value">${fmtRand(l.callout)}</span><div class="label">Call-out Fee</div></div>
+      <div class="stat-box"><span class="value">${fmtRand(l.rate)}/hr</span><div class="label">Hourly Rate</div></div>
+      <div class="stat-box"><span class="value">${l.years||'—'}</span><div class="label">Years Experience</div></div>
+    </div>
+    <div class="profile-section">
+      <div class="section-title">About</div>
+      <p style="font-size:15px;line-height:1.7;color:var(--charcoal-7);">${l.desc}</p>
+      <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span style="font-size:14px;color:var(--charcoal-6);">${l.city}, ${l.province}</span>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="section-title">Credentials & Certifications</div>
+      <div class="cred-list">${credsHTML}</div>
+    </div>
+    <div class="profile-section">
+      <div class="section-title">Client Reviews (${l.reviews.length})</div>
+      <div class="review-list">${reviewsHTML}</div>
+      <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--charcoal-3);">
+        <button class="btn btn-outline" onclick="openReviewModal(${l.id})">+ Write a Review</button>
+      </div>
+    </div>`;
+  showPage('profile');
+}
+
+function openReviewModal(id) { reviewingId=id; document.getElementById('review-modal').classList.add('open'); document.getElementById('r-name').value=''; document.getElementById('r-text').value=''; document.getElementById('s5').checked=true; }
+function closeReviewModal() { document.getElementById('review-modal').classList.remove('open'); }
+function submitReview() {
+  const name=document.getElementById('r-name').value.trim(), text=document.getElementById('r-text').value.trim();
+  const starsEl=document.querySelector('input[name="stars"]:checked'), stars=starsEl?parseInt(starsEl.value):5;
+  if (!name||!text) { toast('Please fill in your name and review.'); return; }
+  const l=listings.find(x=>x.id===reviewingId); if (!l) return;
+  l.reviews.unshift({name,stars,text,date:'Jun 2025'});
+  closeReviewModal(); toast('Review submitted — thank you!');
+  if (currentProfile&&currentProfile.id===reviewingId) openProfile(reviewingId);
+}
+
+function renderRankings() {
+  const tradeFilt=document.getElementById('rank-trade-filter').value;
+  let ranked=listings.filter(l=>!tradeFilt||l.trade===tradeFilt).filter(l=>l.reviews.length>0)
+    .map(l=>({...l,avg:avgRating(l)})).sort((a,b)=>b.avg-a.avg||b.reviews.length-a.reviews.length);
+  const maxAvg=ranked.length?ranked[0].avg:5;
+  document.getElementById('rank-list').innerHTML=ranked.map((l,i)=>`
+    <div class="rank-item" onclick="openProfile(${l.id})">
+      <div class="rank-num">${i+1}</div>
+      <div class="rank-info">
+        <div class="rank-name">${l.name}${l.sample?' <span style="font-size:11px;color:var(--charcoal-6);">[Demo]</span>':''}</div>
+        <div class="rank-trade">${l.trade} · ${l.city}</div>
+      </div>
+      <div class="rank-bar-wrap">
+        <div class="rank-bar"><div class="rank-bar-fill" style="width:${(l.avg/maxAvg*100).toFixed(0)}%"></div></div>
+        <div class="rank-score">${starsHTML(l.avg)} ${l.avg.toFixed(1)} (${l.reviews.length})</div>
+      </div>
+    </div>`).join('')||'<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>';
+}
+
+function handleTradeSelect() {
+  const sel = document.getElementById('f-trade');
+  const newInput = document.getElementById('f-trade-new');
+  const hint = document.getElementById('f-trade-new-hint');
+  const isNew = sel.value === '__new__';
+  newInput.style.display = isNew ? 'block' : 'none';
+  hint.style.display = isNew ? 'block' : 'none';
+  if (isNew) newInput.focus();
+}
+
+function syncNewTrade() {
+  // keeps the custom value accessible when submitting
+}
+
+function getSelectedTrade() {
+  const sel = document.getElementById('f-trade');
+  if (sel.value === '__new__') {
+    return document.getElementById('f-trade-new').value.trim();
+  }
+  return sel.value;
+}
+
+function addTradeToDropdowns(trade) {
+  // Add to hero search dropdown
+  const heroSelect = document.getElementById('hero-search');
+  if (heroSelect && ![...heroSelect.options].some(o => o.value === trade)) {
+    const opt = new Option(trade, trade);
+    heroSelect.insertBefore(opt, heroSelect.options[heroSelect.options.length - 1]);
+  }
+  // Add to listing form dropdown (before the __new__ option)
+  const fTrade = document.getElementById('f-trade');
+  if (fTrade && ![...fTrade.options].some(o => o.value === trade)) {
+    const opt = new Option(trade, trade);
+    fTrade.insertBefore(opt, fTrade.options[fTrade.options.length - 1]);
+  }
+}
+
+function selectTier(tier) {
+  selectedTier=tier;
+  ['free','verified','premium'].forEach(t=>document.getElementById('tier-'+t).classList.toggle('selected',t===tier));
+}
+
+function submitListing() {
+  const contact_name=document.getElementById('f-name').value.trim();
+  const name=document.getElementById('f-business').value.trim() || contact_name;
+  const trade=getSelectedTrade();
+  const province=document.getElementById('f-province').value, city=document.getElementById('f-city').value.trim();
+  const callout=parseInt(document.getElementById('f-callout').value)||0, rate=parseInt(document.getElementById('f-rate').value)||0;
+  const desc=document.getElementById('f-desc').value.trim(), credsRaw=document.getElementById('f-creds').value.trim();
+  const years=parseInt(document.getElementById('f-years').value)||0;
+  const creds=credsRaw?credsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
+  if (!name||!trade||!province||!city) { toast('Please fill in name, trade, province and city.'); return; }
+  if (!rate) { toast('Please enter your hourly rate.'); return; }
+  if (!desc) { toast('Please add a business description.'); return; }
+  const newId=Math.max(...listings.map(l=>l.id),0)+1;
+  listings.push({id:newId,name,contact_name,trade,province,city,callout,rate,desc,creds,years,reviews:[],tier:selectedTier,sample:false});
+  addTradeToDropdowns(trade);
+  toast(`${name} is now live on Tradee!`);
+  ['f-name','f-phone','f-email','f-city','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('f-trade').value='';
+  document.getElementById('f-trade-new').value='';
+  document.getElementById('f-trade-new').style.display='none';
+  document.getElementById('f-trade-new-hint').style.display='none';
+  document.getElementById('f-province').value='';
+  selectTier('free'); filterTrade=trade;
+  setTimeout(()=>showPage('directory'),1500);
+}
+
+selectTier('free'); renderHome(); populateTradeFilter(); renderRankings();
+
+document.getElementById('star-select').addEventListener('mouseover',e=>{
+  if (e.target.tagName==='LABEL') { const val=parseInt(e.target.getAttribute('for').replace('s','')); document.querySelectorAll('.star-select label').forEach((l,i)=>l.classList.toggle('lit',i<val)); }
+});
+document.getElementById('star-select').addEventListener('mouseleave',()=>{ document.querySelectorAll('.star-select label').forEach(l=>l.classList.remove('lit')); });
+</script>
+</body>
+</html>
