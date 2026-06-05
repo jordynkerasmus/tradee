@@ -151,7 +151,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .tier-card:hover { border-color: var(--charcoal-5); }
 .tier-card.selected { border-color: var(--amber); background: rgba(245,158,11,0.05); }
 .tier-card.featured { border-color: var(--amber); }
-.tier-card .popular-tag { display: inline-block; background: var(--amber); color: var(--charcoal); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 12px; border-radius: 100px; margin-bottom: 6px; }
+.tier-card .popular-tag { position: absolute; top: 0; left: 0; right: 0; background: var(--amber); color: var(--charcoal); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 12px; text-align: center; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.tier-card.featured { padding-top: 2.5rem; }
 .tier-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.06em; margin-bottom: 4px; }
 .tier-price { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 500; color: var(--amber); margin-bottom: 4px; }
 .tier-price span { font-size: 12px; color: var(--charcoal-6); font-weight: 400; }
