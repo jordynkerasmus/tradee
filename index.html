@@ -229,11 +229,14 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <option>Welder</option>
         <option>Other</option>
       </select>
-      <select id="hero-province">
+      <select id="hero-province" onchange="updateHeroCities()">
         <option value="">All Provinces</option>
         <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
         <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
         <option>North West</option><option>Free State</option><option>Northern Cape</option>
+      </select>
+      <select id="hero-city">
+        <option value="">All Cities</option>
       </select>
       <button class="btn btn-primary" onclick="heroSearch()">Search</button>
     </div>
@@ -360,7 +363,18 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
             <option>North West</option><option>Free State</option><option>Northern Cape</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">City / Area</label><input class="form-input" id="f-city" placeholder="e.g. Sandton, Johannesburg"></div>
+        <div class="form-group">
+          <label class="form-label">City / Area <span style="color:var(--charcoal-6);font-weight:400;">(select all areas you cover)</span></label>
+          <div id="f-city-wrap" style="position:relative;">
+            <div id="f-city-trigger" onclick="toggleCityDropdown()" style="width:100%;background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;padding:11px 14px;border-radius:var(--radius);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color 0.15s;">
+              <span id="f-city-label" style="color:var(--charcoal-6);">Select cities / areas…</span>
+              <span style="color:var(--charcoal-6);">▾</span>
+            </div>
+            <div id="f-city-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--charcoal-2);border:1px solid var(--charcoal-4);border-radius:var(--radius);z-index:200;max-height:240px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+              <div id="f-city-list" style="padding:8px;"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="f-callout" type="number" placeholder="e.g. 350"><div class="form-hint">Enter 0 if no call-out fee</div></div>
@@ -618,7 +632,13 @@ function renderHome() {
 }
 
 function filterByTrade(trade) { filterTrade=trade; document.getElementById('filter-trade').value=trade; showPage('directory'); }
-function heroSearch() { filterTrade=document.getElementById('hero-search').value; filterProvince=document.getElementById('hero-province').value; document.getElementById('filter-province').value=filterProvince; showPage('directory'); }
+function heroSearch() {
+  filterTrade=document.getElementById('hero-search').value;
+  filterProvince=document.getElementById('hero-province').value;
+  filterCity=document.getElementById('hero-city').value;
+  document.getElementById('filter-province').value=filterProvince;
+  showPage('directory');
+}
 
 function populateTradeFilter() {
   const trades=[...new Set(listings.map(l=>l.trade))].sort();
@@ -787,6 +807,100 @@ function renderRankings() {
       </div>
     </div>`).join('')||'<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>';
 }
+
+// ── City data ─────────────────────────────────────────────────────────────────
+const PROVINCE_CITIES = {
+  'Gauteng': ['Johannesburg','Pretoria','Sandton','Midrand','Centurion','Randburg','Roodepoort','Soweto','Boksburg','Benoni','Kempton Park','Germiston','Fourways','Edenvale','Alberton'],
+  'Western Cape': ['Cape Town','Bellville','Claremont','Wynberg','Durbanville','Somerset West','Stellenbosch','Paarl','George','Knysna','Mossel Bay','Hermanus','Strand','Brackenfell','Tableview'],
+  'KwaZulu-Natal': ['Durban','Umhlanga','Pinetown','Pietermaritzburg','Ballito','Richards Bay','Newcastle','Amanzimtoti','Hillcrest','Westville','Berea','Chatsworth','Phoenix','Tongaat','Empangeni'],
+  'Eastern Cape': ['Gqeberha (Port Elizabeth)','East London','Mthatha','Uitenhage','Makhanda (Grahamstown)','Queenstown','King Williams Town','Butterworth','Jeffreys Bay','Port Alfred'],
+  'Limpopo': ['Polokwane','Tzaneen','Lephalale','Louis Trichardt','Mokopane','Bela-Bela','Thohoyandou','Phalaborwa','Giyani','Burgersfort'],
+  'Mpumalanga': ['Mbombela (Nelspruit)','eMalahleni (Witbank)','Secunda','Middelburg','Barberton','White River','Standerton','Ermelo','Lydenburg','Hazyview'],
+  'North West': ['Rustenburg','Klerksdorp','Mahikeng','Potchefstroom','Brits','Hartbeespoort','Lichtenburg','Orkney','Vryburg','Zeerust'],
+  'Free State': ['Bloemfontein','Welkom','Sasolburg','Phuthaditjhaba','Kroonstad','Bethlehem','Harrismith','Parys','Botshabelo','Virginia'],
+  'Northern Cape': ['Kimberley','Upington','Springbok','De Aar','Kuruman','Calvinia','Colesberg','Douglas','Prieska','Carnarvon']
+};
+
+let selectedCities = [];
+
+function updateHeroCities() {
+  const province = document.getElementById('hero-province').value;
+  const citySelect = document.getElementById('hero-city');
+  citySelect.innerHTML = '<option value="">All Cities</option>';
+  if (province && PROVINCE_CITIES[province]) {
+    PROVINCE_CITIES[province].forEach(c => {
+      citySelect.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+  }
+}
+
+function toggleCityDropdown() {
+  const dd = document.getElementById('f-city-dropdown');
+  const province = document.getElementById('f-province') ? document.getElementById('f-province').value : '';
+  if (dd.style.display === 'none') {
+    renderCityList(province);
+    dd.style.display = 'block';
+    document.getElementById('f-city-trigger').style.borderColor = 'var(--amber)';
+    setTimeout(() => document.addEventListener('click', closeCityDropdownOutside), 0);
+  } else {
+    dd.style.display = 'none';
+    document.getElementById('f-city-trigger').style.borderColor = 'var(--charcoal-4)';
+  }
+}
+
+function closeCityDropdownOutside(e) {
+  const wrap = document.getElementById('f-city-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('f-city-dropdown').style.display = 'none';
+    document.getElementById('f-city-trigger').style.borderColor = 'var(--charcoal-4)';
+    document.removeEventListener('click', closeCityDropdownOutside);
+  }
+}
+
+function renderCityList(province) {
+  const list = document.getElementById('f-city-list');
+  if (!list) return;
+  const cities = province && PROVINCE_CITIES[province] ? PROVINCE_CITIES[province] : Object.values(PROVINCE_CITIES).flat().sort();
+  list.innerHTML = cities.map(c => `
+    <label style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:4px;cursor:pointer;font-size:14px;transition:background 0.1s;" onmouseover="this.style.background='var(--charcoal-3)'" onmouseout="this.style.background='transparent'">
+      <input type="checkbox" value="${c}" ${selectedCities.includes(c) ? 'checked' : ''} onchange="toggleCity('${c}')" style="accent-color:var(--amber);width:16px;height:16px;">
+      ${c}
+    </label>`).join('');
+}
+
+function toggleCity(city) {
+  if (selectedCities.includes(city)) {
+    selectedCities = selectedCities.filter(c => c !== city);
+  } else {
+    selectedCities.push(city);
+  }
+  updateCityLabel();
+}
+
+function updateCityLabel() {
+  const label = document.getElementById('f-city-label');
+  if (!label) return;
+  if (selectedCities.length === 0) {
+    label.textContent = 'Select cities / areas…';
+    label.style.color = 'var(--charcoal-6)';
+  } else if (selectedCities.length <= 2) {
+    label.textContent = selectedCities.join(', ');
+    label.style.color = 'var(--white)';
+  } else {
+    label.textContent = `${selectedCities[0]}, ${selectedCities[1]} +${selectedCities.length - 2} more`;
+    label.style.color = 'var(--white)';
+  }
+}
+
+// Update city list when province changes
+document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'f-province') {
+    selectedCities = [];
+    updateCityLabel();
+    const dd = document.getElementById('f-city-dropdown');
+    if (dd && dd.style.display !== 'none') renderCityList(e.target.value);
+  }
+});
 
 let certFiles = [];
 

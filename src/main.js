@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js'
+import { PROVINCE_CITIES } from './cities.js'
 
 let listings = []
 let currentProfile = null
@@ -6,7 +7,8 @@ let currentUser = null
 let selectedTier = 'free'
 let editTier = 'free'
 let reviewingId = null
-let filterTrade = '', filterProvince = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = ''
+let filterTrade = '', filterProvince = '', filterCity = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = ''
+let selectedCities = []
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 async function initAuth() {
@@ -304,9 +306,89 @@ window.filterByTrade = function (trade) { filterTrade = trade; document.getEleme
 window.heroSearch = function () {
   filterTrade = document.getElementById('hero-search').value
   filterProvince = document.getElementById('hero-province').value
+  filterCity = document.getElementById('hero-city')?.value || ''
   document.getElementById('filter-province').value = filterProvince
-  showPage('directory')
+  window.showPage('directory')
 }
+
+window.updateHeroCities = function () {
+  const province = document.getElementById('hero-province').value
+  const citySelect = document.getElementById('hero-city')
+  if (!citySelect) return
+  citySelect.innerHTML = '<option value="">All Cities</option>'
+  if (province && PROVINCE_CITIES[province]) {
+    PROVINCE_CITIES[province].forEach(c => {
+      citySelect.innerHTML += `<option value="${c}">${c}</option>`
+    })
+  }
+}
+
+window.toggleCityDropdown = function () {
+  const dd = document.getElementById('f-city-dropdown')
+  const province = document.getElementById('f-province')?.value || ''
+  if (dd.style.display === 'none') {
+    renderCityList(province)
+    dd.style.display = 'block'
+    document.getElementById('f-city-trigger').style.borderColor = 'var(--amber)'
+    setTimeout(() => document.addEventListener('click', closeCityDropdownOutside), 0)
+  } else {
+    dd.style.display = 'none'
+    document.getElementById('f-city-trigger').style.borderColor = 'var(--charcoal-4)'
+  }
+}
+
+function closeCityDropdownOutside(e) {
+  const wrap = document.getElementById('f-city-wrap')
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('f-city-dropdown').style.display = 'none'
+    document.getElementById('f-city-trigger').style.borderColor = 'var(--charcoal-4)'
+    document.removeEventListener('click', closeCityDropdownOutside)
+  }
+}
+
+function renderCityList(province) {
+  const list = document.getElementById('f-city-list')
+  if (!list) return
+  const cities = province && PROVINCE_CITIES[province] ? PROVINCE_CITIES[province] : Object.values(PROVINCE_CITIES).flat().sort()
+  list.innerHTML = cities.map(c => `
+    <label style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:4px;cursor:pointer;font-size:14px;transition:background 0.1s;" onmouseover="this.style.background='var(--charcoal-3)'" onmouseout="this.style.background='transparent'">
+      <input type="checkbox" value="${c}" ${selectedCities.includes(c) ? 'checked' : ''} onchange="window.toggleCity('${c}')" style="accent-color:var(--amber);width:16px;height:16px;">
+      ${c}
+    </label>`).join('')
+}
+
+window.toggleCity = function (city) {
+  if (selectedCities.includes(city)) {
+    selectedCities = selectedCities.filter(c => c !== city)
+  } else {
+    selectedCities.push(city)
+  }
+  updateCityLabel()
+}
+
+function updateCityLabel() {
+  const label = document.getElementById('f-city-label')
+  if (!label) return
+  if (selectedCities.length === 0) {
+    label.textContent = 'Select cities / areas…'
+    label.style.color = 'var(--charcoal-6)'
+  } else if (selectedCities.length <= 2) {
+    label.textContent = selectedCities.join(', ')
+    label.style.color = 'var(--white)'
+  } else {
+    label.textContent = `${selectedCities[0]}, ${selectedCities[1]} +${selectedCities.length - 2} more`
+    label.style.color = 'var(--white)'
+  }
+}
+
+document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'f-province') {
+    selectedCities = []
+    updateCityLabel()
+    const dd = document.getElementById('f-city-dropdown')
+    if (dd && dd.style.display !== 'none') renderCityList(e.target.value)
+  }
+})
 
 // ── Directory ─────────────────────────────────────────────────────────────────
 function populateTradeFilter() {
@@ -335,6 +417,10 @@ function renderDirectory() {
     if (filterTrade && l.trade !== filterTrade) return false
     if (filterProvince && l.province !== filterProvince) return false
     if (filterTierVal && l.tier !== filterTierVal) return false
+    if (filterCity) {
+      const listingCities = l.cities && l.cities.length ? l.cities : [l.city]
+      if (!listingCities.some(c => c === filterCity)) return false
+    }
     if (dirSearchTerm) {
       const term = dirSearchTerm.toLowerCase()
       if (!l.name.toLowerCase().includes(term) && !l.trade.toLowerCase().includes(term) && !(l.description || '').toLowerCase().includes(term)) return false
@@ -384,7 +470,7 @@ function cardHTML(l) {
     </div>
     <div class="card-area">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      ${l.city}, ${l.province}
+      ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
     </div>
   </div>`
 }
@@ -623,8 +709,9 @@ window.submitListing = async function () {
     }
   }
 
+  const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const { error } = await supabase.from('listings').insert({
-    name, contact_name, trade, province, city, callout, rate, description, credentials, years_experience, tier: selectedTier,
+    name, contact_name, trade, province, city: cities[0] || city, cities, callout, rate, description, credentials, years_experience, tier: selectedTier,
     user_id: userId, certificate_urls
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
