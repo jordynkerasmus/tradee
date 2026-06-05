@@ -414,7 +414,23 @@ window.openProfile = async function (id) {
         </a>`).join('')
     : ''
   const reviewsHTML = reviews.length
-    ? reviews.map(r => `<div class="review-item"><div class="review-header"><span class="reviewer-name">${r.reviewer_name}</span><span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}</span></div><div class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</div><p class="review-text">${r.review_text}</p></div>`).join('')
+    ? reviews.map(r => `
+      <div class="review-item">
+        <div class="review-header">
+          <span class="reviewer-name">${r.reviewer_name}</span>
+          <span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}</span>
+        </div>
+        <div class="review-stars" style="margin-bottom:8px;">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)} <span style="font-size:12px;color:var(--charcoal-6);margin-left:4px;">${r.stars}.0 overall</span></div>
+        ${r.quality ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:8px;">
+          <div style="font-size:12px;color:var(--charcoal-6);">Quality of Work <span style="color:var(--amber);">${'★'.repeat(r.quality)}</span></div>
+          <div style="font-size:12px;color:var(--charcoal-6);">Level of Service <span style="color:var(--amber);">${'★'.repeat(r.service)}</span></div>
+          <div style="font-size:12px;color:var(--charcoal-6);">Cleanliness <span style="color:var(--amber);">${'★'.repeat(r.cleanliness)}</span></div>
+          <div style="font-size:12px;color:var(--charcoal-6);">Communication <span style="color:var(--amber);">${'★'.repeat(r.communication)}</span></div>
+          <div style="font-size:12px;color:var(--charcoal-6);">Value for Money <span style="color:var(--amber);">${'★'.repeat(r.value)}</span></div>
+        </div>` : ''}
+        <p class="review-text">${r.review_text}</p>
+      </div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>'
   document.getElementById('profile-content').innerHTML = `
     <div class="profile-back" onclick="goBack()">← Back to Directory</div>
@@ -490,13 +506,27 @@ window.openReviewModal = function (id) {
   document.getElementById('s5').checked = true
 }
 window.closeReviewModal = function () { document.getElementById('review-modal').classList.remove('open') }
+function getStarVal(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`)
+  return el ? parseInt(el.value) : 5
+}
+
 window.submitReview = async function () {
   const reviewer_name = document.getElementById('r-name').value.trim()
   const review_text = document.getElementById('r-text').value.trim()
-  const starsEl = document.querySelector('input[name="stars"]:checked')
-  const stars = starsEl ? parseInt(starsEl.value) : 5
   if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return }
-  const { error } = await supabase.from('reviews').insert({ listing_id: reviewingId, reviewer_name, review_text, stars })
+
+  const quality = getStarVal('stars-quality')
+  const service = getStarVal('stars-service')
+  const cleanliness = getStarVal('stars-clean')
+  const communication = getStarVal('stars-comms')
+  const value = getStarVal('stars-value')
+  const stars = Math.round((quality + service + cleanliness + communication + value) / 5)
+
+  const { error } = await supabase.from('reviews').insert({
+    listing_id: reviewingId, reviewer_name, review_text,
+    stars, quality, service, cleanliness, communication, value
+  })
   if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
   closeReviewModal()
   toast('Review submitted — thank you!')
