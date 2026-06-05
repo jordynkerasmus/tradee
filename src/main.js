@@ -154,7 +154,7 @@ async function renderDashboard() {
         </div>
         <div class="tier-card ${editTier === 'premium' ? 'selected' : ''}" id="edit-tier-premium" onclick="selectEditTier('premium')">
           <div class="tier-name">Premium</div>
-          <div class="tier-price">R399<span>/mo</span></div>
+          <div class="tier-price">R249<span>/mo</span></div>
           <div class="tier-desc">Maximum visibility</div>
           <ul class="tier-features">
             <li><span class="tick">✓</span> Basic profile</li>
