@@ -453,6 +453,7 @@ function renderDirectory() {
   document.getElementById('filter-sort').value = filterSort
   const tierOrder = { premium: 0, verified: 1, free: 2 }
   let filtered = listings.filter(l => {
+
     if (filterTrade && l.trade !== filterTrade) return false
     if (filterProvince && l.province !== filterProvince) return false
     if (filterTierVal && l.tier !== filterTierVal) return false
@@ -479,10 +480,58 @@ function renderDirectory() {
   if (filterProvince) titleParts.push(filterProvince)
   document.getElementById('dir-title').textContent = titleParts.length ? titleParts.join(' — ') : 'All Tradesmen'
   document.getElementById('dir-count').textContent = `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
-  document.getElementById('dir-cards').innerHTML = filtered.length
-    ? filtered.map(cardHTML).join('')
-    : `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
+
+  // Split premium (featured) from the rest
+  const featured = filtered.filter(l => l.tier === 'premium')
+  const rest = filtered.filter(l => l.tier !== 'premium')
+
+  let html = ''
+  if (featured.length > 0) {
+    html += `
+      <div style="grid-column:1/-1;margin-bottom:0.5rem;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">⭐ Featured Tradesmen</span>
+          <div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div>
+        </div>
+      </div>
+      ${featured.map(l => featuredCardHTML(l)).join('')}
+      ${rest.length > 0 ? `<div style="grid-column:1/-1;height:1px;background:var(--charcoal-3);margin:0.5rem 0;"></div>` : ''}
+    `
+  }
+  html += rest.length ? rest.map(cardHTML).join('') : (!featured.length ? `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>` : '')
+
+  document.getElementById('dir-cards').innerHTML = html
   dirSearchTerm = ''
+}
+
+function featuredCardHTML(l) {
+  const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
+  const reviewCount = l.reviews ? l.reviews.length : 0
+  return `<div class="tradesman-card featured-card" onclick="openProfile(${l.id})" style="border-color:var(--amber);background:linear-gradient(135deg,var(--charcoal-2) 0%,rgba(245,158,11,0.06) 100%);box-shadow:0 0 24px rgba(245,158,11,0.12);">
+    <div style="position:absolute;top:12px;right:12px;background:var(--amber);color:var(--charcoal);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;">⭐ Featured</div>
+    <div class="card-header" style="margin-right:70px;">
+      <div class="card-avatar premium-av">${initials(l.name)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="card-name">${l.name}</div>
+        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
+        <div class="card-trade">${l.trade}</div>
+        <div class="card-badges">${tierBadge(l.tier)}</div>
+      </div>
+    </div>
+    <div class="card-rating">
+      <span class="stars">${starsHTML(rating)}</span>
+      <span class="rating-num">${rd}</span>
+      <span class="rating-count">(${reviewCount} review${reviewCount !== 1 ? 's' : ''})</span>
+    </div>
+    <div class="card-info">
+      <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
+      <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
+    </div>
+    <div class="card-area">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
+    </div>
+  </div>`
 }
 
 function cardHTML(l) {

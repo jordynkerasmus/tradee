@@ -204,6 +204,14 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .star-select input[type="radio"] { display: none; }
 .star-select label:hover, .star-select label.lit { color: var(--amber); }
 
+/* FEATURED CARDS */
+.featured-card { animation: featuredPulse 3s ease-in-out infinite; }
+@keyframes featuredPulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(245,158,11,0.12); }
+  50% { box-shadow: 0 0 36px rgba(245,158,11,0.28); }
+}
+.featured-card:hover { transform: translateY(-3px) !important; box-shadow: 0 0 40px rgba(245,158,11,0.35) !important; }
+
 /* RESPONSIVE */
 @media (max-width: 640px) {
   .tier-grid { grid-template-columns: 1fr; }
