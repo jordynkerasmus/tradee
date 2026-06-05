@@ -105,8 +105,8 @@ async function renderDashboard() {
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-email" type="email" value="${listing.email || ''}"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" type="number" value="${listing.callout}"></div>
-        <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" type="number" value="${listing.rate}"></div>
+        <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
+        <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" value="${listing.rate === -1 ? 'N/A' : listing.rate}" placeholder="e.g. 650 or N/A"></div>
       </div>
       <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${listing.description || ''}</textarea></div>
       <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${listing.credentials ? listing.credentials.join(', ') : ''}"><div class="form-hint">Separate with commas</div></div>
@@ -189,8 +189,10 @@ window.selectEditTier = function (tier) {
 window.saveListing = async function (id) {
   const name = document.getElementById('edit-business').value.trim()
   const contact_name = document.getElementById('edit-contact').value.trim()
-  const callout = parseInt(document.getElementById('edit-callout').value) || 0
-  const rate = parseInt(document.getElementById('edit-rate').value) || 0
+  const calloutRaw = document.getElementById('edit-callout').value.trim()
+  const rateRaw = document.getElementById('edit-rate').value.trim()
+  const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
+  const rate = rateRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(rateRaw) || 0)
   const description = document.getElementById('edit-desc').value.trim()
   const credsRaw = document.getElementById('edit-creds').value.trim()
   const years_experience = parseInt(document.getElementById('edit-years').value) || 0
@@ -245,7 +247,7 @@ window.deleteListing = async function (id) {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
-function fmtRand(n) { return n === 0 ? 'Free' : 'R' + n }
+function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 function tierBadge(tier) {
   if (tier === 'premium') return '<span class="badge badge-premium">Premium</span>'
   if (tier === 'verified') return '<span class="badge badge-verified">Verified</span>'
@@ -795,8 +797,10 @@ window.submitListing = async function () {
   const trade = getSelectedTrade()
   const province = document.getElementById('f-province').value
   const city = selectedCities.length > 0 ? selectedCities[0] : ''
-  const callout = parseInt(document.getElementById('f-callout').value) || 0
-  const rate = parseInt(document.getElementById('f-rate').value) || 0
+  const calloutRaw = document.getElementById('f-callout').value.trim()
+  const rateRaw = document.getElementById('f-rate').value.trim()
+  const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
+  const rate = rateRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(rateRaw) || 0)
   const description = document.getElementById('f-desc').value.trim()
   const credsRaw = document.getElementById('f-creds')?.value.trim() || ''
   const years_experience = parseInt(document.getElementById('f-years')?.value) || 0
@@ -804,7 +808,7 @@ window.submitListing = async function () {
   if (!email || !password) { toast('Please enter your email and password.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   if (!name || !trade || !province || selectedCities.length === 0) { toast('Please fill in name, trade, province and at least one city.'); return }
-  if (!rate) { toast('Please enter your hourly rate.'); return }
+  if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your hourly rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
 
   // Create account first
