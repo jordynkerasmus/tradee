@@ -474,6 +474,8 @@ window.handleTradeSelect = function () {
 }
 
 window.submitListing = async function () {
+  const email = document.getElementById('f-email').value.trim()
+  const password = document.getElementById('f-password').value
   const contact_name = document.getElementById('f-name').value.trim()
   const name = document.getElementById('f-business').value.trim() || contact_name
   const trade = getSelectedTrade()
@@ -485,22 +487,32 @@ window.submitListing = async function () {
   const credsRaw = document.getElementById('f-creds').value.trim()
   const years_experience = parseInt(document.getElementById('f-years').value) || 0
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
+  if (!email || !password) { toast('Please enter your email and password.'); return }
+  if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   if (!name || !trade || !province || !city) { toast('Please fill in name, trade, province and city.'); return }
   if (!rate) { toast('Please enter your hourly rate.'); return }
   if (!description) { toast('Please add a business description.'); return }
+
+  // Create account first
+  let userId = currentUser?.id ?? null
+  if (!currentUser) {
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    if (signUpError) { toast('Account error: ' + signUpError.message); return }
+    userId = data.user?.id ?? null
+  }
+
   const { error } = await supabase.from('listings').insert({
     name, contact_name, trade, province, city, callout, rate, description, credentials, years_experience, tier: selectedTier,
-    user_id: currentUser?.id ?? null
+    user_id: userId
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
-  ;['f-name', 'f-phone', 'f-email', 'f-city', 'f-callout', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { document.getElementById(id).value = '' })
+  ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-city', 'f-callout', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   document.getElementById('f-trade').value = ''
   document.getElementById('f-province').value = ''
   selectTier('free')
   await loadListings()
-  filterTrade = trade
-  setTimeout(() => showPage('directory'), 1500)
+  setTimeout(() => window.showPage('dashboard'), 1500)
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
