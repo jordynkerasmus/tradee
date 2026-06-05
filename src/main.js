@@ -2,9 +2,188 @@ import { supabase } from './supabaseClient.js'
 
 let listings = []
 let currentProfile = null
+let currentUser = null
 let selectedTier = 'free'
+let editTier = 'free'
 let reviewingId = null
 let filterTrade = '', filterProvince = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = ''
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function initAuth() {
+  const { data: { session } } = await supabase.auth.getSession()
+  currentUser = session?.user ?? null
+  updateNavForAuth()
+  supabase.auth.onAuthStateChange((_event, session) => {
+    currentUser = session?.user ?? null
+    updateNavForAuth()
+  })
+}
+
+function updateNavForAuth() {
+  const authBtn = document.getElementById('nav-auth-btn')
+  const dashBtn = document.getElementById('nav-dashboard-btn')
+  if (!authBtn) return
+  if (currentUser) {
+    authBtn.textContent = 'Log Out'
+    authBtn.onclick = handleSignOut
+    if (dashBtn) dashBtn.style.display = 'inline-flex'
+  } else {
+    authBtn.textContent = 'Log In'
+    authBtn.onclick = () => window.showPage('login')
+    if (dashBtn) dashBtn.style.display = 'none'
+  }
+}
+
+window.handleLogin = async function () {
+  const email = document.getElementById('login-email').value.trim()
+  const password = document.getElementById('login-password').value
+  if (!email || !password) { toast('Please enter your email and password.'); return }
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) { toast('Login failed: ' + error.message); return }
+  toast('Welcome back!')
+  window.showPage('dashboard')
+}
+
+window.handleSignup = async function () {
+  const email = document.getElementById('signup-email').value.trim()
+  const password = document.getElementById('signup-password').value
+  const password2 = document.getElementById('signup-password2').value
+  if (!email || !password) { toast('Please fill in all fields.'); return }
+  if (password !== password2) { toast('Passwords do not match.'); return }
+  if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
+  const { error } = await supabase.auth.signUp({ email, password })
+  if (error) { toast('Sign up failed: ' + error.message); return }
+  toast('Account created! You can now list your business.')
+  window.showPage('list')
+}
+
+window.handleSignOut = async function () {
+  await supabase.auth.signOut()
+  toast('Logged out.')
+  window.showPage('home')
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const el = document.getElementById('dashboard-content')
+  if (!currentUser) {
+    el.innerHTML = `<div class="empty-state"><h3>Not Logged In</h3><p><a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a> to manage your listing.</p></div>`
+    return
+  }
+  const { data: listing, error } = await supabase.from('listings').select('*, reviews(*)').eq('user_id', currentUser.id).single()
+  if (error || !listing) {
+    el.innerHTML = `<div class="empty-state"><h3>No Listing Found</h3><p>You haven't listed your business yet.</p><br><button class="btn btn-primary" onclick="showPage('list')">List Your Business →</button></div>`
+    return
+  }
+  editTier = listing.tier
+  el.innerHTML = `
+    <div class="profile-hero" style="margin-bottom:1.5rem;">
+      <div class="profile-avatar">${initials(listing.name)}</div>
+      <div style="flex:1;">
+        <div class="profile-name">${listing.name}</div>
+        ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${listing.contact_name}</div>` : ''}
+        <div class="profile-trade">${listing.trade}</div>
+        <div class="card-badges">${tierBadge(listing.tier)}</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Edit Your Details</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="edit-business" value="${listing.name}"></div>
+        <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="edit-contact" value="${listing.contact_name || ''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" type="number" value="${listing.callout}"></div>
+        <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" type="number" value="${listing.rate}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${listing.description || ''}</textarea></div>
+      <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${listing.credentials ? listing.credentials.join(', ') : ''}"><div class="form-hint">Separate with commas</div></div>
+      <div class="form-group"><label class="form-label">Years Experience</label><input class="form-input" id="edit-years" type="number" value="${listing.years_experience || 0}"></div>
+    </div>
+
+    <div class="form-card">
+      <h3>Subscription Plan</h3>
+      <div class="tier-grid">
+        <div class="tier-card ${editTier === 'free' ? 'selected' : ''}" id="edit-tier-free" onclick="selectEditTier('free')">
+          <div class="tier-name">Free</div>
+          <div class="tier-price">R0<span>/mo</span></div>
+          <div class="tier-desc">Basic listing</div>
+          <ul class="tier-features">
+            <li><span class="tick">✓</span> Basic profile</li>
+            <li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="cross">✗</span> Priority ranking</li>
+            <li><span class="cross">✗</span> Verified badge</li>
+            <li><span class="cross">✗</span> Featured placement</li>
+          </ul>
+        </div>
+        <div class="tier-card featured ${editTier === 'verified' ? 'selected' : ''}" id="edit-tier-verified" onclick="selectEditTier('verified')">
+          <div class="popular-tag">Most Popular</div>
+          <div class="tier-name">Verified</div>
+          <div class="tier-price">R149<span>/mo</span></div>
+          <div class="tier-desc">Stand out with a verified badge</div>
+          <ul class="tier-features">
+            <li><span class="tick">✓</span> Basic profile</li>
+            <li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="tick">✓</span> Priority ranking</li>
+            <li><span class="tick">✓</span> Verified badge</li>
+            <li><span class="cross">✗</span> Featured placement</li>
+          </ul>
+        </div>
+        <div class="tier-card ${editTier === 'premium' ? 'selected' : ''}" id="edit-tier-premium" onclick="selectEditTier('premium')">
+          <div class="tier-name">Premium</div>
+          <div class="tier-price">R399<span>/mo</span></div>
+          <div class="tier-desc">Maximum visibility</div>
+          <ul class="tier-features">
+            <li><span class="tick">✓</span> Basic profile</li>
+            <li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="tick">✓</span> Priority ranking</li>
+            <li><span class="tick">✓</span> Verified badge</li>
+            <li><span class="tick">✓</span> Featured placement</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="saveListing(${listing.id})">Save Changes →</button>
+    <div style="margin-top:1rem;text-align:center;">
+      <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteListing(${listing.id})">Delete My Listing</button>
+    </div>`
+}
+
+window.selectEditTier = function (tier) {
+  editTier = tier
+  ;['free', 'verified', 'premium'].forEach(t => {
+    document.getElementById('edit-tier-' + t)?.classList.toggle('selected', t === tier)
+  })
+}
+
+window.saveListing = async function (id) {
+  const name = document.getElementById('edit-business').value.trim()
+  const contact_name = document.getElementById('edit-contact').value.trim()
+  const callout = parseInt(document.getElementById('edit-callout').value) || 0
+  const rate = parseInt(document.getElementById('edit-rate').value) || 0
+  const description = document.getElementById('edit-desc').value.trim()
+  const credsRaw = document.getElementById('edit-creds').value.trim()
+  const years_experience = parseInt(document.getElementById('edit-years').value) || 0
+  const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
+  const { error } = await supabase.from('listings').update({
+    name, contact_name, callout, rate, description, credentials, years_experience, tier: editTier
+  }).eq('id', id).eq('user_id', currentUser.id)
+  if (error) { toast('Error saving: ' + error.message); return }
+  toast('Listing updated!')
+  await loadListings()
+  renderDashboard()
+}
+
+window.deleteListing = async function (id) {
+  if (!confirm('Are you sure you want to delete your listing? This cannot be undone.')) return
+  const { error } = await supabase.from('listings').delete().eq('id', id).eq('user_id', currentUser.id)
+  if (error) { toast('Error deleting listing.'); return }
+  toast('Listing deleted.')
+  await loadListings()
+  window.showPage('home')
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
@@ -49,6 +228,7 @@ window.showPage = function (name) {
   if (name === 'home') renderHome()
   if (name === 'directory') renderDirectory()
   if (name === 'rankings') renderRankings()
+  if (name === 'dashboard') renderDashboard()
 }
 
 // ── Home ──────────────────────────────────────────────────────────────────────
@@ -309,7 +489,8 @@ window.submitListing = async function () {
   if (!rate) { toast('Please enter your hourly rate.'); return }
   if (!description) { toast('Please add a business description.'); return }
   const { error } = await supabase.from('listings').insert({
-    name, contact_name, trade, province, city, callout, rate, description, credentials, years_experience, tier: selectedTier
+    name, contact_name, trade, province, city, callout, rate, description, credentials, years_experience, tier: selectedTier,
+    user_id: currentUser?.id ?? null
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
@@ -324,6 +505,7 @@ window.submitListing = async function () {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 selectTier('free')
+initAuth()
 loadListings()
 
 document.getElementById('star-select').addEventListener('mouseover', e => {

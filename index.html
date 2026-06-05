@@ -195,6 +195,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <div class="nav-links">
     <a onclick="showPage('directory')" id="nav-directory">Directory</a>
     <a onclick="showPage('rankings')" id="nav-rankings">Rankings</a>
+    <a onclick="showPage('dashboard')" id="nav-dashboard-btn" style="display:none;">My Listing</a>
+    <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">Log In</button>
     <button class="btn btn-primary btn-sm" onclick="showPage('list')">List Your Business</button>
   </div>
 </nav>
@@ -410,6 +412,48 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <div style="font-size:12px;color:var(--charcoal-6);margin-top:-0.5rem;">* Pricing is indicative for demo purposes</div>
     </div>
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="submitListing()">Publish My Listing →</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="page-login" class="page">
+  <div class="form-page" style="max-width:480px;">
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Log in to manage your listing.</p>
+    <div class="form-card">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="login-email" type="email" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="login-password" type="password" placeholder="Your password"></div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="handleLogin()">Log In →</button>
+      <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Don't have an account? <a onclick="showPage('signup')" style="color:var(--amber);cursor:pointer;">Sign up</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- SIGN UP -->
+<div id="page-signup" class="page">
+  <div class="form-page" style="max-width:480px;">
+    <h2>Create Account</h2>
+    <p class="subtitle">Sign up to list and manage your business on Tradee.</p>
+    <div class="form-card">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signup-password" type="password" placeholder="Create a password"></div>
+      <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="signup-password2" type="password" placeholder="Repeat your password"></div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="handleSignup()">Create Account →</button>
+      <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Already have an account? <a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page">
+  <div class="profile-container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.04em;">My Listing</h2>
+      <button class="btn btn-outline btn-sm" onclick="handleSignOut()">Log Out</button>
+    </div>
+    <div id="dashboard-content">
+      <div class="empty-state"><h3>Loading...</h3></div>
+    </div>
   </div>
 </div>
 
@@ -728,7 +772,52 @@ function submitListing() {
   setTimeout(()=>showPage('directory'),1500);
 }
 
-selectTier('free'); renderHome(); populateTradeFilter(); renderRankings();
+// ── Auth (inline for single-file preview) ────────────────────────────────────
+// Uses Supabase via CDN for the inline version
+let currentUser = null;
+
+function updateNavForAuth() {
+  const authBtn = document.getElementById('nav-auth-btn');
+  const dashBtn = document.getElementById('nav-dashboard-btn');
+  if (!authBtn) return;
+  if (currentUser) {
+    authBtn.textContent = 'Log Out';
+    authBtn.onclick = handleSignOut;
+    if (dashBtn) dashBtn.style.display = 'inline-flex';
+  } else {
+    authBtn.textContent = 'Log In';
+    authBtn.onclick = () => showPage('login');
+    if (dashBtn) dashBtn.style.display = 'none';
+  }
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { toast('Please enter your email and password.'); return; }
+  toast('Logging in...');
+  // Handled by Supabase in main.js — this is the demo fallback
+  toast('Please use the live site at tradee-dusky.vercel.app to log in.');
+}
+
+async function handleSignup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const password2 = document.getElementById('signup-password2').value;
+  if (!email || !password) { toast('Please fill in all fields.'); return; }
+  if (password !== password2) { toast('Passwords do not match.'); return; }
+  if (password.length < 6) { toast('Password must be at least 6 characters.'); return; }
+  toast('Please use the live site at tradee-dusky.vercel.app to sign up.');
+}
+
+async function handleSignOut() {
+  currentUser = null;
+  updateNavForAuth();
+  toast('Logged out.');
+  showPage('home');
+}
+
+selectTier('free'); renderHome(); populateTradeFilter(); renderRankings(); updateNavForAuth();
 
 document.getElementById('star-select').addEventListener('mouseover',e=>{
   if (e.target.tagName==='LABEL') { const val=parseInt(e.target.getAttribute('for').replace('s','')); document.querySelectorAll('.star-select label').forEach((l,i)=>l.classList.toggle('lit',i<val)); }
