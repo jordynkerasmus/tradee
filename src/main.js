@@ -530,6 +530,11 @@ window.renderRankings = function () {
 window.selectTier = function (tier) {
   selectedTier = tier
   ;['free', 'verified', 'premium'].forEach(t => document.getElementById('tier-' + t).classList.toggle('selected', t === tier))
+  const isPaid = tier === 'verified' || tier === 'premium'
+  const locked = document.getElementById('cert-locked')
+  const unlocked = document.getElementById('cert-unlocked')
+  if (locked) locked.style.display = isPaid ? 'none' : 'block'
+  if (unlocked) unlocked.style.display = isPaid ? 'block' : 'none'
 }
 
 function getSelectedTrade() {
@@ -576,9 +581,8 @@ window.submitListing = async function () {
     userId = data.user?.id ?? null
   }
 
-  // Upload certificate files if any
-  const certFileInput = document.getElementById('f-cert-files')
-  const certFiles = window.certFiles || []
+  // Upload certificate files only for paid tiers
+  const certFiles = (selectedTier === 'verified' || selectedTier === 'premium') ? (window.certFiles || []) : []
   const certificate_urls = []
   for (const file of certFiles) {
     const path = `${userId}/${Date.now()}-${file.name}`

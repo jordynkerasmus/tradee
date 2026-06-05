@@ -372,16 +372,25 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <h3>Credentials</h3>
       <div class="form-group"><label class="form-label">Certifications / Registrations</label><input class="form-input" id="f-creds" placeholder="e.g. ECSA Registered, NHBRC Member, COC Issuer"><div class="form-hint">Separate multiple credentials with commas</div></div>
       <div class="form-group"><label class="form-label">Years of Experience</label><input class="form-input" id="f-years" type="number" placeholder="e.g. 12"></div>
-      <div class="form-group">
+      <div class="form-group" id="cert-upload-section">
         <label class="form-label">Upload Certificates / Registration Documents</label>
-        <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.15s;" id="cert-dropzone" onclick="document.getElementById('f-cert-files').click()" ondragover="event.preventDefault();this.style.borderColor='var(--amber)'" ondragleave="this.style.borderColor='var(--charcoal-4)'" ondrop="handleCertDrop(event)">
-          <div style="font-size:2rem;margin-bottom:0.5rem;">📄</div>
-          <div style="font-size:14px;color:var(--charcoal-6);">Click to upload or drag and drop</div>
-          <div style="font-size:12px;color:var(--charcoal-5);margin-top:4px;">PDF, JPG, PNG — max 10MB each</div>
+        <!-- Locked state (shown for Free tier) -->
+        <div id="cert-locked" style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.5rem;text-align:center;">
+          <div style="font-size:1.5rem;margin-bottom:0.5rem;">🔒</div>
+          <div style="font-size:14px;color:var(--charcoal-6);">Certificate uploads are available on <strong style="color:var(--amber);">Verified</strong> and <strong style="color:var(--amber);">Premium</strong> plans</div>
+          <div style="font-size:12px;color:var(--charcoal-5);margin-top:6px;">Select a paid plan below to unlock this feature</div>
         </div>
-        <input type="file" id="f-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewCertFiles(this.files)">
-        <div id="f-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
-        <div class="form-hint">Clients will be able to view these on your profile — uploads complete when you publish your listing.</div>
+        <!-- Unlocked state (shown for Verified/Premium tier) -->
+        <div id="cert-unlocked" style="display:none;">
+          <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.15s;" id="cert-dropzone" onclick="document.getElementById('f-cert-files').click()" ondragover="event.preventDefault();this.style.borderColor='var(--amber)'" ondragleave="this.style.borderColor='var(--charcoal-4)'" ondrop="handleCertDrop(event)">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">📄</div>
+            <div style="font-size:14px;color:var(--charcoal-6);">Click to upload or drag and drop</div>
+            <div style="font-size:12px;color:var(--charcoal-5);margin-top:4px;">PDF, JPG, PNG — max 10MB each</div>
+          </div>
+          <input type="file" id="f-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewCertFiles(this.files)">
+          <div id="f-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <div class="form-hint">Clients will be able to view these on your profile.</div>
       </div>
     </div>
     <div class="form-card">
@@ -790,6 +799,11 @@ function addTradeToDropdowns(trade) {
 function selectTier(tier) {
   selectedTier=tier;
   ['free','verified','premium'].forEach(t=>document.getElementById('tier-'+t).classList.toggle('selected',t===tier));
+  const isPaid = tier === 'verified' || tier === 'premium';
+  const locked = document.getElementById('cert-locked');
+  const unlocked = document.getElementById('cert-unlocked');
+  if (locked) locked.style.display = isPaid ? 'none' : 'block';
+  if (unlocked) unlocked.style.display = isPaid ? 'block' : 'none';
 }
 
 function submitListing() {
