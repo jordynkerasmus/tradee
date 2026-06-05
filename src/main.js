@@ -686,10 +686,16 @@ window.selectTier = function (tier) {
   selectedTier = tier
   ;['free', 'verified', 'premium'].forEach(t => document.getElementById('tier-' + t).classList.toggle('selected', t === tier))
   const isPaid = tier === 'verified' || tier === 'premium'
+  // Certificate upload lock
   const locked = document.getElementById('cert-locked')
   const unlocked = document.getElementById('cert-unlocked')
   if (locked) locked.style.display = isPaid ? 'none' : 'block'
   if (unlocked) unlocked.style.display = isPaid ? 'block' : 'none'
+  // Full credentials section lock
+  const credsLocked = document.getElementById('credentials-locked')
+  const credsUnlocked = document.getElementById('credentials-unlocked')
+  if (credsLocked) credsLocked.style.display = isPaid ? 'none' : 'block'
+  if (credsUnlocked) credsUnlocked.style.display = isPaid ? 'block' : 'none'
 }
 
 function getSelectedTrade() {

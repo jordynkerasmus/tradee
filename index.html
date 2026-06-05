@@ -382,11 +382,21 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
       <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe your services, experience, areas covered, etc."></textarea></div>
     </div>
-    <div class="form-card">
+    <div class="form-card" id="credentials-card">
       <h3>Credentials</h3>
-      <div class="form-group"><label class="form-label">Certifications / Registrations</label><input class="form-input" id="f-creds" placeholder="e.g. ECSA Registered, NHBRC Member, COC Issuer"><div class="form-hint">Separate multiple credentials with commas</div></div>
-      <div class="form-group"><label class="form-label">Years of Experience</label><input class="form-input" id="f-years" type="number" placeholder="e.g. 12"></div>
-      <div class="form-group" id="cert-upload-section">
+
+      <!-- Locked overlay for Free tier -->
+      <div id="credentials-locked" style="text-align:center;padding:2rem 1rem;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">🔒</div>
+        <div style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:6px;">Credentials are available on <span style="color:var(--amber);">Verified</span> and <span style="color:var(--amber);">Premium</span> plans</div>
+        <div style="font-size:13px;color:var(--charcoal-6);">Upgrade your plan below to showcase your certifications, years of experience and upload proof documents.</div>
+      </div>
+
+      <!-- Unlocked content -->
+      <div id="credentials-unlocked" style="display:none;">
+        <div class="form-group"><label class="form-label">Certifications / Registrations</label><input class="form-input" id="f-creds" placeholder="e.g. ECSA Registered, NHBRC Member, COC Issuer"><div class="form-hint">Separate multiple credentials with commas</div></div>
+        <div class="form-group"><label class="form-label">Years of Experience</label><input class="form-input" id="f-years" type="number" placeholder="e.g. 12"></div>
+      <div class="form-group" id="cert-upload-section" style="margin-top:0;">
         <label class="form-label">Upload Certificates / Registration Documents</label>
         <!-- Locked state (shown for Free tier) -->
         <div id="cert-locked" style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.5rem;text-align:center;">
@@ -406,6 +416,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         </div>
         <div class="form-hint">Clients will be able to view these on your profile.</div>
       </div>
+      </div> <!-- end credentials-unlocked -->
     </div>
     <div class="form-card">
       <h3>Choose Your Plan</h3>
@@ -1000,10 +1011,16 @@ function selectTier(tier) {
   selectedTier=tier;
   ['free','verified','premium'].forEach(t=>document.getElementById('tier-'+t).classList.toggle('selected',t===tier));
   const isPaid = tier === 'verified' || tier === 'premium';
+  // Certificate upload lock
   const locked = document.getElementById('cert-locked');
   const unlocked = document.getElementById('cert-unlocked');
   if (locked) locked.style.display = isPaid ? 'none' : 'block';
   if (unlocked) unlocked.style.display = isPaid ? 'block' : 'none';
+  // Entire credentials section lock
+  const credsLocked = document.getElementById('credentials-locked');
+  const credsUnlocked = document.getElementById('credentials-unlocked');
+  if (credsLocked) credsLocked.style.display = isPaid ? 'none' : 'block';
+  if (credsUnlocked) credsUnlocked.style.display = isPaid ? 'block' : 'none';
 }
 
 function submitListing() {
