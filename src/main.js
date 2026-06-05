@@ -28,7 +28,7 @@ function updateNavForAuth() {
     authBtn.onclick = handleSignOut
     if (dashBtn) dashBtn.style.display = 'inline-flex'
   } else {
-    authBtn.textContent = 'Log In'
+    authBtn.textContent = 'Trades Login'
     authBtn.onclick = () => window.showPage('login')
     if (dashBtn) dashBtn.style.display = 'none'
   }
