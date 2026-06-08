@@ -1029,24 +1029,30 @@ function submitListing() {
   const contact_name=document.getElementById('f-name').value.trim();
   const name=document.getElementById('f-business').value.trim() || contact_name;
   const trade=getSelectedTrade();
-  const province=document.getElementById('f-province').value, city=document.getElementById('f-city').value.trim();
-  const callout=parseInt(document.getElementById('f-callout').value)||0, rate=parseInt(document.getElementById('f-rate').value)||0;
-  const desc=document.getElementById('f-desc').value.trim(), credsRaw=document.getElementById('f-creds').value.trim();
-  const years=parseInt(document.getElementById('f-years').value)||0;
+  const province=document.getElementById('f-province').value;
+  const city=selectedCities.length>0?selectedCities[0]:'';
+  const calloutRaw=document.getElementById('f-callout').value.trim();
+  const rateRaw=document.getElementById('f-rate').value.trim();
+  const callout=calloutRaw.toUpperCase()==='N/A'?-1:(parseInt(calloutRaw)||0);
+  const rate=rateRaw.toUpperCase()==='N/A'?-1:(parseInt(rateRaw)||0);
+  const desc=document.getElementById('f-desc').value.trim();
+  const credsRaw=document.getElementById('f-creds')?.value.trim()||'';
+  const years=parseInt(document.getElementById('f-years')?.value)||0;
   const creds=credsRaw?credsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
-  if (!name||!trade||!province||!city) { toast('Please fill in name, trade, province and city.'); return; }
-  if (!rate) { toast('Please enter your hourly rate.'); return; }
+  if (!name||!trade||!province||selectedCities.length===0) { toast('Please fill in name, trade, province and at least one city.'); return; }
+  if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your hourly rate or N/A.'); return; }
   if (!desc) { toast('Please add a business description.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
-  listings.push({id:newId,name,contact_name,trade,province,city,callout,rate,desc,creds,years,reviews:[],tier:selectedTier,sample:false});
+  listings.push({id:newId,name,contact_name,trade,province,city,cities:selectedCities,callout,rate,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false});
   addTradeToDropdowns(trade);
   toast(`${name} is now live on Tradee!`);
-  ['f-name','f-phone','f-email','f-city','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['f-name','f-phone','f-email','f-password','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('f-trade').value='';
   document.getElementById('f-trade-new').value='';
   document.getElementById('f-trade-new').style.display='none';
   document.getElementById('f-trade-new-hint').style.display='none';
   document.getElementById('f-province').value='';
+  selectedCities=[]; updateCityLabel();
   selectTier('free'); filterTrade=trade;
   setTimeout(()=>showPage('directory'),1500);
 }
