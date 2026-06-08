@@ -288,6 +288,12 @@ window.showPage = function (name) {
   if (name === 'directory') renderDirectory()
   if (name === 'rankings') renderRankings()
   if (name === 'dashboard') renderDashboard()
+  if (name === 'list') {
+    const s1 = document.getElementById('list-step-1')
+    const s2 = document.getElementById('list-step-2')
+    if (s1) s1.style.display = 'block'
+    if (s2) s2.style.display = 'none'
+  }
 }
 
 // ── Home ──────────────────────────────────────────────────────────────────────
@@ -770,6 +776,22 @@ window.selectTier = function (tier) {
   const credsUnlocked = document.getElementById('credentials-unlocked')
   if (credsLocked) credsLocked.style.display = isPaid ? 'none' : 'block'
   if (credsUnlocked) credsUnlocked.style.display = isPaid ? 'block' : 'none'
+}
+
+window.goToStep2 = function () {
+  const email = document.getElementById('f-email').value.trim()
+  const password = document.getElementById('f-password').value
+  if (!email) { toast('Please enter your email address.'); return }
+  if (!password || password.length < 6) { toast('Password must be at least 6 characters.'); return }
+  document.getElementById('list-step-1').style.display = 'none'
+  document.getElementById('list-step-2').style.display = 'block'
+  window.scrollTo(0, 0)
+}
+
+window.backToStep1 = function () {
+  document.getElementById('list-step-2').style.display = 'none'
+  document.getElementById('list-step-1').style.display = 'block'
+  window.scrollTo(0, 0)
 }
 
 function getSelectedTrade() {
