@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient.js'
 import { PROVINCE_CITIES } from './cities.js'
+import { trackEvent } from './analytics.js'
 
 let listings = []
 let currentProfile = null
@@ -516,6 +517,11 @@ function renderDirectory() {
 
   document.getElementById('dir-cards').innerHTML = html
   dirSearchTerm = ''
+
+  // Track search impressions for each visible listing
+  filtered.forEach(l => {
+    trackEvent('search_impression', l.id, { trade: l.trade, province: l.province })
+  })
 }
 
 function featuredCardHTML(l) {
@@ -543,8 +549,8 @@ function featuredCardHTML(l) {
     </div>
     ${l.phone || l.email ? `
     <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid rgba(245,158,11,0.2);border-bottom:1px solid rgba(245,158,11,0.2);margin-bottom:0.75rem;">
-      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
-      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
+      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
+      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
     </div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="card-area" style="border-top:none;padding-top:0;">
@@ -581,8 +587,8 @@ function cardHTML(l) {
     </div>
     ${l.phone || l.email ? `
     <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid var(--charcoal-3);border-bottom:1px solid var(--charcoal-3);margin-bottom:0.75rem;">
-      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
-      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation()" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
+      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
+      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
     </div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="card-area" style="border-top:none;padding-top:0;">
@@ -603,8 +609,8 @@ window.openProfile = async function (id) {
     .single()
   if (error || !l) return
   currentProfile = l
-  // Update URL without reloading
   window.history.pushState({}, '', `/profile/${id}`)
+  trackEvent('profile_view', l.id, { trade: l.trade, province: l.province })
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviews = l.reviews || []
   const credsHTML = l.credentials && l.credentials.length
@@ -654,8 +660,11 @@ window.openProfile = async function (id) {
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn btn-primary btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
-          <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">🔗 Share Profile</button>
+          ${l.phone ? `<a href="https://wa.me/${l.phone.replace(/\D/g,'')}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">💬 WhatsApp</a>` : ''}
+          ${l.phone ? `<a href="tel:${l.phone}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">📞 Call</a>` : ''}
+          ${l.email ? `<a href="mailto:${l.email}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">✉ Email</a>` : ''}
+          <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.id})">⭐ Review</button>
+          <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">🔗 Share</button>
           <button class="btn btn-outline btn-sm" onclick="goBack()">← Back</button>
         </div>
       </div>
@@ -686,6 +695,10 @@ window.openProfile = async function (id) {
       </div>
     </div>`
   showPage('profile')
+}
+
+window.trackContact = function (id, type) {
+  trackEvent(type + '_click', id)
 }
 
 window.copyProfileLink = function (id) {
@@ -733,6 +746,7 @@ window.submitReview = async function () {
     stars, quality, service, cleanliness, communication, value
   })
   if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
+  trackEvent('review_left', reviewingId)
   closeReviewModal()
   toast('Review submitted — thank you!')
   if (currentProfile && currentProfile.id === reviewingId) openProfile(reviewingId)
