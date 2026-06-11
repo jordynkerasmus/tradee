@@ -284,7 +284,7 @@ function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 function tierBadge(tier) {
   if (tier === 'premium') return '<span class="badge badge-premium">Premium</span>'
   if (tier === 'verified') return '<span class="badge badge-verified">Verified</span>'
-  return '<span class="badge badge-free">Free</span>'
+  return ''
 }
 function toast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show')
