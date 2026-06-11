@@ -542,8 +542,11 @@ function renderDirectory() {
   document.getElementById('dir-title').textContent = titleParts.length ? titleParts.join(' — ') : 'All Tradesmen'
   document.getElementById('dir-count').textContent = `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
 
-  // Split premium (featured) from the rest
-  const featured = filtered.filter(l => l.tier === 'premium')
+  // Split premium (featured) from the rest — rotate daily so everyone gets equal top exposure
+  const allPremium = filtered.filter(l => l.tier === 'premium')
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+  const offset = allPremium.length > 0 ? dayOfYear % allPremium.length : 0
+  const featured = [...allPremium.slice(offset), ...allPremium.slice(0, offset)]
   const rest = filtered.filter(l => l.tier !== 'premium')
 
   let html = ''
