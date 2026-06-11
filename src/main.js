@@ -342,10 +342,13 @@ function renderHome() {
   const allTrades = [...new Set(listings.map(l => l.trade))].sort()
   document.getElementById('trade-cats').innerHTML = allTrades.map(t =>
     `<div class="trade-pill" onclick="filterByTrade('${t}')">${t}</div>`).join('')
-  const featured = listings.filter(l => l.tier === 'premium').slice(0, 3)
-    .concat(listings.filter(l => l.tier === 'verified').slice(0, 3)).slice(0, 6)
+  const allPremiumHome = listings.filter(l => l.tier === 'premium')
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+  const offset = allPremiumHome.length > 0 ? dayOfYear % allPremiumHome.length : 0
+  const rotatedPremium = [...allPremiumHome.slice(offset), ...allPremiumHome.slice(0, offset)]
+  const featured = rotatedPremium.slice(0, 3).concat(listings.filter(l => l.tier === 'verified').slice(0, 3)).slice(0, 6)
   document.getElementById('home-cards').innerHTML = featured.length
-    ? featured.map(cardHTML).join('')
+    ? featured.map(l => l.tier === 'premium' ? featuredCardHTML(l) : cardHTML(l)).join('')
     : '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
 }
 
