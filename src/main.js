@@ -66,6 +66,16 @@ window.handleSignOut = async function () {
   window.showPage('home')
 }
 
+window.handleForgotPassword = async function () {
+  const email = document.getElementById('login-email').value.trim()
+  if (!email) { toast('Enter your email address first.'); return }
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password'
+  })
+  if (error) { toast('Error: ' + error.message); return }
+  toast('Password reset email sent — check your inbox!')
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 async function renderDashboard() {
   const el = document.getElementById('dashboard-content')
