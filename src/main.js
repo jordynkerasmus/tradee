@@ -81,7 +81,11 @@ async function renderDashboard() {
   editTier = listing.tier
   el.innerHTML = `
     <div class="profile-hero" style="margin-bottom:1.5rem;">
-      <div class="profile-avatar">${listing.photo_url ? `<img src="${listing.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
+      <div style="position:relative;display:inline-block;">
+        <div class="profile-avatar" id="dash-avatar">${listing.photo_url ? `<img src="${listing.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
+        <label for="dash-photo-input" style="position:absolute;bottom:-6px;right:-6px;background:var(--amber);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;" title="Change photo">✏️</label>
+        <input type="file" id="dash-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="window.updatePhoto(this, ${listing.id})">
+      </div>
       <div style="flex:1;">
         <div class="profile-name">${listing.name}</div>
         ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${listing.contact_name}</div>` : ''}
@@ -185,6 +189,24 @@ window.selectEditTier = function (tier) {
   ;['free', 'verified', 'premium'].forEach(t => {
     document.getElementById('edit-tier-' + t)?.classList.toggle('selected', t === tier)
   })
+}
+
+window.updatePhoto = async function (input, id) {
+  const file = input.files[0]
+  if (!file) return
+  if (file.size > 2 * 1024 * 1024) { toast('Photo must be under 2MB'); return }
+  toast('Uploading photo...')
+  const path = `${currentUser.id}/photo-${Date.now()}-${file.name}`
+  const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
+  if (uploadError) { toast('Upload failed: ' + uploadError.message); return }
+  const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
+  const photo_url = urlData.publicUrl
+  const { error } = await supabase.from('listings').update({ photo_url }).eq('id', id).eq('user_id', currentUser.id)
+  if (error) { toast('Error saving photo'); return }
+  toast('Photo updated!')
+  const avatar = document.getElementById('dash-avatar')
+  if (avatar) avatar.innerHTML = `<img src="${photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
+  await loadListings()
 }
 
 window.saveListing = async function (id) {
