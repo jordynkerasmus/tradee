@@ -184,10 +184,19 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   .form-row { grid-template-columns: 1fr; }
   .profile-hero { flex-direction: column; }
   .profile-stats { grid-template-columns: 1fr 1fr; }
-  .nav-links { gap: 1rem; }
   .hero h1 { font-size: 3.5rem; }
   .stats-bar { gap: 1.5rem; }
+  .nav-links { display: none; }
+  .nav-hamburger { display: flex; }
+  .nav-mobile-menu { display: block; }
 }
+.nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; background: none; border: none; }
+.nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--charcoal-6); border-radius: 2px; transition: all 0.2s; }
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.nav-mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 1rem 2rem; z-index: 99; }
+.nav-mobile-menu a, .nav-mobile-menu button { display: block; width: 100%; text-align: left; color: var(--charcoal-6); text-decoration: none; font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.75rem 0; border-bottom: 1px solid var(--charcoal-3); background: none; border-left: none; border-right: none; border-top: none; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -199,9 +208,20 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <a onclick="showPage('rankings')" id="nav-rankings">Rankings</a>
     <a onclick="showPage('dashboard')" id="nav-dashboard-btn" style="display:none;">My Listing</a>
     <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">Trades Login</button>
+  </div>
+  <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()">
+    <span></span><span></span><span></span>
+  </button>
     <button class="btn btn-primary btn-sm" onclick="showPage('list')">List Your Business</button>
   </div>
 </nav>
+<div class="nav-mobile-menu" id="nav-mobile-menu">
+  <a onclick="showPage('directory');closeMobileMenu()">Directory</a>
+  <a onclick="showPage('rankings');closeMobileMenu()">Rankings</a>
+  <a id="nav-mobile-dashboard" onclick="showPage('dashboard');closeMobileMenu()" style="display:none;">My Listing</a>
+  <a onclick="showPage('list');closeMobileMenu()">List Your Business</a>
+  <button id="nav-mobile-auth" onclick="showPage('login');closeMobileMenu()">Trades Login</button>
+</div>
 
 <div id="toast"></div>
 
@@ -615,6 +635,18 @@ let currentProfile = null;
 let selectedTier = 'free';
 let reviewingId = null;
 let filterTrade = '', filterProvince = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = '';
+
+function toggleMobileMenu() {
+  const menu = document.getElementById('nav-mobile-menu');
+  const btn = document.getElementById('nav-hamburger');
+  const open = menu.style.display === 'block';
+  menu.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('open', !open);
+}
+function closeMobileMenu() {
+  document.getElementById('nav-mobile-menu').style.display = 'none';
+  document.getElementById('nav-hamburger').classList.remove('open');
+}
 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1092,15 +1124,21 @@ let currentUser = null;
 function updateNavForAuth() {
   const authBtn = document.getElementById('nav-auth-btn');
   const dashBtn = document.getElementById('nav-dashboard-btn');
+  const mobileAuth = document.getElementById('nav-mobile-auth');
+  const mobileDash = document.getElementById('nav-mobile-dashboard');
   if (!authBtn) return;
   if (currentUser) {
     authBtn.textContent = 'Log Out';
     authBtn.onclick = handleSignOut;
     if (dashBtn) dashBtn.style.display = 'inline-flex';
+    if (mobileAuth) { mobileAuth.textContent = 'Log Out'; mobileAuth.onclick = handleSignOut; }
+    if (mobileDash) mobileDash.style.display = 'block';
   } else {
     authBtn.textContent = 'Trades Login';
     authBtn.onclick = () => showPage('login');
     if (dashBtn) dashBtn.style.display = 'none';
+    if (mobileAuth) { mobileAuth.textContent = 'Trades Login'; mobileAuth.onclick = () => { showPage('login'); closeMobileMenu(); }; }
+    if (mobileDash) mobileDash.style.display = 'none';
   }
 }
 
