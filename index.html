@@ -63,7 +63,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .directory-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem; }
 .directory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
 .directory-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.04em; }
-.filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--charcoal-3); }
+.filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--charcoal-3); }
 .filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 32px 8px 12px; border-radius: var(--radius); cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .filters select option { background: var(--charcoal-2); }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
