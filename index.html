@@ -523,7 +523,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <div class="form-card">
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="login-email" type="email" placeholder="you@example.com"></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="login-password" type="password" placeholder="Your password"></div>
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="handleLogin()">Log In →</button>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="if(window.handleLogin)window.handleLogin();else handleLogin()">Log In →</button>
       <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Don't have an account? <a onclick="showPage('signup')" style="color:var(--amber);cursor:pointer;">Sign up</a></p>
     </div>
   </div>
@@ -538,7 +538,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="you@example.com"></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signup-password" type="password" placeholder="Create a password"></div>
       <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="signup-password2" type="password" placeholder="Repeat your password"></div>
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="handleSignup()">Create Account →</button>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="if(window.handleSignup)window.handleSignup();else handleSignup()">Create Account →</button>
       <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Already have an account? <a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a></p>
     </div>
   </div>
