@@ -191,7 +191,9 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   .nav-mobile-menu { display: block; }
   .filters { flex-direction: column !important; }
   .filters select, .filters .city-dropdown-wrapper { width: 100% !important; box-sizing: border-box !important; min-width: 0 !important; }
-  .search-wrap select { min-width: 0 !important; width: auto; }
+  .search-wrap { flex-direction: column; border-radius: var(--radius); }
+  .search-wrap select { min-width: 0 !important; width: 100% !important; border-left: none !important; border-top: 1px solid var(--charcoal-4); box-sizing: border-box; }
+  .search-wrap .btn { border-radius: 0 0 var(--radius) var(--radius); width: 100%; }
   .directory-wrap { padding: 1rem; }
   body { overflow-x: hidden; }
 }
