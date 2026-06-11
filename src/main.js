@@ -81,7 +81,7 @@ async function renderDashboard() {
   editTier = listing.tier
   el.innerHTML = `
     <div class="profile-hero" style="margin-bottom:1.5rem;">
-      <div class="profile-avatar">${initials(listing.name)}</div>
+      <div class="profile-avatar">${listing.photo_url ? `<img src="${listing.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
       <div style="flex:1;">
         <div class="profile-name">${listing.name}</div>
         ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${listing.contact_name}</div>` : ''}
@@ -338,6 +338,20 @@ window.updateHeroCities = function () {
   }
 }
 
+window.photoFile = null
+window.previewPhoto = function (input) {
+  const file = input.files[0]
+  if (!file) return
+  if (file.size > 2 * 1024 * 1024) { toast('Photo must be under 2MB'); input.value = ''; return }
+  window.photoFile = file
+  const reader = new FileReader()
+  reader.onload = e => {
+    const preview = document.getElementById('photo-preview')
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
+  }
+  reader.readAsDataURL(file)
+}
+
 window.toggleCityDropdown = function () {
   const dd = document.getElementById('f-city-dropdown')
   const province = document.getElementById('f-province')?.value || ''
@@ -530,7 +544,7 @@ function featuredCardHTML(l) {
   return `<div class="tradesman-card featured-card" onclick="openProfile(${l.id})" style="border-color:var(--amber);background:linear-gradient(135deg,var(--charcoal-2) 0%,rgba(245,158,11,0.06) 100%);box-shadow:0 0 24px rgba(245,158,11,0.12);">
     <div style="position:absolute;top:12px;right:12px;background:var(--amber);color:var(--charcoal);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;">⭐ Featured</div>
     <div class="card-header" style="margin-right:70px;">
-      <div class="card-avatar premium-av">${initials(l.name)}</div>
+      <div class="card-avatar premium-av">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${l.name}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
@@ -568,7 +582,7 @@ function cardHTML(l) {
   const cityStr = l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')
   return `<div class="tradesman-card">
     <div class="card-header">
-      <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${initials(l.name)}</div>
+      <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${l.name}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
@@ -646,7 +660,7 @@ window.openProfile = async function (id) {
   document.getElementById('profile-content').innerHTML = `
     <div class="profile-back" onclick="goBack()">← Back to Directory</div>
     <div class="profile-hero">
-      <div class="profile-avatar">${initials(l.name)}</div>
+      <div class="profile-avatar">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;">
         <div class="profile-name">${l.name}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${l.contact_name}</div>` : ''}
@@ -855,6 +869,18 @@ window.submitListing = async function () {
     userId = data.user?.id ?? null
   }
 
+  // Upload profile photo if provided
+  let photo_url = null
+  const photoFile = window.photoFile
+  if (photoFile) {
+    const photoPath = `${userId}/photo-${Date.now()}-${photoFile.name}`
+    const { error: photoUploadError } = await supabase.storage.from('certifications-registrations').upload(photoPath, photoFile)
+    if (!photoUploadError) {
+      const { data: photoUrlData } = supabase.storage.from('certifications-registrations').getPublicUrl(photoPath)
+      photo_url = photoUrlData.publicUrl
+    }
+  }
+
   // Upload certificate files only for paid tiers
   const certFiles = (selectedTier === 'verified' || selectedTier === 'premium') ? (window.certFiles || []) : []
   const certificate_urls = []
@@ -870,7 +896,7 @@ window.submitListing = async function () {
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const { error } = await supabase.from('listings').insert({
     name, contact_name, phone, email, trade, province, city: cities[0] || city, cities, callout, rate, description, credentials, years_experience, tier: selectedTier,
-    user_id: userId, certificate_urls
+    user_id: userId, certificate_urls, photo_url
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)

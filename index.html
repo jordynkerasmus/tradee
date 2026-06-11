@@ -361,6 +361,17 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     </div>
     <div class="form-card">
       <h3>Personal Details</h3>
+      <div class="form-group" style="margin-bottom:1.25rem;">
+        <label class="form-label">Profile Photo <span style="color:var(--charcoal-6);font-weight:400;">(optional)</span></label>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div id="photo-preview" style="width:72px;height:72px;border-radius:var(--radius);background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--amber);flex-shrink:0;overflow:hidden;"></div>
+          <div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('f-photo').click()">Upload Photo</button>
+            <div style="font-size:12px;color:var(--charcoal-6);margin-top:4px;">JPG or PNG, max 2MB</div>
+          </div>
+        </div>
+        <input type="file" id="f-photo" accept=".jpg,.jpeg,.png" style="display:none;" onchange="previewPhoto(this)">
+      </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="f-name" placeholder="e.g. John Smith"></div>
         <div class="form-group"><label class="form-label">Trade / Specialty</label>
@@ -753,7 +764,7 @@ function cardHTML(l) {
   const rating=avgRating(l), rd=rating>0?rating.toFixed(1):'—';
   return `<div class="tradesman-card" onclick="openProfile(${l.id})">
     <div class="card-header">
-      <div class="card-avatar ${l.tier==='premium'?'premium-av':''}">${initials(l.name)}</div>
+      <div class="card-avatar ${l.tier==='premium'?'premium-av':''}">${l.photo_url?`<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`:initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${l.name}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
@@ -786,7 +797,7 @@ function openProfile(id) {
   document.getElementById('profile-content').innerHTML=`
     <div class="profile-back" onclick="showPage('directory')">← Back to Directory</div>
     <div class="profile-hero">
-      <div class="profile-avatar">${initials(l.name)}</div>
+      <div class="profile-avatar">${l.photo_url?`<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`:initials(l.name)}</div>
       <div style="flex:1;">
         <div class="profile-name">${l.name}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${l.contact_name}</div>` : ''}
@@ -991,6 +1002,20 @@ document.addEventListener('change', e => {
     if (dd && dd.style.display !== 'none') renderCityList(e.target.value);
   }
 });
+
+let photoFile = null;
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast('Photo must be under 2MB'); input.value = ''; return; }
+  photoFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('photo-preview');
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`;
+  };
+  reader.readAsDataURL(file);
+}
 
 let certFiles = [];
 
