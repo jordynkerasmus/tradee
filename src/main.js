@@ -165,7 +165,7 @@ async function renderDashboard() {
     <div class="profile-hero" style="margin-bottom:1.5rem;">
       <div style="position:relative;display:inline-block;">
         <div class="profile-avatar" id="dash-avatar">${listing.photo_url ? `<img src="${listing.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
-        <label for="dash-photo-input" style="position:absolute;bottom:-6px;right:-6px;background:var(--amber);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;" title="Change photo">📷</label>
+        <label for="dash-photo-input" style="position:absolute;bottom:-6px;right:-6px;background:var(--amber);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Change photo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2.5" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></label>
         <input type="file" id="dash-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="window.updatePhoto(this, ${listing.id})">
       </div>
       <div style="flex:1;">
@@ -215,7 +215,7 @@ async function renderDashboard() {
     </div>
 
     <div class="form-card" style="margin-bottom:1rem;">
-      <h3 style="margin-bottom:1rem;">⭐ Client Reviews (${reviews.length})</h3>
+      <h3 style="margin-bottom:1rem;">Client Reviews (${reviews.length})</h3>
       ${reviews.length ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;background:var(--charcoal-3);border-radius:var(--radius);padding:14px;">
         <div style="font-size:2.5rem;font-weight:800;color:var(--amber);">${rating > 0 ? rating.toFixed(1) : '—'}</div>
         <div>
@@ -227,10 +227,10 @@ async function renderDashboard() {
     </div>
 
     <div class="form-card" style="margin-bottom:1rem;">
-      <h3 style="margin-bottom:0.5rem;">📸 Portfolio Photos</h3>
+      <h3 style="margin-bottom:0.5rem;">Portfolio Photos</h3>
       <p style="font-size:13px;color:var(--charcoal-6);margin-bottom:1rem;">Upload before/after shots and completed work. Max 10MB per photo.</p>
       <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;margin-bottom:1rem;" onclick="document.getElementById('portfolio-input').click()">
-        <div style="font-size:14px;color:var(--charcoal-6);">📷 Click to upload photos</div>
+        <div style="font-size:14px;color:var(--charcoal-6);">Click to upload photos</div>
         <div style="font-size:12px;color:var(--charcoal-6);margin-top:4px;">JPG, PNG · Max 10MB each</div>
       </div>
       <input type="file" id="portfolio-input" multiple accept=".jpg,.jpeg,.png" style="display:none;" onchange="uploadPortfolioPhotos(this, ${listing.id})">
@@ -253,7 +253,7 @@ async function renderDashboard() {
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
             ${listing.photo_url ? `<img src="${listing.photo_url}" style="width:56px;height:56px;border-radius:var(--radius);object-fit:cover;">` : `<div style="width:56px;height:56px;border-radius:var(--radius);background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--amber);">${escHtml(listing.name.slice(0,2).toUpperCase())}</div>`}
             <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:0.75rem 1rem;cursor:pointer;flex:1;text-align:center;" onclick="document.getElementById('edit-photo-input').click()">
-              <div style="font-size:13px;color:var(--charcoal-6);">📷 Upload new photo</div>
+              <div style="font-size:13px;color:var(--charcoal-6);">Upload new photo</div>
             </div>
           </div>
           <input type="file" id="edit-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="previewEditPhoto(this)">
@@ -291,7 +291,7 @@ async function renderDashboard() {
         <div class="form-group">
           <label class="form-label">Upload New Certificates</label>
           <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;" onclick="document.getElementById('edit-cert-files').click()">
-            <div style="font-size:14px;color:var(--charcoal-6);">📄 Click to upload PDF, JPG or PNG</div>
+            <div style="font-size:14px;color:var(--charcoal-6);">Click to upload PDF, JPG or PNG</div>
           </div>
           <input type="file" id="edit-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewEditCerts(this.files)">
           <div id="edit-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
@@ -300,16 +300,16 @@ async function renderDashboard() {
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded Certificates</div>
             ${listing.certificate_urls.map((url, i) => `
               <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;margin-bottom:6px;">
-                <span style="font-size:18px;">${url.includes('.pdf') ? '📄' : '🖼️'}</span>
+                <span style="font-size:18px;">${url.includes('.pdf') ? 'PDF' : 'IMG'}</span>
                 <a href="${url}" target="_blank" style="flex:1;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Certificate ${i + 1}</a>
               </div>`).join('')}
           </div>` : ''}
         </div>
         <div class="form-group">
-          <label class="form-label">📍 Your Location & Service Radius</label>
+          <label class="form-label">Your Location & Service Radius</label>
           <div style="display:flex;gap:8px;margin-bottom:8px;">
             <input id="edit-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" class="form-input" style="flex:1;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="geocodeEditLocation()" style="white-space:nowrap;">📍 Locate</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="geocodeEditLocation()" style="white-space:nowrap;">Locate</button>
           </div>
           <div id="edit-geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-bottom:8px;">${listing.lat ? '✓ Location set' : 'No location set yet'}</div>
           <input type="hidden" id="edit-lat" value="${listing.lat || ''}">
@@ -523,7 +523,7 @@ window.previewEditCerts = function (files) {
   if (!el) return
   el.innerHTML = (window.editCertFiles || []).map((f, i) => `
     <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;">
-      <span>${f.type.includes('pdf') ? '📄' : '🖼️'}</span>
+      <span>${f.type.includes('pdf') ? 'PDF' : 'IMG'}</span>
       <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
       <span style="font-size:12px;color:var(--charcoal-6);">${(f.size/1024/1024).toFixed(1)}MB</span>
     </div>`).join('')
@@ -553,9 +553,11 @@ function escHtml(str) {
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
+const VERIFIED_TICK = `<span class="verified-tick" title="Verified"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#22C55E"/><path d="M4.5 8.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+
 function tierBadge(tier) {
-  if (tier === 'premium') return '<span class="badge badge-premium">Premium</span><span class="badge badge-verified">Verified</span>'
-  if (tier === 'verified') return '<span class="badge badge-verified">Verified</span>'
+  if (tier === 'premium') return '<span class="badge badge-premium">Premium</span>' + VERIFIED_TICK
+  if (tier === 'verified') return VERIFIED_TICK
   return ''
 }
 function toast(msg) {
@@ -571,7 +573,7 @@ window.toggleFav = function (id, e) {
   if (idx >= 0) favs.splice(idx, 1); else favs.push(id)
   localStorage.setItem('tradee_favs', JSON.stringify(favs))
   document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(btn => {
-    btn.textContent = isFav(id) ? '♥' : '♡'
+    btn.innerHTML = isFav(id) ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
     btn.style.color = isFav(id) ? 'var(--amber)' : 'var(--charcoal-6)'
   })
 }
@@ -894,7 +896,7 @@ function renderMap() {
       iconSize: [16, 16], iconAnchor: [8, 8],
     })
     L.marker([_userLat, _userLng], { icon: youIcon }).addTo(_map)
-      .bindPopup('<div style="font-weight:700;color:#1C1917;font-size:13px;">📍 You are here</div>')
+      .bindPopup('<div style="font-weight:700;color:#1C1917;font-size:13px;">You are here</div>')
     _map.setView([_userLat, _userLng], 10)
   }
 
@@ -949,21 +951,21 @@ window.toggleNearMe = function () {
   const status = document.getElementById('near-me-status')
   if (_nearMeActive) {
     _nearMeActive = false; _userLat = null; _userLng = null
-    if (btn) { btn.style.color = 'var(--charcoal-6)'; btn.style.borderColor = 'var(--charcoal-4)'; btn.textContent = '📍 Near Me' }
+    if (btn) { btn.style.color = 'var(--charcoal-6)'; btn.style.borderColor = 'var(--charcoal-4)'; btn.textContent = 'Near Me' }
     if (status) { status.style.display = 'none'; status.textContent = '' }
     renderDirectory(); return
   }
   if (!navigator.geolocation) { toast('Your browser does not support location.'); return }
-  if (btn) btn.textContent = '📍 Locating...'
+  if (btn) btn.textContent = 'Locating...'
   navigator.geolocation.getCurrentPosition(pos => {
     _userLat = pos.coords.latitude; _userLng = pos.coords.longitude
     _nearMeActive = true
-    if (btn) { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'var(--amber)'; btn.textContent = '📍 Near Me ✓' }
+    if (btn) { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'var(--amber)'; btn.textContent = 'Near Me ✓' }
     if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area. Switch to Map view to see them visually.' }
     window.setDirView('map')
     renderDirectory()
   }, () => {
-    if (btn) btn.textContent = '📍 Near Me'
+    if (btn) btn.textContent = 'Near Me'
     toast('Could not get your location — please allow location access and try again.')
   })
 }
@@ -1031,7 +1033,7 @@ function renderDirectory() {
     html += `
       <div style="grid-column:1/-1;margin-bottom:0.5rem;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">⭐ Featured Tradesmen</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span>
           <div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div>
         </div>
       </div>
@@ -1056,7 +1058,7 @@ function featuredCardHTML(l) {
   const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : [])
   const rateLabel = l.rate_type === 'day' ? 'Rate / Day' : 'Rate / Hr'
   return `<div class="tradesman-card featured-card" onclick="openProfile(${l.id})" style="border-color:var(--amber);background:linear-gradient(135deg,var(--charcoal-2) 0%,rgba(245,158,11,0.06) 100%);box-shadow:0 0 24px rgba(245,158,11,0.12);">
-    <div style="position:absolute;top:12px;right:12px;background:var(--amber);color:var(--charcoal);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;">⭐ Featured</div>
+    <div style="position:absolute;top:12px;right:12px;background:var(--amber);color:var(--charcoal);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;">Featured</div>
     <div class="card-header" style="margin-right:70px;">
       <div class="card-avatar premium-av">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
@@ -1086,7 +1088,7 @@ function featuredCardHTML(l) {
         ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
+        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;cursor:pointer;color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};padding:4px;display:flex;align-items:center;" title="Save to favourites">${isFav(l.id) ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'}</button>
         <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
       </div>
     </div>
@@ -1129,7 +1131,7 @@ function cardHTML(l) {
         ${escHtml(cityStr)}, ${escHtml(l.province)}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
+        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;cursor:pointer;color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};padding:4px;display:flex;align-items:center;" title="Save to favourites">${isFav(l.id) ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'}</button>
         <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
       </div>
     </div>
@@ -1157,7 +1159,7 @@ window.openProfile = async function (id) {
   const certsHTML = l.certificate_urls && l.certificate_urls.length
     ? l.certificate_urls.map((url, i) => `
         <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:10px 14px;text-decoration:none;transition:background 0.15s;" onmouseover="this.style.background='var(--charcoal-4)'" onmouseout="this.style.background='var(--charcoal-3)'">
-          <span style="font-size:20px;">${url.includes('.pdf') ? '📄' : '🖼️'}</span>
+          <span style="font-size:20px;">${url.includes('.pdf') ? 'PDF' : 'IMG'}</span>
           <span style="font-size:14px;color:var(--amber);">View Certificate ${i + 1}</span>
           <span style="margin-left:auto;font-size:12px;color:var(--charcoal-6);">↗ Open</span>
         </a>`).join('')
@@ -1218,7 +1220,7 @@ window.openProfile = async function (id) {
           ${l.phone ? `<a href="https://wa.me/${l.phone.replace(/\D/g,'')}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">💬 WhatsApp</a>` : ''}
           ${l.phone ? `<a href="tel:${l.phone}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">📞 Call</a>` : ''}
           ${l.email ? `<a href="mailto:${l.email}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">✉ Email</a>` : ''}
-          <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.id})">⭐ Review</button>
+          <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
           <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">🔗 Share</button>
           <button class="btn btn-outline btn-sm" onclick="goBack()">← Back</button>
         </div>

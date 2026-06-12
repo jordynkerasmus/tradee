@@ -102,9 +102,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .card-trade { font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-top: 2px; }
 .card-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
 .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
-.badge-verified { background: rgba(34,197,94,0.15); color: #4ADE80; border: 1px solid rgba(34,197,94,0.2); }
+.badge-verified { display:none; }
 .badge-premium { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
 .badge-free { background: var(--charcoal-3); color: var(--charcoal-6); border: 1px solid var(--charcoal-4); }
+.verified-tick { display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;margin-left:5px; }
+.verified-tick svg { display:block; }
 .card-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 0.75rem; }
 .stars { color: var(--amber); font-size: 14px; }
 .rating-num { font-weight: 600; font-size: 14px; }
@@ -346,8 +348,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;" id="dir-count"></div>
       </div>
       <div class="view-toggle">
-        <button id="btn-list-view" class="active" onclick="setDirView('list')">☰ List</button>
-        <button id="btn-map-view" onclick="setDirView('map')">🗺 Map</button>
+        <button id="btn-list-view" class="active" onclick="setDirView('list')">List</button>
+        <button id="btn-map-view" onclick="setDirView('map')">Map</button>
       </div>
     </div>
     <div id="map-container"></div>
@@ -370,8 +372,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <option value="rate">Sort: Lowest Rate</option>
         <option value="reviews">Sort: Most Reviews</option>
       </select>
-      <button id="fav-filter-btn" data-active="0" onclick="toggleFavsFilter()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">♡ Saved</button>
-      <button id="near-me-btn" onclick="toggleNearMe()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">📍 Near Me</button>
+      <button id="fav-filter-btn" data-active="0" onclick="toggleFavsFilter()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">Saved</button>
+      <button id="near-me-btn" onclick="toggleNearMe()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">Near Me</button>
     </div>
     <div id="near-me-status" style="display:none;font-size:13px;color:var(--amber);margin-bottom:1rem;"></div>
     <div class="card-grid" id="dir-cards"></div>
@@ -584,12 +586,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <div style="font-size:12px;color:var(--charcoal-6);margin-top:-0.5rem;">* Pricing is indicative for demo purposes</div>
     </div>
     <div class="form-card" style="margin-bottom:1.5rem;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.06em;margin-bottom:1rem;">📍 Your Location & Service Radius</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.06em;margin-bottom:1rem;">Your Location & Service Radius</div>
       <div style="margin-bottom:1rem;">
         <label style="display:block;font-size:12px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Your Address or Area</label>
         <div style="display:flex;gap:8px;">
           <input id="f-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" style="flex:1;background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);padding:10px 12px;border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="geocodeListingLocation()" style="white-space:nowrap;">📍 Locate</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="geocodeListingLocation()" style="white-space:nowrap;">Locate</button>
         </div>
         <div id="geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-top:6px;"></div>
         <input type="hidden" id="f-lat">
@@ -775,7 +777,7 @@ function toggleFav(id,e) {
   if (idx>=0) favs.splice(idx,1); else favs.push(id);
   localStorage.setItem('tradee_favs',JSON.stringify(favs));
   document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(btn=>{
-    btn.textContent=isFav(id)?'♥':'♡';
+    btn.innerHTML=isFav(id)?'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
     btn.style.color=isFav(id)?'#ef4444':'var(--charcoal-6)';
   });
 }
@@ -888,23 +890,23 @@ function toggleNearMe() {
   if (_nearMeActive) {
     _nearMeActive = false; _userLat = null; _userLng = null;
     btn.style.color = 'var(--charcoal-6)'; btn.style.borderColor = 'var(--charcoal-4)';
-    btn.textContent = '📍 Near Me';
+    btn.textContent = 'Near Me';
     if (status) { status.style.display = 'none'; status.textContent = ''; }
     renderDirectory();
     return;
   }
   if (!navigator.geolocation) { alert('Your browser does not support location.'); return; }
-  btn.textContent = '📍 Locating...';
+  btn.textContent = 'Locating...';
   navigator.geolocation.getCurrentPosition(pos => {
     _userLat = pos.coords.latitude; _userLng = pos.coords.longitude;
     _nearMeActive = true;
     btn.style.color = 'var(--amber)'; btn.style.borderColor = 'var(--amber)';
-    btn.textContent = '📍 Near Me ✓';
+    btn.textContent = 'Near Me ✓';
     if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area. Switch to Map view to see them visually.'; }
     setDirView('map');
     renderDirectory();
   }, () => {
-    btn.textContent = '📍 Near Me';
+    btn.textContent = 'Near Me';
     alert('Could not get your location. Please allow location access and try again.');
   });
 }
