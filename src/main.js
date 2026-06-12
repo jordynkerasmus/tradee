@@ -151,7 +151,7 @@ async function renderDashboard() {
       <h3>Subscription Plan</h3>
       <div class="tier-grid">
         <div class="tier-card ${editTier === 'free' ? 'selected' : ''}" id="edit-tier-free" onclick="selectEditTier('free')">
-          <div class="tier-name">Free</div>
+          <div class="tier-name">Standard</div>
           <div class="tier-price">R0<span>/mo</span></div>
           <div class="tier-desc">Basic listing</div>
           <ul class="tier-features">

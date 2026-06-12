@@ -302,7 +302,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </select>
       <select id="filter-tier" onchange="applyFilters()">
         <option value="">All Tiers</option>
-        <option value="premium">Premium</option><option value="verified">Verified</option><option value="free">Free</option>
+        <option value="premium">Premium</option><option value="verified">Verified</option><option value="free">Standard</option>
       </select>
       <select id="filter-sort" onchange="applyFilters()">
         <option value="rating">Sort: Top Rated</option>
@@ -471,7 +471,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <h3>Choose Your Plan</h3>
       <div class="tier-grid">
         <div class="tier-card" id="tier-free" onclick="selectTier('free')">
-          <div class="tier-name">Free</div>
+          <div class="tier-name">Standard</div>
           <div class="tier-price">R0<span>/mo</span></div>
           <div class="tier-desc">Get started with a basic listing</div>
           <ul class="tier-features">
