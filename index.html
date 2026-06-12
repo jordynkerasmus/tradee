@@ -236,27 +236,25 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <div class="hero-eyebrow">The Trade Directory</div>
     <h1>FIND THE<br><span class="accent">RIGHT</span><br>TRADESMAN</h1>
     <p class="hero-sub">Verified electricians, plumbers, builders and more — browse, compare, and book with confidence.</p>
-    <div style="max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:8px;">
-      <div class="search-wrap">
-        <select id="hero-category" onchange="updateHeroTrades()" style="flex:1;border-left:none;">
-          <option value="">All Categories</option>
-        </select>
-        <select id="hero-search" style="flex:1;">
-          <option value="">All Trades</option>
-        </select>
-      </div>
-      <div class="search-wrap">
-        <select id="hero-province" onchange="updateHeroCities()" style="flex:1;border-left:none;">
-          <option value="">All Provinces</option>
-          <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
-          <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
-          <option>North West</option><option>Free State</option><option>Northern Cape</option>
-        </select>
-        <select id="hero-city" style="flex:1;">
-          <option value="">All Cities</option>
-        </select>
-        <button class="btn btn-primary" onclick="heroSearch()">Search</button>
-      </div>
+    <div class="search-wrap" style="margin-bottom:8px;">
+      <select id="hero-category" onchange="updateHeroTrades()" style="flex:1;border-left:none;">
+        <option value="">All Categories</option>
+      </select>
+      <select id="hero-search" style="flex:1;">
+        <option value="">All Trades</option>
+      </select>
+    </div>
+    <div class="search-wrap">
+      <select id="hero-province" onchange="updateHeroCities()" style="flex:1;border-left:none;">
+        <option value="">All Provinces</option>
+        <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
+        <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
+        <option>North West</option><option>Free State</option><option>Northern Cape</option>
+      </select>
+      <select id="hero-city" style="flex:1;">
+        <option value="">All Cities</option>
+      </select>
+      <button class="btn btn-primary" onclick="heroSearch()">Search</button>
     </div>
   </div>
   <div class="stats-bar" id="home-stats"></div>
