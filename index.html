@@ -240,6 +240,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <a id="nav-mobile-dashboard" onclick="showPage('dashboard');closeMobileMenu()" style="display:none;">My Listing</a>
   <a onclick="showPage('list');closeMobileMenu()">List Your Business</a>
   <button id="nav-mobile-auth" onclick="showPage('login');closeMobileMenu()">Trades Login</button>
+  <button id="nav-mobile-install" onclick="showInstallPrompt();closeMobileMenu()" style="color:var(--amber);">📲 Install App</button>
 </div>
 
 <div id="toast"></div>
@@ -1425,38 +1426,52 @@ async function handleSignOut() {
 selectTier('free'); renderHome(); populateTradeFilter(); renderRankings(); updateNavForAuth(); updateHeroCities();
 
 // ── PWA Install Prompts ───────────────────────────────────────────────────────
-(function () {
-  if (localStorage.getItem('tradee_install_dismissed')) return;
-  if (window.matchMedia('(display-mode: standalone)').matches) return; // already installed
+let _androidDeferredPrompt = null;
 
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-  const isAndroid = /android/i.test(navigator.userAgent);
+const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+const _isAndroid = /android/i.test(navigator.userAgent);
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-  if (isIOS && /safari/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent)) {
-    setTimeout(() => {
-      document.getElementById('ios-install-banner').style.display = 'block';
-    }, 4000);
-  }
-
-  if (isAndroid) {
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      setTimeout(() => {
-        document.getElementById('android-install-banner').style.display = 'block';
-      }, 4000);
-    });
-    document.getElementById('android-install-btn').addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      deferredPrompt = null;
+function showInstallPrompt() {
+  if (_isStandalone) { toast('Tradee is already installed on your home screen!'); return; }
+  if (_isIOS) {
+    document.getElementById('ios-install-banner').style.display = 'block';
+  } else if (_isAndroid && _androidDeferredPrompt) {
+    _androidDeferredPrompt.prompt();
+    _androidDeferredPrompt.userChoice.then(({ outcome }) => {
+      _androidDeferredPrompt = null;
       document.getElementById('android-install-banner').style.display = 'none';
-      if (outcome === 'accepted') localStorage.setItem('tradee_install_dismissed', '1');
     });
+  } else if (_isAndroid) {
+    document.getElementById('android-install-banner').style.display = 'block';
+  } else {
+    toast('Open this site in Safari on iPhone, or Chrome on Android to install.');
   }
-})();
+}
+
+window.showInstallPrompt = showInstallPrompt;
+
+// Hide install button once already installed
+if (_isStandalone) {
+  const btn = document.getElementById('nav-mobile-install');
+  if (btn) btn.style.display = 'none';
+}
+
+// Android: catch install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _androidDeferredPrompt = e;
+  if (!localStorage.getItem('tradee_install_dismissed') && !_isStandalone) {
+    setTimeout(() => { document.getElementById('android-install-banner').style.display = 'block'; }, 3000);
+  }
+});
+
+document.getElementById('android-install-btn').addEventListener('click', () => showInstallPrompt());
+
+// iOS: show banner after delay on first visit only
+if (_isIOS && !_isStandalone && !localStorage.getItem('tradee_install_dismissed')) {
+  setTimeout(() => { document.getElementById('ios-install-banner').style.display = 'block'; }, 3000);
+}
 
 // Star hover effect for all rating groups
 ['star-quality','star-service','star-clean','star-comms','star-value'].forEach(id => {
