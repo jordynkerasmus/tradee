@@ -862,20 +862,56 @@ window.backToStep1 = function () {
   window.scrollTo(0, 0)
 }
 
-function getSelectedTrade() {
-  const sel = document.getElementById('f-trade')
-  if (sel.value === '__new__') return document.getElementById('f-trade-new').value.trim()
-  return sel.value
+const TRADES_LIST = ['Air Conditioning','Appliance Repair','Builder / Contractor','Carpenter','Electrician','Handyman','Landscaper','Painter','Pest Control','Plumber','Pool Service','Roofer','Security','Tiler','Welder']
+let selectedTrades = []
+
+window.toggleTradeDropdown = function () {
+  const dd = document.getElementById('f-trade-dropdown')
+  if (dd.style.display === 'none') { renderTradeList(); dd.style.display = 'block' }
+  else dd.style.display = 'none'
 }
 
-window.handleTradeSelect = function () {
-  const sel = document.getElementById('f-trade')
-  const newInput = document.getElementById('f-trade-new')
-  const hint = document.getElementById('f-trade-new-hint')
-  const isNew = sel.value === '__new__'
-  newInput.style.display = isNew ? 'block' : 'none'
-  hint.style.display = isNew ? 'block' : 'none'
-  if (isNew) newInput.focus()
+document.addEventListener('click', function closeTradeDropdown(e) {
+  if (!document.getElementById('f-trade-wrapper')?.contains(e.target)) {
+    const dd = document.getElementById('f-trade-dropdown')
+    if (dd) dd.style.display = 'none'
+  }
+})
+
+function renderTradeList() {
+  const allTrades = [...new Set([...TRADES_LIST, ...selectedTrades])].sort()
+  document.getElementById('f-trade-list').innerHTML = allTrades.map(t => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;">
+      <input type="checkbox" value="${t}" ${selectedTrades.includes(t)?'checked':''} onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;">
+      <span style="color:var(--white);font-size:14px;">${t}</span>
+    </label>`).join('')
+}
+
+window.toggleTrade = function (trade) {
+  if (selectedTrades.includes(trade)) selectedTrades = selectedTrades.filter(t => t !== trade)
+  else selectedTrades.push(trade)
+  updateTradeLabel()
+  renderTradeList()
+}
+
+window.addCustomTrade = function () {
+  const val = document.getElementById('f-trade-new').value.trim()
+  if (val && !selectedTrades.includes(val)) {
+    selectedTrades.push(val)
+    updateTradeLabel()
+    renderTradeList()
+  }
+}
+
+function updateTradeLabel() {
+  const label = document.getElementById('f-trade-label-text')
+  if (!label) return
+  if (selectedTrades.length === 0) { label.textContent = 'Select trades…'; label.style.color = 'var(--charcoal-6)' }
+  else { label.textContent = selectedTrades.join(', '); label.style.color = 'var(--white)' }
+}
+
+function getSelectedTrade() {
+  return selectedTrades[0] || ''
 }
 
 window.submitListing = async function () {
@@ -897,7 +933,7 @@ window.submitListing = async function () {
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
   if (!email || !password) { toast('Please enter your email and password.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
-  if (!name || !trade || !province || selectedCities.length === 0) { toast('Please fill in name, trade, province and at least one city.'); return }
+  if (!name || selectedTrades.length === 0 || !province || selectedCities.length === 0) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
   if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your hourly rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
 
@@ -943,7 +979,8 @@ window.submitListing = async function () {
   toast(`${name} is now live on Tradee!`)
   ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-callout', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   selectedCities = []; updateCityLabel()
-  document.getElementById('f-trade').value = ''
+  selectedTrades = []; updateTradeLabel()
+  document.getElementById('f-trade-new').value = ''
   document.getElementById('f-province').value = ''
   selectTier('free')
   await loadListings()

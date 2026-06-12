@@ -375,27 +375,18 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <div class="form-row">
         <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="f-name" placeholder="e.g. John Smith"></div>
         <div class="form-group"><label class="form-label">Trade / Specialty</label>
-          <select class="form-select" id="f-trade" onchange="handleTradeSelect()">
-            <option value="">Select trade…</option>
-            <option>Air Conditioning</option>
-            <option>Appliance Repair</option>
-            <option>Builder / Contractor</option>
-            <option>Carpenter</option>
-            <option>Electrician</option>
-            <option>Handyman</option>
-            <option>Landscaper</option>
-            <option>Painter</option>
-            <option>Pest Control</option>
-            <option>Plumber</option>
-            <option>Pool Service</option>
-            <option>Roofer</option>
-            <option>Security</option>
-            <option>Tiler</option>
-            <option>Welder</option>
-            <option value="__new__">＋ Add new trade…</option>
-          </select>
-          <input class="form-input" id="f-trade-new" placeholder="e.g. Solar Installer" style="display:none;margin-top:8px;" oninput="syncNewTrade()">
-          <div class="form-hint" id="f-trade-new-hint" style="display:none;">This trade will be added to the directory when you publish.</div>
+          <div style="position:relative;" id="f-trade-wrapper">
+            <div class="form-select" id="f-trade-label" onclick="toggleTradeDropdown()" style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;">
+              <span id="f-trade-label-text" style="color:var(--charcoal-6);">Select trades…</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><polygon points="0,2 10,2 5,8" fill="#A8A29E"/></svg>
+            </div>
+            <div id="f-trade-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--charcoal-2);border:1px solid var(--charcoal-4);border-radius:var(--radius);z-index:200;max-height:240px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+              <div id="f-trade-list"></div>
+              <div style="padding:8px 12px;border-top:1px solid var(--charcoal-3);">
+                <input class="form-input" id="f-trade-new" placeholder="＋ Add new trade…" style="font-size:13px;padding:6px 10px;" oninput="addCustomTrade()">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="f-phone" placeholder="+27 82 000 0000"></div>
@@ -1073,16 +1064,54 @@ function handleTradeSelect() {
   if (isNew) newInput.focus();
 }
 
-function syncNewTrade() {
-  // keeps the custom value accessible when submitting
-}
+const TRADES_LIST = ['Air Conditioning','Appliance Repair','Builder / Contractor','Carpenter','Electrician','Handyman','Landscaper','Painter','Pest Control','Plumber','Pool Service','Roofer','Security','Tiler','Welder'];
+let selectedTrades = [];
 
-function getSelectedTrade() {
-  const sel = document.getElementById('f-trade');
-  if (sel.value === '__new__') {
-    return document.getElementById('f-trade-new').value.trim();
+function toggleTradeDropdown() {
+  const dd = document.getElementById('f-trade-dropdown');
+  if (dd.style.display === 'none') {
+    renderTradeList();
+    dd.style.display = 'block';
+    document.addEventListener('click', closeTradeDropdown);
+  } else {
+    dd.style.display = 'none';
   }
-  return sel.value;
+}
+function closeTradeDropdown(e) {
+  if (!document.getElementById('f-trade-wrapper')?.contains(e.target)) {
+    document.getElementById('f-trade-dropdown').style.display = 'none';
+    document.removeEventListener('click', closeTradeDropdown);
+  }
+}
+function renderTradeList() {
+  const allTrades = [...new Set([...TRADES_LIST, ...selectedTrades])].sort();
+  document.getElementById('f-trade-list').innerHTML = allTrades.map(t => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;font-size:14px;color:var(--charcoal-6);" onclick="event.stopPropagation()">
+      <input type="checkbox" value="${t}" ${selectedTrades.includes(t)?'checked':''} onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;">
+      ${t}
+    </label>`).join('');
+}
+function toggleTrade(trade) {
+  if (selectedTrades.includes(trade)) selectedTrades = selectedTrades.filter(t => t !== trade);
+  else selectedTrades.push(trade);
+  updateTradeLabel();
+  renderTradeList();
+}
+function addCustomTrade() {
+  const val = document.getElementById('f-trade-new').value.trim();
+  if (val && !selectedTrades.includes(val)) {
+    selectedTrades.push(val);
+    updateTradeLabel();
+    renderTradeList();
+  }
+}
+function updateTradeLabel() {
+  const label = document.getElementById('f-trade-label-text');
+  if (selectedTrades.length === 0) { label.textContent = 'Select trades…'; label.style.color = 'var(--charcoal-6)'; }
+  else { label.textContent = selectedTrades.join(', '); label.style.color = 'var(--white)'; }
+}
+function getSelectedTrade() {
+  return selectedTrades[0] || '';
 }
 
 function addTradeToDropdowns(trade) {
@@ -1092,12 +1121,8 @@ function addTradeToDropdowns(trade) {
     const opt = new Option(trade, trade);
     heroSelect.insertBefore(opt, heroSelect.options[heroSelect.options.length - 1]);
   }
-  // Add to listing form dropdown (before the __new__ option)
-  const fTrade = document.getElementById('f-trade');
-  if (fTrade && ![...fTrade.options].some(o => o.value === trade)) {
-    const opt = new Option(trade, trade);
-    fTrade.insertBefore(opt, fTrade.options[fTrade.options.length - 1]);
-  }
+  // Add to trade multi-select list if not already there
+  if (!TRADES_LIST.includes(trade)) TRADES_LIST.push(trade);
 }
 
 function selectTier(tier) {
@@ -1130,7 +1155,7 @@ function submitListing() {
   const credsRaw=document.getElementById('f-creds')?.value.trim()||'';
   const years=parseInt(document.getElementById('f-years')?.value)||0;
   const creds=credsRaw?credsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
-  if (!name||!trade||!province||selectedCities.length===0) { toast('Please fill in name, trade, province and at least one city.'); return; }
+  if (!name||selectedTrades.length===0||!province||selectedCities.length===0) { toast('Please fill in name, at least one trade, province and at least one city.'); return; }
   if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your hourly rate or N/A.'); return; }
   if (!desc) { toast('Please add a business description.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
@@ -1138,11 +1163,9 @@ function submitListing() {
   addTradeToDropdowns(trade);
   toast(`${name} is now live on Tradee!`);
   ['f-name','f-phone','f-email','f-password','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('f-trade').value='';
   document.getElementById('f-trade-new').value='';
-  document.getElementById('f-trade-new').style.display='none';
-  document.getElementById('f-trade-new-hint').style.display='none';
   document.getElementById('f-province').value='';
+  selectedTrades=[]; updateTradeLabel();
   selectedCities=[]; updateCityLabel();
   selectTier('free'); filterTrade=trade;
   setTimeout(()=>showPage('directory'),1500);
