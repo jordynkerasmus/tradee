@@ -91,7 +91,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 32px 8px 12px; border-radius: var(--radius); cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .filters select option { background: var(--charcoal-2); }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
-.tradesman-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.tradesman-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 .tradesman-card:hover { border-color: var(--amber); transform: translateY(-2px); }
 .tradesman-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--amber); opacity: 0; transition: opacity 0.2s; }
 .tradesman-card:hover::before { opacity: 1; }
@@ -1066,7 +1066,7 @@ function cardHTML(l) {
       <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
       <div class="info-item"><div class="info-label">${rateLabel}</div><div class="info-value">${fmtRand(l.rate)}</div></div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
       <div class="card-area" style="border-top:none;padding-top:0;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         ${cityStr}, ${l.province}

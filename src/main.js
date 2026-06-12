@@ -1109,7 +1109,7 @@ function featuredCardHTML(l) {
       ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${escHtml(l.phone)}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${escHtml(l.phone)}</a></div>` : ''}
       ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${escHtml(l.email)}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${escHtml(l.email)}</a></div>` : ''}
     </div>` : ''}
-    <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
       <div class="card-area" style="border-top:none;padding-top:0;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
@@ -1152,7 +1152,7 @@ function cardHTML(l) {
       ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${escHtml(l.phone)}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${escHtml(l.phone)}</a></div>` : ''}
       ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${escHtml(l.email)}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${escHtml(l.email)}</a></div>` : ''}
     </div>` : ''}
-    <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
       <div class="card-area" style="border-top:none;padding-top:0;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         ${escHtml(cityStr)}, ${escHtml(l.province)}
