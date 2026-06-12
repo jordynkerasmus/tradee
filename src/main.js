@@ -855,7 +855,7 @@ function renderMap() {
 
   if (!_map) {
     _map = L.map('map-container', { zoomControl: true }).setView([-28.4793, 24.6727], 6)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO',
       maxZoom: 18,
     }).addTo(_map)
