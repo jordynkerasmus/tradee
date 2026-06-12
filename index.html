@@ -176,9 +176,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .review-form input, .review-form textarea { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: var(--radius); outline: none; width: 100%; }
 .review-form textarea { min-height: 90px; resize: vertical; }
 .star-select { display: flex; gap: 8px; margin: 4px 0; }
-.star-select label { font-size: 24px; cursor: pointer; color: var(--charcoal-5); transition: color 0.1s; }
-.star-select input[type="radio"] { display: none; }
-.star-select label:hover, .star-select label.lit { color: var(--amber); }
+.star-select span { font-size: 24px; cursor: pointer; color: var(--charcoal-5); transition: color 0.1s; user-select: none; }
+.star-select span.lit { color: var(--amber); }
 @media (max-width: 640px) {
   .tier-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
