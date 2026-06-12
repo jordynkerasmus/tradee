@@ -36,7 +36,8 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'DM Sans', sans-serif; background: var(--charcoal); color: var(--white); min-height: 100vh; font-size: 15px; line-height: 1.6; }
-nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 0 2rem; padding-top: env(safe-area-inset-top); display: flex; align-items: center; justify-content: space-between; height: calc(64px + env(safe-area-inset-top)); position: sticky; top: 0; z-index: 100; }
+nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+nav::before { content: ''; display: block; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--charcoal-2); z-index: 101; }
 .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.08em; color: var(--amber); text-decoration: none; cursor: pointer; }
 .nav-logo span { color: var(--white); }
 .nav-links { display: flex; gap: 2rem; align-items: center; }
