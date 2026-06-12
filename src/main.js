@@ -496,12 +496,23 @@ document.addEventListener('change', e => {
 })
 
 // ── Directory ─────────────────────────────────────────────────────────────────
+function buildTradeOptgroups() {
+  return Object.entries(TRADE_CATEGORIES).map(([cat, trades]) =>
+    `<optgroup label="${cat}">${trades.map(t => `<option value="${t}">${t}</option>`).join('')}</optgroup>`
+  ).join('')
+}
 function populateTradeFilter() {
-  const trades = [...new Set(listings.map(l => l.trade))].sort()
-  const opts = trades.map(t => `<option value="${t}">${t}</option>`).join('')
-  document.getElementById('filter-trade').innerHTML = '<option value="">All Trades</option>' + opts
-  document.getElementById('rank-trade-filter').innerHTML = '<option value="">All Trades</option>' + opts
+  const groups = buildTradeOptgroups()
+  const base = '<option value="">All Trades</option>'
+  ;['filter-trade', 'rank-trade-filter', 'hero-search'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.innerHTML = base + groups
+  })
   document.getElementById('filter-trade').value = filterTrade
+  const catSel = document.getElementById('f-trade-category')
+  if (catSel && catSel.options.length <= 1) {
+    Object.keys(TRADE_CATEGORIES).forEach(cat => catSel.add(new Option(cat, cat)))
+  }
 }
 
 window.applyFilters = function () {
@@ -861,7 +872,16 @@ window.backToStep1 = function () {
   window.scrollTo(0, 0)
 }
 
-const TRADES_LIST = ['Air Conditioning','Appliance Repair','Builder / Contractor','Carpenter','Electrician','Handyman','Landscaper','Painter','Pest Control','Plumber','Pool Service','Roofer','Security','Tiler','Welder']
+const TRADE_CATEGORIES = {
+  'Home & Building': ['Architect','Bricklayer','Builder / General Contractor','Carpenter','Ceiling & Partitioning','Concrete Contractor','Damp Proofing','Demolition','Drywaller','Fencer','Flooring Installer','Glazier','Insulation Installer','Plasterer','Roofer','Scaffolder','Stonemason','Tiler','Waterproofing'],
+  'Electrical & Tech': ['Alarm & Security Systems','AV & Home Automation','CCTV Installer','Data & Networking','Electrician','Electric Gate & Intercom','EV Charger Installer','Generator Installer','Solar Panel Installer'],
+  'Plumbing & HVAC': ['Air Conditioning & HVAC','Borehole & Water','Gas Fitter','Geyser & Hot Water','Irrigation & Sprinklers','Plumber','Pool Service','Water Filtration'],
+  'Finishing & Interior': ['Curtains & Blinds','Interior Designer','Kitchen Fitter','Painter','Upholsterer','Wallpaper Installer','Wardrobe & Built-ins'],
+  'Outdoor & Garden': ['Arborist / Tree Feller','Landscaper','Lawn Care','Paving & Driveways','Pest Control','Pressure Washing','Skip Hire'],
+  'Automotive': ['Auto Electrician','Auto Panel Beater','Car Audio & Accessories','Car Detailer','Mobile Mechanic','Roadworthy & Inspection','Tow Truck','Tyre Fitting','Windscreen Repair'],
+  'Appliances & Small Jobs': ['Appliance Repair','Handyman','Locksmith','Moving & Removals','Welder & Fabrication'],
+}
+const TRADES_LIST = Object.values(TRADE_CATEGORIES).flat()
 let selectedTrades = []
 
 window.toggleTradeDropdown = function () {
@@ -878,12 +898,27 @@ document.addEventListener('click', function closeTradeDropdown(e) {
 })
 
 function renderTradeList() {
-  const allTrades = [...new Set([...TRADES_LIST, ...selectedTrades])].sort()
-  document.getElementById('f-trade-list').innerHTML = allTrades.map(t => `
-    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;">
-      <input type="checkbox" value="${t}" ${selectedTrades.includes(t)?'checked':''} onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;">
-      <span style="color:var(--white);font-size:14px;">${t}</span>
-    </label>`).join('')
+  const cat = document.getElementById('f-trade-category')?.value || ''
+  const customTrades = selectedTrades.filter(t => !TRADES_LIST.includes(t))
+  const categoriesToShow = cat ? { [cat]: TRADE_CATEGORIES[cat] } : TRADE_CATEGORIES
+  let html = ''
+  for (const [catName, trades] of Object.entries(categoriesToShow)) {
+    html += `<div style="padding:5px 12px 3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--amber);background:var(--charcoal-3);">${catName}</div>`
+    html += trades.map(t => `
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);" onclick="event.stopPropagation()">
+        <input type="checkbox" value="${t}" ${selectedTrades.includes(t)?'checked':''} onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;flex-shrink:0;">
+        <span style="color:var(--white);font-size:13px;">${t}</span>
+      </label>`).join('')
+  }
+  if (customTrades.length) {
+    html += `<div style="padding:5px 12px 3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--amber);background:var(--charcoal-3);">Custom</div>`
+    html += customTrades.map(t => `
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;" onclick="event.stopPropagation()">
+        <input type="checkbox" value="${t}" checked onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;flex-shrink:0;">
+        <span style="color:var(--white);font-size:13px;">${t}</span>
+      </label>`).join('')
+  }
+  document.getElementById('f-trade-list').innerHTML = html
 }
 
 window.toggleTrade = function (trade) {

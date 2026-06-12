@@ -239,22 +239,6 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <div class="search-wrap">
       <select id="hero-search" style="flex:1;border-left:none;">
         <option value="">All Trades</option>
-        <option>Air Conditioning</option>
-        <option>Appliance Repair</option>
-        <option>Builder / Contractor</option>
-        <option>Carpenter</option>
-        <option>Electrician</option>
-        <option>Handyman</option>
-        <option>Landscaper</option>
-        <option>Painter</option>
-        <option>Pest Control</option>
-        <option>Plumber</option>
-        <option>Pool Service</option>
-        <option>Roofer</option>
-        <option>Security</option>
-        <option>Tiler</option>
-        <option>Welder</option>
-        <option>Other</option>
       </select>
       <select id="hero-province" onchange="updateHeroCities()">
         <option value="">All Provinces</option>
@@ -374,15 +358,18 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <div class="form-row">
         <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="f-name" placeholder="e.g. John Smith"></div>
         <div class="form-group"><label class="form-label">Trade / Specialty</label>
+          <select class="form-select" id="f-trade-category" onchange="renderTradeList()" style="margin-bottom:6px;">
+            <option value="">All Categories</option>
+          </select>
           <div style="position:relative;" id="f-trade-wrapper">
             <div class="form-select" id="f-trade-label" onclick="toggleTradeDropdown()" style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;">
               <span id="f-trade-label-text" style="color:var(--charcoal-6);">Select trades…</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><polygon points="0,2 10,2 5,8" fill="#A8A29E"/></svg>
             </div>
-            <div id="f-trade-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--charcoal-2);border:1px solid var(--charcoal-4);border-radius:var(--radius);z-index:200;max-height:240px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+            <div id="f-trade-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--charcoal-2);border:1px solid var(--charcoal-4);border-radius:var(--radius);z-index:200;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
               <div id="f-trade-list"></div>
               <div style="padding:8px 12px;border-top:1px solid var(--charcoal-3);">
-                <input class="form-input" id="f-trade-new" placeholder="＋ Add new trade…" style="font-size:13px;padding:6px 10px;" oninput="addCustomTrade()">
+                <input class="form-input" id="f-trade-new" placeholder="＋ Add unlisted trade…" style="font-size:13px;padding:6px 10px;" oninput="addCustomTrade()">
               </div>
             </div>
           </div>
@@ -679,12 +666,24 @@ function heroSearch() {
   showPage('directory');
 }
 
+function buildTradeOptgroups() {
+  return Object.entries(TRADE_CATEGORIES).map(([cat, trades]) =>
+    `<optgroup label="${cat}">${trades.map(t=>`<option value="${t}">${t}</option>`).join('')}</optgroup>`
+  ).join('');
+}
 function populateTradeFilter() {
-  const trades=[...new Set(listings.map(l=>l.trade))].sort();
-  const opts=trades.map(t=>`<option value="${t}">${t}</option>`).join('');
-  document.getElementById('filter-trade').innerHTML='<option value="">All Trades</option>'+opts;
-  document.getElementById('rank-trade-filter').innerHTML='<option value="">All Trades</option>'+opts;
-  document.getElementById('filter-trade').value=filterTrade;
+  const groups = buildTradeOptgroups();
+  const base = '<option value="">All Trades</option>';
+  ['filter-trade','rank-trade-filter','hero-search'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = base + groups; }
+  });
+  document.getElementById('filter-trade').value = filterTrade;
+  // Populate category select on listing form
+  const catSel = document.getElementById('f-trade-category');
+  if (catSel && catSel.options.length <= 1) {
+    Object.keys(TRADE_CATEGORIES).forEach(cat => catSel.add(new Option(cat, cat)));
+  }
 }
 
 function applyFilters() {
@@ -1056,7 +1055,16 @@ function handleTradeSelect() {
   if (isNew) newInput.focus();
 }
 
-const TRADES_LIST = ['Air Conditioning','Appliance Repair','Builder / Contractor','Carpenter','Electrician','Handyman','Landscaper','Painter','Pest Control','Plumber','Pool Service','Roofer','Security','Tiler','Welder'];
+const TRADE_CATEGORIES = {
+  'Home & Building': ['Architect','Bricklayer','Builder / General Contractor','Carpenter','Ceiling & Partitioning','Concrete Contractor','Damp Proofing','Demolition','Drywaller','Fencer','Flooring Installer','Glazier','Insulation Installer','Plasterer','Roofer','Scaffolder','Stonemason','Tiler','Waterproofing'],
+  'Electrical & Tech': ['Alarm & Security Systems','AV & Home Automation','CCTV Installer','Data & Networking','Electrician','Electric Gate & Intercom','EV Charger Installer','Generator Installer','Solar Panel Installer'],
+  'Plumbing & HVAC': ['Air Conditioning & HVAC','Borehole & Water','Gas Fitter','Geyser & Hot Water','Irrigation & Sprinklers','Plumber','Pool Service','Water Filtration'],
+  'Finishing & Interior': ['Curtains & Blinds','Interior Designer','Kitchen Fitter','Painter','Upholsterer','Wallpaper Installer','Wardrobe & Built-ins'],
+  'Outdoor & Garden': ['Arborist / Tree Feller','Landscaper','Lawn Care','Paving & Driveways','Pest Control','Pressure Washing','Skip Hire'],
+  'Automotive': ['Auto Electrician','Auto Panel Beater','Car Audio & Accessories','Car Detailer','Mobile Mechanic','Roadworthy & Inspection','Tow Truck','Tyre Fitting','Windscreen Repair'],
+  'Appliances & Small Jobs': ['Appliance Repair','Handyman','Locksmith','Moving & Removals','Welder & Fabrication'],
+};
+const TRADES_LIST = Object.values(TRADE_CATEGORIES).flat();
 let selectedTrades = [];
 
 function toggleTradeDropdown() {
@@ -1076,12 +1084,27 @@ function closeTradeDropdown(e) {
   }
 }
 function renderTradeList() {
-  const allTrades = [...new Set([...TRADES_LIST, ...selectedTrades])].sort();
-  document.getElementById('f-trade-list').innerHTML = allTrades.map(t => `
-    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;font-size:14px;color:var(--charcoal-6);" onclick="event.stopPropagation()">
-      <input type="checkbox" value="${t}" ${selectedTrades.includes(t)?'checked':''} onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;">
-      ${t}
-    </label>`).join('');
+  const cat = document.getElementById('f-trade-category')?.value || '';
+  const customTrades = selectedTrades.filter(t => !TRADES_LIST.includes(t));
+  const categoriesToShow = cat ? { [cat]: TRADE_CATEGORIES[cat] } : TRADE_CATEGORIES;
+  let html = '';
+  for (const [catName, trades] of Object.entries(categoriesToShow)) {
+    html += `<div style="padding:5px 12px 3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--amber);background:var(--charcoal-3);">${catName}</div>`;
+    html += trades.map(t => `
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);" onclick="event.stopPropagation()">
+        <input type="checkbox" value="${t}" ${selectedTrades.includes(t)?'checked':''} onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;flex-shrink:0;">
+        <span style="color:var(--white);font-size:13px;">${t}</span>
+      </label>`).join('');
+  }
+  if (customTrades.length) {
+    html += `<div style="padding:5px 12px 3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--amber);background:var(--charcoal-3);">Custom</div>`;
+    html += customTrades.map(t => `
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;" onclick="event.stopPropagation()">
+        <input type="checkbox" value="${t}" checked onchange="toggleTrade('${t}')" style="accent-color:var(--amber);width:16px;height:16px;flex-shrink:0;">
+        <span style="color:var(--white);font-size:13px;">${t}</span>
+      </label>`).join('');
+  }
+  document.getElementById('f-trade-list').innerHTML = html;
 }
 function toggleTrade(trade) {
   if (selectedTrades.includes(trade)) selectedTrades = selectedTrades.filter(t => t !== trade);
