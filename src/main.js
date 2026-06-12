@@ -182,22 +182,22 @@ async function renderDashboard() {
 
     <div class="form-card" style="margin-bottom:1rem;">
       <h3 style="margin-bottom:1rem;">📊 Last 30 Days</h3>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
+      <div class="dash-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div style="font-size:1.8rem;font-weight:700;color:var(--white);">${views}</div>
-          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Profile Views</div>
+          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--white);">${views}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Views</div>
         </div>
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div style="font-size:1.8rem;font-weight:700;color:var(--white);">${phoneCl}</div>
-          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Phone Clicks</div>
+          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--white);">${phoneCl}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Calls</div>
         </div>
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div style="font-size:1.8rem;font-weight:700;color:#25D366;">${waCl}</div>
+          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:#25D366;">${waCl}</div>
           <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">WhatsApp</div>
         </div>
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div style="font-size:1.8rem;font-weight:700;color:var(--amber);">${emailCl}</div>
-          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Email Clicks</div>
+          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--amber);">${emailCl}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Email</div>
         </div>
       </div>
       <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;">
