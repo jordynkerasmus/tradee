@@ -552,7 +552,7 @@ function escHtml(str) {
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
-const VERIFIED_TICK = `<span class="verified-tick" title="Verified"><svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2l3.8 5.2 6.2-1.6-1.6 6.2L34 16l-5.2 3.8.6 6.5-6.2-2.2L20 30l-3.2-5.9-6.2 2.2.6-6.5L6 16l5.6-4.2-1.6-6.2 6.2 1.6z" fill="#22C55E"/><path d="M12 21l5.5 5.5 10.5-11" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+const VERIFIED_TICK = `<span class="verified-tick" title="Verified"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1l2.83 3.89 4.71-1.22-1.22 4.71L22.11 12l-3.79 2.62 1.22 4.71-4.71-1.22L12 23l-2.83-3.89-4.71 1.22 1.22-4.71L1.89 12l3.79-2.62-1.22-4.71 4.71 1.22z" fill="#22C55E"/><path d="M8 12.5l2.8 2.8 5.2-5.6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
 
 function tierBadge(tier) {
   if (tier === 'premium' || tier === 'verified') return VERIFIED_TICK
