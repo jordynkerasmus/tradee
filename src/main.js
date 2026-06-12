@@ -96,13 +96,38 @@ async function renderDashboard() {
   }
   editTier = listing.tier
 
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const { data: events } = await supabase.from('analytics_events').select('event_type').eq('listing_id', listing.id).gte('created_at', since)
-  const ev = events || []
-  const views = ev.filter(e => e.event_type === 'profile_view').length
-  const phoneCl = ev.filter(e => e.event_type === 'phone_click').length
-  const waCl = ev.filter(e => e.event_type === 'whatsapp_click').length
-  const emailCl = ev.filter(e => e.event_type === 'email_click').length
+  let _dashListingId = listing.id
+  let _dashCreatedAt = listing.created_at
+
+  async function fetchStats(period) {
+    let since
+    if (period === '7d') since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    else if (period === '30d') since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    else if (period === '6m') since = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000).toISOString()
+    else since = _dashCreatedAt
+    const { data: events } = await supabase.from('analytics_events').select('event_type').eq('listing_id', _dashListingId).gte('created_at', since)
+    const ev = events || []
+    return {
+      views: ev.filter(e => e.event_type === 'profile_view').length,
+      phoneCl: ev.filter(e => e.event_type === 'phone_click').length,
+      waCl: ev.filter(e => e.event_type === 'whatsapp_click').length,
+      emailCl: ev.filter(e => e.event_type === 'email_click').length,
+    }
+  }
+
+  window.switchStatPeriod = async function(btn, period) {
+    document.querySelectorAll('.stat-period-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    const label = { '7d': 'Last 7 Days', '30d': 'Last 30 Days', '6m': 'Last 6 Months', 'all': 'Since Sign Up' }
+    document.getElementById('stat-period-label').textContent = label[period]
+    const s = await fetchStats(period)
+    document.getElementById('stat-views').textContent = s.views
+    document.getElementById('stat-calls').textContent = s.phoneCl
+    document.getElementById('stat-wa').textContent = s.waCl
+    document.getElementById('stat-email').textContent = s.emailCl
+  }
+
+  const { views, phoneCl, waCl, emailCl } = await fetchStats('30d')
 
   const portfolio = listing.portfolio_photos || []
   const reviews = listing.reviews || []
@@ -180,22 +205,30 @@ async function renderDashboard() {
     </div>
 
     <div class="form-card" style="margin-bottom:1rem;">
-      <h3 style="margin-bottom:1rem;">📊 Last 30 Days</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+        <h3 style="margin:0;" id="stat-period-label">Last 30 Days</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="stat-period-btn" onclick="switchStatPeriod(this,'7d')">7 Days</button>
+          <button class="stat-period-btn active" onclick="switchStatPeriod(this,'30d')">30 Days</button>
+          <button class="stat-period-btn" onclick="switchStatPeriod(this,'6m')">6 Months</button>
+          <button class="stat-period-btn" onclick="switchStatPeriod(this,'all')">Since Sign Up</button>
+        </div>
+      </div>
       <div class="dash-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--white);">${views}</div>
+          <div id="stat-views" class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--white);">${views}</div>
           <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Views</div>
         </div>
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--white);">${phoneCl}</div>
+          <div id="stat-calls" class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--white);">${phoneCl}</div>
           <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Calls</div>
         </div>
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:#25D366;">${waCl}</div>
+          <div id="stat-wa" class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:#25D366;">${waCl}</div>
           <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">WhatsApp</div>
         </div>
         <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-          <div class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--amber);">${emailCl}</div>
+          <div id="stat-email" class="stat-num-lg" style="font-size:1.8rem;font-weight:700;color:var(--amber);">${emailCl}</div>
           <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Email</div>
         </div>
       </div>
