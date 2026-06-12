@@ -56,6 +56,8 @@ window.handleSignup = async function () {
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   const { error } = await supabase.auth.signUp({ email, password })
   if (error) { toast('Sign up failed: ' + error.message); return }
+  // Send welcome email via Edge Function
+  supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {})
   toast('Account created! You can now list your business.')
   window.showPage('list')
 }
@@ -905,6 +907,7 @@ window.submitListing = async function () {
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
     if (signUpError) { toast('Account error: ' + signUpError.message); return }
     userId = data.user?.id ?? null
+    supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {})
   }
 
   // Upload profile photo if provided
