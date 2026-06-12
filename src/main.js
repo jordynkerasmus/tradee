@@ -118,7 +118,7 @@ async function renderDashboard() {
   if (reviews.length > 0) health += 20
   if (listing.tier !== 'free') health += 10
   if (portfolio.length > 0) health += 10
-  const healthColor = health >= 80 ? '#22c55e' : health >= 50 ? '#F59E0B' : '#ef4444'
+  const healthColor = health >= 80 ? '#22c55e' : '#F59E0B'
   const healthLabel = health >= 80 ? 'Excellent' : health >= 50 ? 'Good' : 'Needs Work'
 
   const tips = []
