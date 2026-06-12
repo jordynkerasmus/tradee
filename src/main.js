@@ -169,10 +169,9 @@ async function renderDashboard() {
         <input type="file" id="dash-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="window.updatePhoto(this, ${listing.id})">
       </div>
       <div style="flex:1;">
-        <div class="profile-name">${escHtml(listing.name)}</div>
+        <div class="profile-name">${escHtml(listing.name)}${tierBadge(listing.tier)}</div>
         ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${escHtml(listing.contact_name)}</div>` : ''}
         <div class="profile-trade">${escHtml(listing.trade)}</div>
-        <div class="card-badges" style="margin-bottom:12px;">${tierBadge(listing.tier)}</div>
         <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${profileUrl(listing)}</span>
           <button class="btn btn-primary btn-sm" onclick="copyProfileLink(${listing.id})">🔗 Copy Link</button>
@@ -553,7 +552,7 @@ function escHtml(str) {
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
-const VERIFIED_TICK = `<span class="verified-tick" title="Verified"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#22C55E"/><path d="M4.5 8.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+const VERIFIED_TICK = `<span class="verified-tick" title="Verified"><svg width="16" height="16" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2l3.8 5.2 6.2-1.6-1.6 6.2L34 16l-5.2 3.8.6 6.5-6.2-2.2L20 30l-3.2-5.9-6.2 2.2.6-6.5L6 16l5.6-4.2-1.6-6.2 6.2 1.6z" fill="#22C55E"/><path d="M13 20.5l4.5 4.5 9.5-10" stroke="white" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
 
 function tierBadge(tier) {
   if (tier === 'premium' || tier === 'verified') return VERIFIED_TICK
@@ -1058,10 +1057,9 @@ function featuredCardHTML(l) {
     <div class="card-header" style="margin-right:70px;">
       <div class="card-avatar premium-av">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
-        <div class="card-name">${escHtml(l.name)}</div>
+        <div class="card-name">${escHtml(l.name)}${tierBadge(l.tier)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
         <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
     <div class="card-rating">
@@ -1101,10 +1099,9 @@ function cardHTML(l) {
     <div class="card-header">
       <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
-        <div class="card-name">${escHtml(l.name)}</div>
+        <div class="card-name">${escHtml(l.name)}${tierBadge(l.tier)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
         <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
     <div class="card-rating">
@@ -1201,10 +1198,9 @@ window.openProfile = async function (id) {
     <div class="profile-hero">
       <div class="profile-avatar">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;">
-        <div class="profile-name">${escHtml(l.name)}</div>
+        <div class="profile-name">${escHtml(l.name)}${tierBadge(l.tier)}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${escHtml(l.contact_name)}</div>` : ''}
         <div class="profile-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        <div class="card-badges" style="margin-bottom:12px;">${tierBadge(l.tier)}</div>
         <div class="profile-rating-row">
           <span class="profile-rating-big">${rd}</span>
           <div>
