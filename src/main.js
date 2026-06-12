@@ -9,7 +9,7 @@ let selectedTier = 'free'
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL || '').split(',').map(e => e.trim()).filter(Boolean)
 let editTier = 'free'
 let reviewingId = null
-let filterTrade = '', filterProvince = '', filterCity = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = ''
+let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = ''
 let selectedCities = []
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -556,8 +556,7 @@ function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 const VERIFIED_TICK = `<span class="verified-tick" title="Verified"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#22C55E"/><path d="M4.5 8.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
 
 function tierBadge(tier) {
-  if (tier === 'premium') return '<span class="badge badge-premium">Premium</span>' + VERIFIED_TICK
-  if (tier === 'verified') return VERIFIED_TICK
+  if (tier === 'premium' || tier === 'verified') return VERIFIED_TICK
   return ''
 }
 function toast(msg) {
@@ -832,7 +831,6 @@ function populateTradeFilter() {
 window.applyFilters = function () {
   filterTrade = document.getElementById('filter-trade').value
   filterProvince = document.getElementById('filter-province').value
-  filterTierVal = document.getElementById('filter-tier').value
   filterSort = document.getElementById('filter-sort').value
   renderDirectory()
 }
@@ -983,7 +981,6 @@ window.toggleFavsFilter = function () {
 function renderDirectory() {
   populateTradeFilter()
   document.getElementById('filter-province').value = filterProvince
-  document.getElementById('filter-tier').value = filterTierVal
   document.getElementById('filter-sort').value = filterSort
   const tierOrder = { premium: 0, verified: 1, free: 2 }
   const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1'
@@ -996,7 +993,6 @@ function renderDirectory() {
     }
     if (filterTrade && l.trade !== filterTrade) return false
     if (filterProvince && l.province !== filterProvince) return false
-    if (filterTierVal && l.tier !== filterTierVal) return false
     if (filterCity) {
       const listingCities = l.cities && l.cities.length ? l.cities : [l.city]
       if (!listingCities.some(c => c === filterCity)) return false
