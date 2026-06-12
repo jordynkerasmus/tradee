@@ -886,6 +886,18 @@ function renderMap() {
     `)
   })
 
+  // "You are here" pin
+  if (_nearMeActive && _userLat && _userLng) {
+    const youIcon = L.divIcon({
+      className: '',
+      html: '<div style="background:#fff;width:16px;height:16px;border-radius:50%;border:3px solid #F59E0B;box-shadow:0 0 10px rgba(245,158,11,0.8);"></div>',
+      iconSize: [16, 16], iconAnchor: [8, 8],
+    })
+    L.marker([_userLat, _userLng], { icon: youIcon }).addTo(_map)
+      .bindPopup('<div style="font-weight:700;color:#1C1917;font-size:13px;">📍 You are here</div>')
+    _map.setView([_userLat, _userLng], 10)
+  }
+
   setTimeout(() => _map.invalidateSize(), 100)
 }
 
@@ -923,6 +935,39 @@ window.geocodeEditLocation = async function () {
   }
 }
 
+// ── NEAR ME ───────────────────────────────────────────────
+let _userLat = null, _userLng = null, _nearMeActive = false
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
+window.toggleNearMe = function () {
+  const btn = document.getElementById('near-me-btn')
+  const status = document.getElementById('near-me-status')
+  if (_nearMeActive) {
+    _nearMeActive = false; _userLat = null; _userLng = null
+    if (btn) { btn.style.color = 'var(--charcoal-6)'; btn.style.borderColor = 'var(--charcoal-4)'; btn.textContent = '📍 Near Me' }
+    if (status) { status.style.display = 'none'; status.textContent = '' }
+    renderDirectory(); return
+  }
+  if (!navigator.geolocation) { toast('Your browser does not support location.'); return }
+  if (btn) btn.textContent = '📍 Locating...'
+  navigator.geolocation.getCurrentPosition(pos => {
+    _userLat = pos.coords.latitude; _userLng = pos.coords.longitude
+    _nearMeActive = true
+    if (btn) { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'var(--amber)'; btn.textContent = '📍 Near Me ✓' }
+    if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area. Switch to Map view to see them visually.' }
+    window.setDirView('map')
+    renderDirectory()
+  }, () => {
+    if (btn) btn.textContent = '📍 Near Me'
+    toast('Could not get your location — please allow location access and try again.')
+  })
+}
+
 window.toggleFavsFilter = function () {
   const btn = document.getElementById('fav-filter-btn')
   if (!btn) return
@@ -942,6 +987,11 @@ function renderDirectory() {
   const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1'
   let filtered = listings.filter(l => {
     if (showFavsOnly && !isFav(l.id)) return false
+    if (_nearMeActive && _userLat && _userLng) {
+      if (!l.lat || !l.lng) return false
+      const dist = haversineKm(_userLat, _userLng, l.lat, l.lng)
+      if (dist > (l.service_radius || 30)) return false
+    }
     if (filterTrade && l.trade !== filterTrade) return false
     if (filterProvince && l.province !== filterProvince) return false
     if (filterTierVal && l.tier !== filterTierVal) return false

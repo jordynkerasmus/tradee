@@ -371,7 +371,9 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <option value="reviews">Sort: Most Reviews</option>
       </select>
       <button id="fav-filter-btn" data-active="0" onclick="toggleFavsFilter()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">♡ Saved</button>
+      <button id="near-me-btn" onclick="toggleNearMe()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">📍 Near Me</button>
     </div>
+    <div id="near-me-status" style="display:none;font-size:13px;color:var(--amber);margin-bottom:1rem;"></div>
     <div class="card-grid" id="dir-cards"></div>
   </div>
 </div>
@@ -877,6 +879,42 @@ async function geocodeListingLocation() {
   }
 }
 
+// ── NEAR ME ───────────────────────────────────────────────
+let _userLat = null, _userLng = null, _nearMeActive = false;
+
+function toggleNearMe() {
+  const btn = document.getElementById('near-me-btn');
+  const status = document.getElementById('near-me-status');
+  if (_nearMeActive) {
+    _nearMeActive = false; _userLat = null; _userLng = null;
+    btn.style.color = 'var(--charcoal-6)'; btn.style.borderColor = 'var(--charcoal-4)';
+    btn.textContent = '📍 Near Me';
+    if (status) { status.style.display = 'none'; status.textContent = ''; }
+    renderDirectory();
+    return;
+  }
+  if (!navigator.geolocation) { alert('Your browser does not support location.'); return; }
+  btn.textContent = '📍 Locating...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    _userLat = pos.coords.latitude; _userLng = pos.coords.longitude;
+    _nearMeActive = true;
+    btn.style.color = 'var(--amber)'; btn.style.borderColor = 'var(--amber)';
+    btn.textContent = '📍 Near Me ✓';
+    if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area. Switch to Map view to see them visually.'; }
+    setDirView('map');
+    renderDirectory();
+  }, () => {
+    btn.textContent = '📍 Near Me';
+    alert('Could not get your location. Please allow location access and try again.');
+  });
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function toggleFavsFilter() {
   const btn=document.getElementById('fav-filter-btn');
   if (!btn) return;
@@ -975,6 +1013,11 @@ function renderDirectory() {
   const showFavsOnly=document.getElementById('fav-filter-btn')?.dataset.active==='1';
   let filtered=listings.filter(l=>{
     if (showFavsOnly && !isFav(l.id)) return false;
+    if (_nearMeActive && _userLat && _userLng) {
+      if (!l.lat || !l.lng) return false;
+      const dist = haversineKm(_userLat, _userLng, l.lat, l.lng);
+      if (dist > (l.service_radius || 30)) return false;
+    }
     if (filterTrade && l.trade!==filterTrade) return false;
     if (filterProvince && l.province!==filterProvince) return false;
     if (filterTierVal && l.tier!==filterTierVal) return false;
