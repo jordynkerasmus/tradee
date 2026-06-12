@@ -248,6 +248,32 @@ async function renderDashboard() {
           <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="edit-phone" value="${escHtml(listing.phone || '')}"></div>
           <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-email" type="email" value="${escHtml(listing.email || '')}"></div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Profile Photo</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            ${listing.photo_url ? `<img src="${listing.photo_url}" style="width:56px;height:56px;border-radius:var(--radius);object-fit:cover;">` : `<div style="width:56px;height:56px;border-radius:var(--radius);background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--amber);">${escHtml(listing.name.slice(0,2).toUpperCase())}</div>`}
+            <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:0.75rem 1rem;cursor:pointer;flex:1;text-align:center;" onclick="document.getElementById('edit-photo-input').click()">
+              <div style="font-size:13px;color:var(--charcoal-6);">📷 Upload new photo</div>
+            </div>
+          </div>
+          <input type="file" id="edit-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="previewEditPhoto(this)">
+          <div id="edit-photo-preview" style="font-size:12px;color:var(--charcoal-6);"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Trades</label>
+          <div style="font-size:12px;color:var(--charcoal-6);margin-bottom:6px;">Currently: <span style="color:var(--amber);">${(listing.trades && listing.trades.length ? listing.trades : [listing.trade]).join(', ')}</span></div>
+          <input class="form-input" id="edit-trades-text" value="${escHtml((listing.trades && listing.trades.length ? listing.trades : [listing.trade || '']).join(', '))}" placeholder="e.g. Plumber, Tiler, Waterproofing">
+          <div class="form-hint">Separate multiple trades with commas</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Province</label>
+            <select class="form-input" id="edit-province">
+              ${['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Free State','Northern Cape'].map(p => `<option value="${p}" ${listing.province === p ? 'selected' : ''}>${p}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Primary City</label><input class="form-input" id="edit-city" value="${escHtml(listing.city || '')}"></div>
+        </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
           <div class="form-group">
@@ -454,13 +480,41 @@ window.saveListing = async function (id) {
   const lat = parseFloat(document.getElementById('edit-lat')?.value) || null
   const lng = parseFloat(document.getElementById('edit-lng')?.value) || null
   const service_radius = parseInt(document.getElementById('edit-service-radius')?.value) || 30
-  const { error } = await supabase.from('listings').update({
-    name, contact_name, phone, email, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls, lat, lng, service_radius
-  }).eq('id', id).eq('user_id', currentUser.id)
+  const province = document.getElementById('edit-province')?.value || ''
+  const city = document.getElementById('edit-city')?.value.trim() || ''
+  const tradesRaw = document.getElementById('edit-trades-text')?.value || ''
+  const trades = tradesRaw.split(',').map(t => t.trim()).filter(Boolean)
+  const trade = trades[0] || ''
+
+  // Upload new profile photo if selected
+  let photo_url = undefined
+  const newPhoto = window.editPhotoFile
+  if (newPhoto) {
+    const photoPath = `${currentUser.id}/photo-${Date.now()}-${newPhoto.name}`
+    const { error: photoErr } = await supabase.storage.from('certifications-registrations').upload(photoPath, newPhoto)
+    if (!photoErr) {
+      const { data: photoUrlData } = supabase.storage.from('certifications-registrations').getPublicUrl(photoPath)
+      photo_url = photoUrlData.publicUrl
+    }
+    window.editPhotoFile = null
+  }
+
+  const updateData = { name, contact_name, phone, email, trade, trades, province, city, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls, lat, lng, service_radius }
+  if (photo_url !== undefined) updateData.photo_url = photo_url
+
+  const { error } = await supabase.from('listings').update(updateData).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving: ' + error.message); return }
   toast('Listing updated!')
   await loadListings()
   renderDashboard()
+}
+
+window.previewEditPhoto = function (input) {
+  const file = input.files[0]
+  if (!file) return
+  window.editPhotoFile = file
+  const preview = document.getElementById('edit-photo-preview')
+  if (preview) preview.textContent = `✓ Ready to upload: ${file.name}`
 }
 
 window.previewEditCerts = function (files) {
