@@ -1244,12 +1244,12 @@ window.openProfile = async function (id) {
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          ${l.phone ? `<a href="https://wa.me/${l.phone.replace(/\D/g,'')}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">💬 WhatsApp</a>` : ''}
-          ${l.phone ? `<a href="tel:${l.phone}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">📞 Call</a>` : ''}
-          ${l.email ? `<a href="mailto:${l.email}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">✉ Email</a>` : ''}
+          ${l.phone ? `<a href="https://wa.me/${l.phone.replace(/\D/g,'')}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">WhatsApp</a>` : ''}
+          ${l.phone ? `<a href="tel:${l.phone}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">Call</a>` : ''}
+          ${l.email ? `<a href="mailto:${l.email}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">Email</a>` : ''}
           <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
-          <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">🔗 Share</button>
-          <button class="btn btn-outline btn-sm" onclick="goBack()">← Back</button>
+          <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">Share</button>
+          <button class="btn btn-outline btn-sm" onclick="goBack()">Back</button>
         </div>
       </div>
     </div>
