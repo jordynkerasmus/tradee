@@ -355,6 +355,25 @@ function renderHome() {
 }
 
 window.filterByTrade = function (trade) { filterTrade = trade; document.getElementById('filter-trade').value = trade; showPage('directory') }
+window.updateHeroTrades = function () {
+  const cat = document.getElementById('hero-category').value
+  const tradeSelect = document.getElementById('hero-search')
+  tradeSelect.innerHTML = '<option value="">All Trades</option>'
+  const trades = cat ? TRADE_CATEGORIES[cat] : Object.values(TRADE_CATEGORIES).flat()
+  trades.forEach(t => tradeSelect.add(new Option(t, t)))
+}
+window.updateFilterTrades = function () {
+  const cat = document.getElementById('filter-category').value
+  const tradeSelect = document.getElementById('filter-trade')
+  if (cat) {
+    tradeSelect.innerHTML = '<option value="">All Trades</option>'
+    TRADE_CATEGORIES[cat].forEach(t => tradeSelect.add(new Option(t, t)))
+  } else {
+    tradeSelect.innerHTML = '<option value="">All Trades</option>' + buildTradeOptgroups()
+  }
+  tradeSelect.value = ''
+  window.applyFilters()
+}
 window.heroSearch = function () {
   filterTrade = document.getElementById('hero-search').value
   filterProvince = document.getElementById('hero-province').value
@@ -501,18 +520,25 @@ function buildTradeOptgroups() {
     `<optgroup label="${cat}">${trades.map(t => `<option value="${t}">${t}</option>`).join('')}</optgroup>`
   ).join('')
 }
+function populateCategorySelects() {
+  const cats = Object.keys(TRADE_CATEGORIES)
+  ;['hero-category', 'filter-category', 'f-trade-category'].forEach(id => {
+    const el = document.getElementById(id)
+    if (!el) return
+    el.innerHTML = '<option value="">All Categories</option>'
+    cats.forEach(cat => el.add(new Option(cat, cat)))
+  })
+}
 function populateTradeFilter() {
+  populateCategorySelects()
   const groups = buildTradeOptgroups()
   const base = '<option value="">All Trades</option>'
-  ;['filter-trade', 'rank-trade-filter', 'hero-search'].forEach(id => {
+  ;['filter-trade', 'rank-trade-filter'].forEach(id => {
     const el = document.getElementById(id)
     if (el) el.innerHTML = base + groups
   })
   document.getElementById('filter-trade').value = filterTrade
-  const catSel = document.getElementById('f-trade-category')
-  if (catSel && catSel.options.length <= 1) {
-    Object.keys(TRADE_CATEGORIES).forEach(cat => catSel.add(new Option(cat, cat)))
-  }
+  window.updateHeroTrades()
 }
 
 window.applyFilters = function () {

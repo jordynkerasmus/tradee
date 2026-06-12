@@ -237,7 +237,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <h1>FIND THE<br><span class="accent">RIGHT</span><br>TRADESMAN</h1>
     <p class="hero-sub">Verified electricians, plumbers, builders and more — browse, compare, and book with confidence.</p>
     <div class="search-wrap">
-      <select id="hero-search" style="flex:1;border-left:none;">
+      <select id="hero-category" onchange="updateHeroTrades()" style="flex:1;border-left:none;">
+        <option value="">All Categories</option>
+      </select>
+      <select id="hero-search" style="flex:1;">
         <option value="">All Trades</option>
       </select>
       <select id="hero-province" onchange="updateHeroCities()">
@@ -276,6 +279,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
     </div>
     <div class="filters">
+      <select id="filter-category" onchange="updateFilterTrades()"><option value="">All Categories</option></select>
       <select id="filter-trade" onchange="applyFilters()"><option value="">All Trades</option></select>
       <select id="filter-province" onchange="applyFilters()">
         <option value="">All Provinces</option>
@@ -658,6 +662,25 @@ function renderHome() {
 }
 
 function filterByTrade(trade) { filterTrade=trade; document.getElementById('filter-trade').value=trade; showPage('directory'); }
+function updateHeroTrades() {
+  const cat = document.getElementById('hero-category').value;
+  const tradeSelect = document.getElementById('hero-search');
+  tradeSelect.innerHTML = '<option value="">All Trades</option>';
+  const trades = cat ? TRADE_CATEGORIES[cat] : Object.values(TRADE_CATEGORIES).flat();
+  trades.forEach(t => tradeSelect.add(new Option(t, t)));
+}
+function updateFilterTrades() {
+  const cat = document.getElementById('filter-category').value;
+  const tradeSelect = document.getElementById('filter-trade');
+  if (cat) {
+    tradeSelect.innerHTML = '<option value="">All Trades</option>';
+    TRADE_CATEGORIES[cat].forEach(t => tradeSelect.add(new Option(t, t)));
+  } else {
+    tradeSelect.innerHTML = '<option value="">All Trades</option>' + buildTradeOptgroups();
+  }
+  tradeSelect.value = '';
+  applyFilters();
+}
 function heroSearch() {
   filterTrade=document.getElementById('hero-search').value;
   filterProvince=document.getElementById('hero-province').value;
@@ -671,19 +694,28 @@ function buildTradeOptgroups() {
     `<optgroup label="${cat}">${trades.map(t=>`<option value="${t}">${t}</option>`).join('')}</optgroup>`
   ).join('');
 }
+function populateCategorySelects() {
+  const cats = Object.keys(TRADE_CATEGORIES);
+  ['hero-category','filter-category','f-trade-category'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const placeholder = id === 'f-trade-category' ? 'All Categories' : 'All Categories';
+    el.innerHTML = `<option value="">${placeholder}</option>`;
+    cats.forEach(cat => el.add(new Option(cat, cat)));
+  });
+}
 function populateTradeFilter() {
+  populateCategorySelects();
+  // Directory trade filter uses optgroups (flat browse)
   const groups = buildTradeOptgroups();
   const base = '<option value="">All Trades</option>';
-  ['filter-trade','rank-trade-filter','hero-search'].forEach(id => {
+  ['filter-trade','rank-trade-filter'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) { el.innerHTML = base + groups; }
+    if (el) el.innerHTML = base + groups;
   });
   document.getElementById('filter-trade').value = filterTrade;
-  // Populate category select on listing form
-  const catSel = document.getElementById('f-trade-category');
-  if (catSel && catSel.options.length <= 1) {
-    Object.keys(TRADE_CATEGORIES).forEach(cat => catSel.add(new Option(cat, cat)));
-  }
+  // Hero trade dropdown starts flat (all trades), filtered on category change
+  updateHeroTrades();
 }
 
 function applyFilters() {
