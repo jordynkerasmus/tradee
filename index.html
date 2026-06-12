@@ -36,8 +36,9 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'DM Sans', sans-serif; background: var(--charcoal); color: var(--white); min-height: 100vh; font-size: 15px; line-height: 1.6; }
-nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
-.safe-area-bar { height: env(safe-area-inset-top); background: var(--charcoal-2); position: sticky; top: 0; z-index: 101; }
+nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 100; }
+.safe-area-bar { height: env(safe-area-inset-top); background: var(--charcoal-2); position: fixed; top: 0; left: 0; right: 0; z-index: 101; }
+.nav-spacer { height: calc(64px + env(safe-area-inset-top)); }
 .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.08em; color: var(--amber); text-decoration: none; cursor: pointer; }
 .nav-logo span { color: var(--white); }
 .nav-links { display: flex; gap: 2rem; align-items: center; }
@@ -245,6 +246,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <button id="nav-mobile-auth" onclick="(currentUser?showPage('dashboard'):showPage('login'));closeMobileMenu()">My Listing</button>
   <button id="nav-mobile-install" onclick="showInstallPrompt();closeMobileMenu()" style="color:var(--amber);">📲 Install App</button>
 </div>
+<div class="nav-spacer"></div>
 
 <div id="toast"></div>
 
