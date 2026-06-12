@@ -683,7 +683,7 @@ window.openProfile = async function (id) {
       <div class="review-item">
         <div class="review-header">
           <span class="reviewer-name">${r.reviewer_name}</span>
-          <span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' })}</span>
+          <span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
         <div class="review-stars" style="margin-bottom:8px;">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)} <span style="font-size:12px;color:var(--charcoal-6);margin-left:4px;">${r.stars}.0 overall</span></div>
         ${r.quality ? `
