@@ -200,6 +200,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   .stats-bar { gap: 1.5rem; }
   .nav-links { display: none; }
   .nav-hamburger { display: flex !important; }
+  .nav-list-mobile { display: inline-flex !important; padding: 0.4rem 0.85rem; font-size: 13px; }
   .nav-mobile-menu { display: block; }
   .filters { flex-direction: column !important; }
   .filters select, .filters .city-dropdown-wrapper { width: 100% !important; box-sizing: border-box !important; min-width: 0 !important; }
@@ -210,6 +211,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   body { overflow-x: hidden; }
 }
 .nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; background: none; border: none; }
+.nav-list-mobile { display: none; }
 .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--amber); border-radius: 2px; transition: all 0.2s; }
 .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-hamburger.open span:nth-child(2) { opacity: 0; }
@@ -230,6 +232,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">Trades Login</button>
     <button class="btn btn-primary btn-sm" onclick="showPage('list')">List Your Business</button>
   </div>
+  <button class="btn btn-primary btn-sm nav-list-mobile" onclick="showPage('list')">List Your Business</button>
   <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()">
     <span></span><span></span><span></span>
   </button>
@@ -238,7 +241,6 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <a onclick="showPage('directory');closeMobileMenu()">Directory</a>
   <a onclick="showPage('rankings');closeMobileMenu()">Rankings</a>
   <a id="nav-mobile-dashboard" onclick="showPage('dashboard');closeMobileMenu()" style="display:none;">My Listing</a>
-  <a onclick="showPage('list');closeMobileMenu()">List Your Business</a>
   <button id="nav-mobile-auth" onclick="(currentUser?showPage('dashboard'):showPage('login'));closeMobileMenu()">My Listing</button>
   <button id="nav-mobile-install" onclick="showInstallPrompt();closeMobileMenu()" style="color:var(--amber);">📲 Install App</button>
 </div>
