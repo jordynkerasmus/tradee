@@ -6,6 +6,7 @@ let listings = []
 let currentProfile = null
 let currentUser = null
 let selectedTier = 'free'
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL || '').split(',').map(e => e.trim()).filter(Boolean)
 let editTier = 'free'
 let reviewingId = null
 let filterTrade = '', filterProvince = '', filterCity = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = ''
@@ -26,14 +27,17 @@ function updateNavForAuth() {
   const authBtn = document.getElementById('nav-auth-btn')
   const dashBtn = document.getElementById('nav-dashboard-btn')
   if (!authBtn) return
+  const adminLink = document.getElementById('nav-admin')
   if (currentUser) {
     authBtn.textContent = 'Log Out'
     authBtn.onclick = handleSignOut
     if (dashBtn) dashBtn.style.display = 'inline-flex'
+    if (adminLink) adminLink.style.display = ADMIN_EMAILS.includes(currentUser.email) ? 'inline' : 'none'
   } else {
     authBtn.textContent = 'Trades Login'
     authBtn.onclick = () => window.showPage('login')
     if (dashBtn) dashBtn.style.display = 'none'
+    if (adminLink) adminLink.style.display = 'none'
   }
 }
 
@@ -91,6 +95,72 @@ async function renderDashboard() {
     return
   }
   editTier = listing.tier
+
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: events } = await supabase.from('analytics_events').select('event_type').eq('listing_id', listing.id).gte('created_at', since)
+  const ev = events || []
+  const views = ev.filter(e => e.event_type === 'profile_view').length
+  const phoneCl = ev.filter(e => e.event_type === 'phone_click').length
+  const waCl = ev.filter(e => e.event_type === 'whatsapp_click').length
+  const emailCl = ev.filter(e => e.event_type === 'email_click').length
+
+  const portfolio = listing.portfolio_photos || []
+  const reviews = listing.reviews || []
+  const rating = avgRating(listing)
+
+  let health = 0
+  if (listing.photo_url) health += 20
+  if (listing.description && listing.description.length > 30) health += 15
+  if (listing.phone) health += 10
+  if (listing.email) health += 10
+  if (listing.credentials && listing.credentials.length > 0) health += 10
+  if (listing.years_experience > 0) health += 5
+  if (reviews.length > 0) health += 20
+  if (listing.tier !== 'free') health += 10
+  if (portfolio.length > 0) health += 10
+  const healthColor = health >= 80 ? '#22c55e' : health >= 50 ? '#F59E0B' : '#ef4444'
+  const healthLabel = health >= 80 ? 'Excellent' : health >= 50 ? 'Good' : 'Needs Work'
+
+  const tips = []
+  if (!listing.photo_url) tips.push('Add a profile photo (+20pts)')
+  if (!listing.description || listing.description.length <= 30) tips.push('Write a description (+15pts)')
+  if (!listing.phone) tips.push('Add phone number (+10pts)')
+  if (!listing.email) tips.push('Add email address (+10pts)')
+  if (!listing.credentials || listing.credentials.length === 0) tips.push('Add credentials (+10pts)')
+  if (portfolio.length === 0) tips.push('Upload portfolio photos (+10pts)')
+  if (listing.tier === 'free') tips.push('Upgrade plan (+10pts)')
+
+  const reviewsListHTML = reviews.length
+    ? reviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(r => `
+    <div style="background:var(--charcoal-2);border:1px solid var(--charcoal-3);border-radius:var(--radius);padding:1rem;margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+        <div>
+          <span style="font-weight:600;color:var(--white);">${escHtml(r.reviewer_name)}</span>
+          <span style="font-size:12px;color:var(--charcoal-6);margin-left:8px;">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        </div>
+        <div style="color:var(--amber);font-size:14px;">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</div>
+      </div>
+      <p style="font-size:14px;color:var(--charcoal-7);margin:0 0 10px;">${escHtml(r.review_text)}</p>
+      ${r.reply_text ? `
+      <div style="background:var(--charcoal-3);border-left:3px solid var(--amber);border-radius:0 var(--radius) var(--radius) 0;padding:8px 12px;font-size:13px;color:var(--charcoal-7);">
+        <div style="font-weight:600;color:var(--amber);font-size:11px;margin-bottom:4px;">YOUR REPLY</div>
+        ${escHtml(r.reply_text)}
+      </div>` : `
+      <div id="reply-section-${r.id}">
+        <button class="btn btn-outline btn-sm" onclick="showReplyForm(${r.id})">↩ Reply</button>
+      </div>`}
+    </div>`).join('')
+    : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — share your profile link with past clients!</p>'
+
+  const portfolioHTML = portfolio.length
+    ? portfolio.map((p, i) => `
+    <div style="position:relative;aspect-ratio:1;border-radius:var(--radius);overflow:hidden;background:var(--charcoal-3);">
+      <img src="${escHtml(p.url)}" style="width:100%;height:100%;object-fit:cover;">
+      ${p.caption ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.65);padding:4px 8px;font-size:11px;color:#fff;">${escHtml(p.caption)}</div>` : ''}
+      <button onclick="removePortfolioPhoto(${listing.id},${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.7);border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;">×</button>
+    </div>`).join('')
+    : '<p style="color:var(--charcoal-6);font-size:14px;">No photos yet. Upload before/after shots and completed work to build client trust.</p>'
+
   el.innerHTML = `
     <div class="profile-hero" style="margin-bottom:1.5rem;">
       <div style="position:relative;display:inline-block;">
@@ -99,51 +169,110 @@ async function renderDashboard() {
         <input type="file" id="dash-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="window.updatePhoto(this, ${listing.id})">
       </div>
       <div style="flex:1;">
-        <div class="profile-name">${listing.name}</div>
-        ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${listing.contact_name}</div>` : ''}
-        <div class="profile-trade">${listing.trade}</div>
+        <div class="profile-name">${escHtml(listing.name)}</div>
+        ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${escHtml(listing.contact_name)}</div>` : ''}
+        <div class="profile-trade">${escHtml(listing.trade)}</div>
         <div class="card-badges" style="margin-bottom:12px;">${tierBadge(listing.tier)}</div>
         <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${window.location.origin}/profile/${listing.id}</span>
           <button class="btn btn-primary btn-sm" onclick="copyProfileLink(${listing.id})">🔗 Copy Link</button>
         </div>
-        <div style="font-size:12px;color:var(--charcoal-6);margin-top:6px;">Share this link with your clients so they can find and review you.</div>
       </div>
     </div>
 
-    <div class="form-card">
-      <h3>Edit Your Details</h3>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="edit-business" value="${listing.name}"></div>
-        <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="edit-contact" value="${listing.contact_name || ''}"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="edit-phone" value="${listing.phone || ''}"></div>
-        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-email" type="email" value="${listing.email || ''}"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
-        <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" value="${listing.rate === -1 ? 'N/A' : listing.rate}" placeholder="e.g. 650 or N/A"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${listing.description || ''}</textarea></div>
-      <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${listing.credentials ? listing.credentials.join(', ') : ''}"><div class="form-hint">Separate with commas</div></div>
-      <div class="form-group"><label class="form-label">Years Experience</label><input class="form-input" id="edit-years" type="number" value="${listing.years_experience || 0}"></div>
-      <div class="form-group">
-        <label class="form-label">Upload New Certificates</label>
-        <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;" onclick="document.getElementById('edit-cert-files').click()">
-          <div style="font-size:14px;color:var(--charcoal-6);">📄 Click to upload PDF, JPG or PNG</div>
+    <div class="form-card" style="margin-bottom:1rem;">
+      <h3 style="margin-bottom:1rem;">📊 Last 30 Days</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">
+        <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--white);">${views}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Profile Views</div>
         </div>
-        <input type="file" id="edit-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewEditCerts(this.files)">
-        <div id="edit-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
-        ${listing.certificate_urls && listing.certificate_urls.length ? `
-        <div style="margin-top:1rem;">
-          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded Certificates</div>
-          ${listing.certificate_urls.map((url, i) => `
-            <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;margin-bottom:6px;">
-              <span style="font-size:18px;">${url.includes('.pdf') ? '📄' : '🖼️'}</span>
-              <a href="${url}" target="_blank" style="flex:1;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Certificate ${i + 1}</a>
-            </div>`).join('')}
-        </div>` : ''}
+        <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--white);">${phoneCl}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Phone Clicks</div>
+        </div>
+        <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:1.8rem;font-weight:700;color:#25D366;">${waCl}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">WhatsApp</div>
+        </div>
+        <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--amber);">${emailCl}</div>
+          <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">Email Clicks</div>
+        </div>
+      </div>
+      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Listing Health — ${healthLabel}</div>
+            <div style="background:var(--charcoal-4);border-radius:100px;height:6px;overflow:hidden;">
+              <div style="background:${healthColor};height:100%;width:${health}%;border-radius:100px;"></div>
+            </div>
+          </div>
+          <div style="font-size:1.5rem;font-weight:700;color:${healthColor};">${health}<span style="font-size:12px;">/100</span></div>
+        </div>
+        ${tips.length ? `<div style="margin-top:8px;font-size:12px;color:var(--charcoal-6);">${tips.map(t => '• ' + t).join(' &nbsp;')}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="form-card" style="margin-bottom:1rem;">
+      <h3 style="margin-bottom:1rem;">⭐ Client Reviews (${reviews.length})</h3>
+      ${reviews.length ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;background:var(--charcoal-3);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:2.5rem;font-weight:800;color:var(--amber);">${rating > 0 ? rating.toFixed(1) : '—'}</div>
+        <div>
+          <div style="font-size:18px;color:var(--amber);">${starsHTML(rating)}</div>
+          <div style="font-size:12px;color:var(--charcoal-6);">${reviews.length} review${reviews.length !== 1 ? 's' : ''}</div>
+        </div>
+      </div>` : ''}
+      <div id="dash-reviews-list">${reviewsListHTML}</div>
+    </div>
+
+    <div class="form-card" style="margin-bottom:1rem;">
+      <h3 style="margin-bottom:0.5rem;">📸 Portfolio Photos</h3>
+      <p style="font-size:13px;color:var(--charcoal-6);margin-bottom:1rem;">Upload before/after shots and completed work. Max 10MB per photo.</p>
+      <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;margin-bottom:1rem;" onclick="document.getElementById('portfolio-input').click()">
+        <div style="font-size:14px;color:var(--charcoal-6);">📷 Click to upload photos</div>
+        <div style="font-size:12px;color:var(--charcoal-6);margin-top:4px;">JPG, PNG · Max 10MB each</div>
+      </div>
+      <input type="file" id="portfolio-input" multiple accept=".jpg,.jpeg,.png" style="display:none;" onchange="uploadPortfolioPhotos(this, ${listing.id})">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;">${portfolioHTML}</div>
+    </div>
+
+    <div class="form-card">
+      <h3 style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onclick="const ed=document.getElementById('edit-form-body');ed.style.display=ed.style.display==='none'?'block':'none'">Edit Your Details <span style="font-size:13px;color:var(--charcoal-6);">▼ expand</span></h3>
+      <div id="edit-form-body" style="display:none;">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="edit-business" value="${escHtml(listing.name)}"></div>
+          <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="edit-contact" value="${escHtml(listing.contact_name || '')}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="edit-phone" value="${escHtml(listing.phone || '')}"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-email" type="email" value="${escHtml(listing.email || '')}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
+          <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" value="${listing.rate === -1 ? 'N/A' : listing.rate}" placeholder="e.g. 650 or N/A"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${escHtml(listing.description || '')}</textarea></div>
+        <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${escHtml(listing.credentials ? listing.credentials.join(', ') : '')}"><div class="form-hint">Separate with commas</div></div>
+        <div class="form-group"><label class="form-label">Years Experience</label><input class="form-input" id="edit-years" type="number" value="${listing.years_experience || 0}"></div>
+        <div class="form-group">
+          <label class="form-label">Upload New Certificates</label>
+          <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;" onclick="document.getElementById('edit-cert-files').click()">
+            <div style="font-size:14px;color:var(--charcoal-6);">📄 Click to upload PDF, JPG or PNG</div>
+          </div>
+          <input type="file" id="edit-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewEditCerts(this.files)">
+          <div id="edit-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
+          ${listing.certificate_urls && listing.certificate_urls.length ? `
+          <div style="margin-top:1rem;">
+            <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded Certificates</div>
+            ${listing.certificate_urls.map((url, i) => `
+              <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;margin-bottom:6px;">
+                <span style="font-size:18px;">${url.includes('.pdf') ? '📄' : '🖼️'}</span>
+                <a href="${url}" target="_blank" style="flex:1;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Certificate ${i + 1}</a>
+              </div>`).join('')}
+          </div>` : ''}
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="saveListing(${listing.id})">Save Changes →</button>
       </div>
     </div>
 
@@ -151,49 +280,86 @@ async function renderDashboard() {
       <h3>Subscription Plan</h3>
       <div class="tier-grid">
         <div class="tier-card ${editTier === 'free' ? 'selected' : ''}" id="edit-tier-free" onclick="selectEditTier('free')">
-          <div class="tier-name">Standard</div>
-          <div class="tier-price">R0<span>/mo</span></div>
-          <div class="tier-desc">Basic listing</div>
+          <div class="tier-name">Standard</div><div class="tier-price">R0<span>/mo</span></div>
           <ul class="tier-features">
-            <li><span class="tick">✓</span> Basic profile</li>
-            <li><span class="tick">✓</span> Client reviews</li>
-            <li><span class="cross">✗</span> Priority ranking</li>
-            <li><span class="cross">✗</span> Verified badge</li>
-            <li><span class="cross">✗</span> Featured placement</li>
+            <li><span class="tick">✓</span> Basic profile</li><li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="cross">✗</span> Priority ranking</li><li><span class="cross">✗</span> Verified badge</li><li><span class="cross">✗</span> Featured placement</li>
           </ul>
         </div>
         <div class="tier-card featured ${editTier === 'verified' ? 'selected' : ''}" id="edit-tier-verified" onclick="selectEditTier('verified')">
-          <div class="popular-tag">Most Popular</div>
-          <div class="tier-name">Verified</div>
-          <div class="tier-price">R149<span>/mo</span></div>
-          <div class="tier-desc">Stand out with a verified badge</div>
+          <div class="popular-tag">Most Popular</div><div class="tier-name">Verified</div><div class="tier-price">R149<span>/mo</span></div>
           <ul class="tier-features">
-            <li><span class="tick">✓</span> Basic profile</li>
-            <li><span class="tick">✓</span> Client reviews</li>
-            <li><span class="tick">✓</span> Priority ranking</li>
-            <li><span class="tick">✓</span> Verified badge</li>
-            <li><span class="cross">✗</span> Featured placement</li>
+            <li><span class="tick">✓</span> Basic profile</li><li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="tick">✓</span> Priority ranking</li><li><span class="tick">✓</span> Verified badge</li><li><span class="cross">✗</span> Featured placement</li>
           </ul>
         </div>
         <div class="tier-card ${editTier === 'premium' ? 'selected' : ''}" id="edit-tier-premium" onclick="selectEditTier('premium')">
-          <div class="tier-name">Premium</div>
-          <div class="tier-price">R249<span>/mo</span></div>
-          <div class="tier-desc">Maximum visibility</div>
+          <div class="tier-name">Premium</div><div class="tier-price">R249<span>/mo</span></div>
           <ul class="tier-features">
-            <li><span class="tick">✓</span> Basic profile</li>
-            <li><span class="tick">✓</span> Client reviews</li>
-            <li><span class="tick">✓</span> Priority ranking</li>
-            <li><span class="tick">✓</span> Verified badge</li>
-            <li><span class="tick">✓</span> Featured placement</li>
+            <li><span class="tick">✓</span> Basic profile</li><li><span class="tick">✓</span> Client reviews</li>
+            <li><span class="tick">✓</span> Priority ranking</li><li><span class="tick">✓</span> Verified badge</li><li><span class="tick">✓</span> Featured placement</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="saveListing(${listing.id})">Save Changes →</button>
     <div style="margin-top:1rem;text-align:center;">
       <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="deleteListing(${listing.id})">Delete My Listing</button>
     </div>`
+}
+
+window.showReplyForm = function (reviewId) {
+  const section = document.getElementById('reply-section-' + reviewId)
+  if (!section) return
+  section.innerHTML = `
+    <textarea id="reply-text-${reviewId}" class="form-textarea" style="margin-top:8px;min-height:80px;" placeholder="Write your reply..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-primary btn-sm" onclick="submitReply(${reviewId})">Submit Reply</button>
+      <button class="btn btn-outline btn-sm" onclick="renderDashboard()">Cancel</button>
+    </div>`
+}
+
+window.submitReply = async function (reviewId) {
+  const text = document.getElementById('reply-text-' + reviewId)?.value.trim()
+  if (!text) { toast('Please write a reply.'); return }
+  const { error } = await supabase.from('reviews').update({ reply_text: text, reply_at: new Date().toISOString() }).eq('id', reviewId)
+  if (error) { toast('Error saving reply.'); return }
+  toast('Reply saved!')
+  renderDashboard()
+}
+
+window.uploadPortfolioPhotos = async function (input, listingId) {
+  const MAX = 10 * 1024 * 1024
+  const files = Array.from(input.files).filter(f => {
+    if (f.size > MAX) { toast(`${f.name} is over 10MB and was skipped.`); return false }
+    return true
+  })
+  if (!files.length) return
+  toast('Uploading photos...')
+  const { data: existing } = await supabase.from('listings').select('portfolio_photos').eq('id', listingId).single()
+  const portfolio = existing?.portfolio_photos || []
+  for (const file of files) {
+    const path = `${currentUser.id}/portfolio-${Date.now()}-${file.name}`
+    const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
+      portfolio.push({ url: urlData.publicUrl, caption: '' })
+    }
+  }
+  await supabase.from('listings').update({ portfolio_photos: portfolio }).eq('id', listingId).eq('user_id', currentUser.id)
+  toast('Photos uploaded!')
+  await loadListings()
+  renderDashboard()
+}
+
+window.removePortfolioPhoto = async function (listingId, index) {
+  const { data: existing } = await supabase.from('listings').select('portfolio_photos').eq('id', listingId).single()
+  const portfolio = existing?.portfolio_photos || []
+  portfolio.splice(index, 1)
+  await supabase.from('listings').update({ portfolio_photos: portfolio }).eq('id', listingId).eq('user_id', currentUser.id)
+  toast('Photo removed.')
+  await loadListings()
+  renderDashboard()
 }
 
 window.selectEditTier = function (tier) {
@@ -295,6 +461,19 @@ function toast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show')
   setTimeout(() => t.classList.remove('show'), 3000)
 }
+function getFavs() { return JSON.parse(localStorage.getItem('tradee_favs') || '[]') }
+function isFav(id) { return getFavs().includes(id) }
+window.toggleFav = function (id, e) {
+  if (e) e.stopPropagation()
+  const favs = getFavs()
+  const idx = favs.indexOf(id)
+  if (idx >= 0) favs.splice(idx, 1); else favs.push(id)
+  localStorage.setItem('tradee_favs', JSON.stringify(favs))
+  document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(btn => {
+    btn.textContent = isFav(id) ? '♥' : '♡'
+    btn.style.color = isFav(id) ? '#ef4444' : 'var(--charcoal-6)'
+  })
+}
 function avgRating(l) {
   if (l.rating_avg && l.rating_avg > 0) return parseFloat(l.rating_avg)
   if (l.reviews && l.reviews.length) return l.reviews.reduce((s, r) => s + r.stars, 0) / l.reviews.length
@@ -326,6 +505,7 @@ window.showPage = function (name) {
   if (name === 'directory') renderDirectory()
   if (name === 'rankings') renderRankings()
   if (name === 'dashboard') renderDashboard()
+  if (name === 'admin') renderAdmin()
   if (name === 'list') {
     const s1 = document.getElementById('list-step-1')
     const s2 = document.getElementById('list-step-2')
@@ -554,14 +734,25 @@ window.applyFilters = function () {
   renderDirectory()
 }
 
+window.toggleFavsFilter = function () {
+  const btn = document.getElementById('fav-filter-btn')
+  if (!btn) return
+  const active = btn.dataset.active === '1'
+  btn.dataset.active = active ? '0' : '1'
+  btn.style.color = active ? 'var(--charcoal-6)' : '#ef4444'
+  btn.style.borderColor = active ? 'var(--charcoal-4)' : '#ef4444'
+  renderDirectory()
+}
+
 function renderDirectory() {
   populateTradeFilter()
   document.getElementById('filter-province').value = filterProvince
   document.getElementById('filter-tier').value = filterTierVal
   document.getElementById('filter-sort').value = filterSort
   const tierOrder = { premium: 0, verified: 1, free: 2 }
+  const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1'
   let filtered = listings.filter(l => {
-
+    if (showFavsOnly && !isFav(l.id)) return false
     if (filterTrade && l.trade !== filterTrade) return false
     if (filterProvince && l.province !== filterProvince) return false
     if (filterTierVal && l.tier !== filterTierVal) return false
@@ -653,7 +844,10 @@ function featuredCardHTML(l) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
       </div>
-      <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? '#ef4444' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
+        <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
+      </div>
     </div>
   </div>`
 }
@@ -691,7 +885,10 @@ function cardHTML(l) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         ${escHtml(cityStr)}, ${escHtml(l.province)}
       </div>
-      <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? '#ef4444' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
+        <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
+      </div>
     </div>
   </div>`
 }
@@ -720,6 +917,18 @@ window.openProfile = async function (id) {
           <span style="margin-left:auto;font-size:12px;color:var(--charcoal-6);">↗ Open</span>
         </a>`).join('')
     : ''
+  const portfolio = l.portfolio_photos || []
+  const portfolioSection = portfolio.length ? `
+    <div class="profile-section">
+      <div class="section-title">Portfolio</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
+        ${portfolio.map(p => `
+          <div style="position:relative;aspect-ratio:1;border-radius:var(--radius);overflow:hidden;cursor:pointer;" onclick="window.open('${escHtml(p.url)}','_blank')">
+            <img src="${escHtml(p.url)}" style="width:100%;height:100%;object-fit:cover;">
+            ${p.caption ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.65);padding:4px 8px;font-size:11px;color:#fff;">${escHtml(p.caption)}</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>` : ''
   const reviewsHTML = reviews.length
     ? reviews.map(r => `
       <div class="review-item">
@@ -737,6 +946,11 @@ window.openProfile = async function (id) {
           <div style="font-size:12px;color:var(--charcoal-6);">Value for Money <span style="color:var(--amber);">${'★'.repeat(r.value)}</span></div>
         </div>` : ''}
         <p class="review-text">${escHtml(r.review_text)}</p>
+        ${r.reply_text ? `
+        <div style="margin-top:8px;background:var(--charcoal-3);border-left:3px solid var(--amber);border-radius:0 var(--radius) var(--radius) 0;padding:8px 12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--amber);margin-bottom:4px;">OWNER'S REPLY · ${new Date(r.reply_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+          <p style="font-size:13px;color:var(--charcoal-7);margin:0;">${escHtml(r.reply_text)}</p>
+        </div>` : ''}
       </div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>'
   document.getElementById('profile-content').innerHTML = `
@@ -783,6 +997,7 @@ window.openProfile = async function (id) {
       <div class="cred-list">${credsHTML}</div>
       ${certsHTML ? `<div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px;">${certsHTML}</div>` : ''}
     </div>
+    ${portfolioSection}
     <div class="profile-section">
       <div class="section-title">Client Reviews (${reviews.length})</div>
       <div class="review-list">${reviewsHTML}</div>
@@ -841,6 +1056,13 @@ window.submitReview = async function () {
   }
 
   trackEvent('review_left', reviewingId)
+  // Notify tradesman by email
+  try {
+    const { data: tl } = await supabase.from('listings').select('email,name').eq('id', reviewingId).single()
+    if (tl?.email) {
+      supabase.functions.invoke('review-notification', { body: { email: tl.email, tradeName: tl.name, reviewerName: reviewer_name, stars } }).catch(() => {})
+    }
+  } catch (_) {}
   closeReviewModal()
   toast('Review submitted — thank you!')
   await loadListings()
@@ -1094,4 +1316,104 @@ window.openReviewModal = function (id) {
   document.getElementById('r-name').value = ''
   document.getElementById('r-text').value = ''
   initStarSelects()
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+async function renderAdmin() {
+  const el = document.getElementById('admin-content')
+  if (!el) return
+  if (!currentUser || (!ADMIN_EMAILS.includes(currentUser.email) && ADMIN_EMAILS.length > 0)) {
+    el.innerHTML = '<div class="empty-state"><h3>Access Denied</h3><p>Admin only.</p></div>'
+    return
+  }
+  el.innerHTML = '<div class="empty-state"><p>Loading...</p></div>'
+  const [{ data: allListings }, { data: allReviews }] = await Promise.all([
+    supabase.from('listings').select('*, reviews(*)').order('created_at', { ascending: false }),
+    supabase.from('reviews').select('*, listings(name)').order('created_at', { ascending: false }).limit(50)
+  ])
+  const ls = allListings || []
+  const rs = allReviews || []
+  el.innerHTML = `
+    <h2 style="margin-bottom:1.5rem;">Admin Dashboard</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:2rem;">
+      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+        <div style="font-size:2rem;font-weight:700;color:var(--white);">${ls.length}</div>
+        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Total Listings</div>
+      </div>
+      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+        <div style="font-size:2rem;font-weight:700;color:var(--amber);">${ls.filter(l => l.tier === 'verified').length}</div>
+        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Verified</div>
+      </div>
+      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+        <div style="font-size:2rem;font-weight:700;color:var(--amber);">${ls.filter(l => l.tier === 'premium').length}</div>
+        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Premium</div>
+      </div>
+      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+        <div style="font-size:2rem;font-weight:700;color:var(--white);">${rs.length}</div>
+        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Recent Reviews</div>
+      </div>
+    </div>
+    <div class="form-card" style="margin-bottom:1rem;">
+      <h3 style="margin-bottom:1rem;">All Listings</h3>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="color:var(--charcoal-6);text-align:left;">
+            <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Name</th>
+            <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Trade</th>
+            <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Tier</th>
+            <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Reviews</th>
+            <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Actions</th>
+          </tr></thead>
+          <tbody>${ls.map(l => `
+            <tr style="border-bottom:1px solid var(--charcoal-3);">
+              <td style="padding:8px 12px;color:var(--white);">${escHtml(l.name)}</td>
+              <td style="padding:8px 12px;color:var(--charcoal-6);">${escHtml(l.trade)}</td>
+              <td style="padding:8px 12px;">${tierBadge(l.tier) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
+              <td style="padding:8px 12px;color:var(--charcoal-6);">${l.reviews?.length || 0}</td>
+              <td style="padding:8px 12px;white-space:nowrap;">
+                <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
+                  <option value="free" ${l.tier === 'free' ? 'selected' : ''}>Standard</option>
+                  <option value="verified" ${l.tier === 'verified' ? 'selected' : ''}>Verified</option>
+                  <option value="premium" ${l.tier === 'premium' ? 'selected' : ''}>Premium</option>
+                </select>
+                <button class="btn btn-outline btn-sm" style="margin-left:6px;color:var(--danger);border-color:var(--danger);" onclick="adminDeleteListing(${l.id})">Delete</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="form-card">
+      <h3 style="margin-bottom:1rem;">Recent Reviews</h3>
+      ${rs.map(r => `
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--charcoal-3);">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--white);">${escHtml(r.reviewer_name)} → ${escHtml(r.listings?.name || '')}</div>
+            <div style="font-size:12px;color:var(--charcoal-6);">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} · ${r.stars}★</div>
+            <p style="font-size:13px;color:var(--charcoal-7);margin:4px 0;">${escHtml(r.review_text)}</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);flex-shrink:0;" onclick="adminDeleteReview(${r.id})">Remove</button>
+        </div>`).join('')}
+    </div>`
+}
+
+window.adminSetTier = async function (id, tier) {
+  await supabase.from('listings').update({ tier }).eq('id', id)
+  toast('Tier updated.')
+  await loadListings()
+}
+
+window.adminDeleteListing = async function (id) {
+  if (!confirm('Delete this listing? This cannot be undone.')) return
+  await supabase.from('listings').delete().eq('id', id)
+  toast('Listing deleted.')
+  await loadListings()
+  renderAdmin()
+}
+
+window.adminDeleteReview = async function (id) {
+  if (!confirm('Remove this review?')) return
+  await supabase.from('reviews').delete().eq('id', id)
+  toast('Review removed.')
+  renderAdmin()
 }
