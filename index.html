@@ -902,11 +902,10 @@ function updateHeroCities() {
   const province = document.getElementById('hero-province').value;
   const citySelect = document.getElementById('hero-city');
   citySelect.innerHTML = '<option value="">All Cities</option>';
-  if (province && PROVINCE_CITIES[province]) {
-    PROVINCE_CITIES[province].forEach(c => {
-      citySelect.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-  }
+  const cities = province && PROVINCE_CITIES[province]
+    ? PROVINCE_CITIES[province]
+    : Object.values(PROVINCE_CITIES).flat().sort();
+  cities.forEach(c => { citySelect.innerHTML += `<option value="${c}">${c}</option>`; });
 }
 
 function toggleCityDropdown() {
@@ -1200,7 +1199,7 @@ async function handleSignOut() {
   showPage('home');
 }
 
-selectTier('free'); renderHome(); populateTradeFilter(); renderRankings(); updateNavForAuth();
+selectTier('free'); renderHome(); populateTradeFilter(); renderRankings(); updateNavForAuth(); updateHeroCities();
 
 // Star hover effect for all rating groups
 ['star-quality','star-service','star-clean','star-comms','star-value'].forEach(id => {
