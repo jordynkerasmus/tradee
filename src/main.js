@@ -587,7 +587,7 @@ function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 function tierBadge(tier) {
-  if (tier === 'premium' || tier === 'verified') return '<span class="badge badge-verified">Verified</span>'
+  if (tier === 'verified') return '<span class="badge badge-verified">Verified</span>'
   return ''
 }
 function toast(msg) {
