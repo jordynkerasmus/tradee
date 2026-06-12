@@ -771,23 +771,18 @@ window.goBack = function () {
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
 window.closeReviewModal = function () { document.getElementById('review-modal').classList.remove('open') }
-function getStarVal(name) {
-  const el = document.querySelector(`input[name="${name}"]:checked`)
-  return el ? parseInt(el.value) : 0
-}
 
 window.submitReview = async function () {
   const reviewer_name = document.getElementById('r-name').value.trim()
   const review_text = document.getElementById('r-text').value.trim()
   if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return }
-  const cats = ['stars-quality','stars-service','stars-clean','stars-comms','stars-value']
-  if (cats.some(n => !document.querySelector(`input[name="${n}"]:checked`))) { toast('Please rate all 5 categories.'); return }
 
-  const quality = getStarVal('stars-quality')
-  const service = getStarVal('stars-service')
-  const cleanliness = getStarVal('stars-clean')
-  const communication = getStarVal('stars-comms')
-  const value = getStarVal('stars-value')
+  const quality = getStarVal('star-quality')
+  const service = getStarVal('star-service')
+  const cleanliness = getStarVal('star-clean')
+  const communication = getStarVal('star-comms')
+  const value = getStarVal('star-value')
+  if (!quality || !service || !cleanliness || !communication || !value) { toast('Please rate all 5 categories.'); return }
   const stars = Math.round((quality + service + cleanliness + communication + value) / 5)
 
   const { error } = await supabase.from('reviews').insert({
@@ -1009,17 +1004,20 @@ loadListings().then(() => handleRoute())
 
 function initStarSelects() {
   document.querySelectorAll('.star-select').forEach(group => {
-    const fresh = group.cloneNode(true)
-    group.parentNode.replaceChild(fresh, group)
-    const radios = [...fresh.querySelectorAll('input[type="radio"]')]
-    const labels = [...fresh.querySelectorAll('label')]
-    function updateLit(val) { labels.forEach((l, i) => l.classList.toggle('lit', i < val)) }
-    const checked = radios.find(r => r.checked)
-    updateLit(checked ? parseInt(checked.value) : 0)
-    radios.forEach(r => r.addEventListener('change', () => updateLit(parseInt(r.value))))
-    labels.forEach((l, i) => l.addEventListener('mouseenter', () => updateLit(i + 1)))
-    fresh.addEventListener('mouseleave', () => { const cur = radios.find(r => r.checked); updateLit(cur ? parseInt(cur.value) : 0) })
+    group.dataset.selected = '0'
+    const stars = [...group.querySelectorAll('span')]
+    function paint(val) { stars.forEach((s, i) => s.classList.toggle('lit', i < val)) }
+    paint(0)
+    stars.forEach((s, i) => {
+      s.onclick = () => { group.dataset.selected = String(i + 1); paint(i + 1) }
+      s.onmouseenter = () => paint(i + 1)
+    })
+    group.onmouseleave = () => paint(parseInt(group.dataset.selected) || 0)
   })
+}
+
+function getStarVal(id) {
+  return parseInt(document.getElementById(id)?.dataset.selected) || 0
 }
 
 window.openReviewModal = function (id) {
@@ -1027,6 +1025,5 @@ window.openReviewModal = function (id) {
   document.getElementById('review-modal').classList.add('open')
   document.getElementById('r-name').value = ''
   document.getElementById('r-text').value = ''
-  document.querySelectorAll('.star-select input[type="radio"]').forEach(r => r.checked = false)
   initStarSelects()
 }

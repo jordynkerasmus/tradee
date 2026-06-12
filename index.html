@@ -562,62 +562,36 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 
       <!-- 5 category ratings -->
       <div style="display:flex;flex-direction:column;gap:14px;margin:4px 0;">
-
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:13px;font-weight:600;color:var(--white);min-width:160px;">Quality of Work</div>
-          <div class="star-select" id="star-quality">
-            <input type="radio" name="stars-quality" id="sq1" value="1"><label for="sq1">★</label>
-            <input type="radio" name="stars-quality" id="sq2" value="2"><label for="sq2">★</label>
-            <input type="radio" name="stars-quality" id="sq3" value="3"><label for="sq3">★</label>
-            <input type="radio" name="stars-quality" id="sq4" value="4"><label for="sq4">★</label>
-            <input type="radio" name="stars-quality" id="sq5" value="5"><label for="sq5">★</label>
+          <div class="star-select" id="star-quality" data-selected="0">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
           </div>
         </div>
-
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:13px;font-weight:600;color:var(--white);min-width:160px;">Level of Service</div>
-          <div class="star-select" id="star-service">
-            <input type="radio" name="stars-service" id="ss1" value="1"><label for="ss1">★</label>
-            <input type="radio" name="stars-service" id="ss2" value="2"><label for="ss2">★</label>
-            <input type="radio" name="stars-service" id="ss3" value="3"><label for="ss3">★</label>
-            <input type="radio" name="stars-service" id="ss4" value="4"><label for="ss4">★</label>
-            <input type="radio" name="stars-service" id="ss5" value="5"><label for="ss5">★</label>
+          <div class="star-select" id="star-service" data-selected="0">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
           </div>
         </div>
-
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:13px;font-weight:600;color:var(--white);min-width:160px;">Cleanliness</div>
-          <div class="star-select" id="star-clean">
-            <input type="radio" name="stars-clean" id="sc1" value="1"><label for="sc1">★</label>
-            <input type="radio" name="stars-clean" id="sc2" value="2"><label for="sc2">★</label>
-            <input type="radio" name="stars-clean" id="sc3" value="3"><label for="sc3">★</label>
-            <input type="radio" name="stars-clean" id="sc4" value="4"><label for="sc4">★</label>
-            <input type="radio" name="stars-clean" id="sc5" value="5"><label for="sc5">★</label>
+          <div class="star-select" id="star-clean" data-selected="0">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
           </div>
         </div>
-
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:13px;font-weight:600;color:var(--white);min-width:160px;">Communication</div>
-          <div class="star-select" id="star-comms">
-            <input type="radio" name="stars-comms" id="sm1" value="1"><label for="sm1">★</label>
-            <input type="radio" name="stars-comms" id="sm2" value="2"><label for="sm2">★</label>
-            <input type="radio" name="stars-comms" id="sm3" value="3"><label for="sm3">★</label>
-            <input type="radio" name="stars-comms" id="sm4" value="4"><label for="sm4">★</label>
-            <input type="radio" name="stars-comms" id="sm5" value="5"><label for="sm5">★</label>
+          <div class="star-select" id="star-comms" data-selected="0">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
           </div>
         </div>
-
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div style="font-size:13px;font-weight:600;color:var(--white);min-width:160px;">Value for Money</div>
-          <div class="star-select" id="star-value">
-            <input type="radio" name="stars-value" id="sv1" value="1"><label for="sv1">★</label>
-            <input type="radio" name="stars-value" id="sv2" value="2"><label for="sv2">★</label>
-            <input type="radio" name="stars-value" id="sv3" value="3"><label for="sv3">★</label>
-            <input type="radio" name="stars-value" id="sv4" value="4"><label for="sv4">★</label>
-            <input type="radio" name="stars-value" id="sv5" value="5"><label for="sv5">★</label>
+          <div class="star-select" id="star-value" data-selected="0">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
           </div>
         </div>
-
       </div>
 
       <div>
@@ -840,40 +814,36 @@ function openReviewModal(id) {
   document.getElementById('review-modal').classList.add('open');
   document.getElementById('r-name').value='';
   document.getElementById('r-text').value='';
-  // Clear all selections
-  document.querySelectorAll('.star-select input[type="radio"]').forEach(r => r.checked=false);
   initStarSelects();
 }
 function initStarSelects() {
   document.querySelectorAll('.star-select').forEach(group => {
-    // Clone to remove old listeners
-    const fresh = group.cloneNode(true);
-    group.parentNode.replaceChild(fresh, group);
-    const radios = [...fresh.querySelectorAll('input[type="radio"]')];
-    const labels = [...fresh.querySelectorAll('label')];
-    function updateLit(val) { labels.forEach((l,i) => l.classList.toggle('lit', i < val)); }
-    const checked = radios.find(r => r.checked);
-    updateLit(checked ? parseInt(checked.value) : 0);
-    radios.forEach(r => r.addEventListener('change', () => updateLit(parseInt(r.value))));
-    labels.forEach((l,i) => l.addEventListener('mouseenter', () => updateLit(i+1)));
-    fresh.addEventListener('mouseleave', () => { const cur = radios.find(r => r.checked); updateLit(cur ? parseInt(cur.value) : 0); });
+    group.dataset.selected = '0';
+    const stars = [...group.querySelectorAll('span')];
+    function paint(val) { stars.forEach((s,i) => s.classList.toggle('lit', i < val)); }
+    paint(0);
+    stars.forEach((s,i) => {
+      s.onclick = () => { group.dataset.selected = String(i+1); paint(i+1); };
+      s.onmouseenter = () => paint(i+1);
+    });
+    group.onmouseleave = () => paint(parseInt(group.dataset.selected)||0);
   });
 }
 function closeReviewModal() { document.getElementById('review-modal').classList.remove('open'); }
-function getStarVal(name) {
-  const el = document.querySelector(`input[name="${name}"]:checked`);
-  return el ? parseInt(el.value) : 0;
+function getStarVal(id) {
+  return parseInt(document.getElementById(id)?.dataset.selected) || 0;
 }
 
 function submitReview() {
   const reviewer_name = document.getElementById('r-name').value.trim();
   const review_text = document.getElementById('r-text').value.trim();
   if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return; }
-  const quality = getStarVal('stars-quality');
-  const service = getStarVal('stars-service');
-  const cleanliness = getStarVal('stars-clean');
-  const communication = getStarVal('stars-comms');
-  const value = getStarVal('stars-value');
+  const quality = getStarVal('star-quality');
+  const service = getStarVal('star-service');
+  const cleanliness = getStarVal('star-clean');
+  const communication = getStarVal('star-comms');
+  const value = getStarVal('star-value');
+  if (!quality||!service||!cleanliness||!communication||!value) { toast('Please rate all 5 categories.'); return; }
   const stars = Math.round((quality + service + cleanliness + communication + value) / 5);
   toast('Please use the live site to submit reviews.');
 }
