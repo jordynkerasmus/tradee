@@ -1036,7 +1036,12 @@ function previewPhoto(input) {
 let certFiles = [];
 
 function previewCertFiles(files) {
-  certFiles = [...certFiles, ...Array.from(files)];
+  const MAX = 10 * 1024 * 1024;
+  const valid = Array.from(files).filter(f => {
+    if (f.size > MAX) { toast(`${f.name} is over 10MB and was skipped.`); return false; }
+    return true;
+  });
+  certFiles = [...certFiles, ...valid];
   renderCertPreview();
 }
 

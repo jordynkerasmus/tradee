@@ -216,9 +216,8 @@ window.updatePhoto = async function (input, id) {
   const { error } = await supabase.from('listings').update({ photo_url }).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving photo'); return }
   toast('Photo updated!')
-  const avatar = document.getElementById('dash-avatar')
-  if (avatar) avatar.innerHTML = `<img src="${photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
   await loadListings()
+  renderDashboard()
 }
 
 window.saveListing = async function (id) {
@@ -280,6 +279,10 @@ window.deleteListing = async function (id) {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  if (!str) return ''
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+}
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
@@ -343,7 +346,9 @@ function renderHome() {
     <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">Provinces Covered</span></div>`
   const allTrades = [...new Set(listings.map(l => l.trade))].sort()
   document.getElementById('trade-cats').innerHTML = allTrades.map(t =>
-    `<div class="trade-pill" onclick="filterByTrade('${t}')">${t}</div>`).join('')
+    `<div class="trade-pill" data-trade="${escHtml(t)}">${escHtml(t)}</div>`).join('')
+  document.getElementById('trade-cats').querySelectorAll('.trade-pill').forEach(el =>
+    el.addEventListener('click', () => window.filterByTrade(el.dataset.trade)))
   const allPremiumHome = listings.filter(l => l.tier === 'premium')
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
   const offset = allPremiumHome.length > 0 ? dayOfYear % allPremiumHome.length : 0
@@ -623,9 +628,9 @@ function featuredCardHTML(l) {
     <div class="card-header" style="margin-right:70px;">
       <div class="card-avatar premium-av">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
-        <div class="card-name">${l.name}</div>
-        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
-        <div class="card-trade">${l.trade}</div>
+        <div class="card-name">${escHtml(l.name)}</div>
+        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
+        <div class="card-trade">${escHtml(l.trade)}</div>
         <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
@@ -640,8 +645,8 @@ function featuredCardHTML(l) {
     </div>
     ${l.phone || l.email ? `
     <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid rgba(245,158,11,0.2);border-bottom:1px solid rgba(245,158,11,0.2);margin-bottom:0.75rem;">
-      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
-      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
+      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${escHtml(l.phone)}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${escHtml(l.phone)}</a></div>` : ''}
+      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${escHtml(l.email)}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${escHtml(l.email)}</a></div>` : ''}
     </div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="card-area" style="border-top:none;padding-top:0;">
@@ -661,9 +666,9 @@ function cardHTML(l) {
     <div class="card-header">
       <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
-        <div class="card-name">${l.name}</div>
-        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
-        <div class="card-trade">${l.trade}</div>
+        <div class="card-name">${escHtml(l.name)}</div>
+        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
+        <div class="card-trade">${escHtml(l.trade)}</div>
         <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
@@ -678,13 +683,13 @@ function cardHTML(l) {
     </div>
     ${l.phone || l.email ? `
     <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid var(--charcoal-3);border-bottom:1px solid var(--charcoal-3);margin-bottom:0.75rem;">
-      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${l.phone}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${l.phone}</a></div>` : ''}
-      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${l.email}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${l.email}</a></div>` : ''}
+      ${l.phone ? `<div><div class="info-label">Phone</div><a href="tel:${escHtml(l.phone)}" onclick="event.stopPropagation();trackContact(${l.id},'phone')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;">${escHtml(l.phone)}</a></div>` : ''}
+      ${l.email ? `<div><div class="info-label">Email</div><a href="mailto:${escHtml(l.email)}" onclick="event.stopPropagation();trackContact(${l.id},'email')" style="font-size:13px;color:var(--white);text-decoration:none;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${escHtml(l.email)}</a></div>` : ''}
     </div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="card-area" style="border-top:none;padding-top:0;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        ${cityStr}, ${l.province}
+        ${escHtml(cityStr)}, ${escHtml(l.province)}
       </div>
       <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
     </div>
@@ -705,7 +710,7 @@ window.openProfile = async function (id) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviews = l.reviews || []
   const credsHTML = l.credentials && l.credentials.length
-    ? l.credentials.map(c => `<div class="cred-item"><div class="cred-icon">✓</div><span>${c}</span></div>`).join('')
+    ? l.credentials.map(c => `<div class="cred-item"><div class="cred-icon">✓</div><span>${escHtml(c)}</span></div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No credentials listed yet.</p>'
   const certsHTML = l.certificate_urls && l.certificate_urls.length
     ? l.certificate_urls.map((url, i) => `
@@ -719,7 +724,7 @@ window.openProfile = async function (id) {
     ? reviews.map(r => `
       <div class="review-item">
         <div class="review-header">
-          <span class="reviewer-name">${r.reviewer_name}</span>
+          <span class="reviewer-name">${escHtml(r.reviewer_name)}</span>
           <span class="review-date">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         </div>
         <div class="review-stars" style="margin-bottom:8px;">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)} <span style="font-size:12px;color:var(--charcoal-6);margin-left:4px;">${r.stars}.0 overall</span></div>
@@ -731,7 +736,7 @@ window.openProfile = async function (id) {
           <div style="font-size:12px;color:var(--charcoal-6);">Communication <span style="color:var(--amber);">${'★'.repeat(r.communication)}</span></div>
           <div style="font-size:12px;color:var(--charcoal-6);">Value for Money <span style="color:var(--amber);">${'★'.repeat(r.value)}</span></div>
         </div>` : ''}
-        <p class="review-text">${r.review_text}</p>
+        <p class="review-text">${escHtml(r.review_text)}</p>
       </div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>'
   document.getElementById('profile-content').innerHTML = `
@@ -739,9 +744,9 @@ window.openProfile = async function (id) {
     <div class="profile-hero">
       <div class="profile-avatar">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;">
-        <div class="profile-name">${l.name}</div>
-        ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${l.contact_name}</div>` : ''}
-        <div class="profile-trade">${l.trade}</div>
+        <div class="profile-name">${escHtml(l.name)}</div>
+        ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${escHtml(l.contact_name)}</div>` : ''}
+        <div class="profile-trade">${escHtml(l.trade)}</div>
         <div class="card-badges" style="margin-bottom:12px;">${tierBadge(l.tier)}</div>
         <div class="profile-rating-row">
           <span class="profile-rating-big">${rd}</span>
@@ -767,7 +772,7 @@ window.openProfile = async function (id) {
     </div>
     <div class="profile-section">
       <div class="section-title">About</div>
-      <p style="font-size:15px;line-height:1.7;color:var(--charcoal-7);">${l.description || 'No description provided.'}</p>
+      <p style="font-size:15px;line-height:1.7;color:var(--charcoal-7);">${escHtml(l.description) || 'No description provided.'}</p>
       <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <span style="font-size:14px;color:var(--charcoal-6);">${l.city}, ${l.province}</span>
@@ -994,6 +999,7 @@ window.submitListing = async function () {
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
   if (!email || !password) { toast('Please enter your email and password.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
+  if (phone && !/^\+?[\d\s\-()]{7,15}$/.test(phone)) { toast('Please enter a valid phone number.'); return }
   if (!name || selectedTrades.length === 0 || !province || selectedCities.length === 0) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
   if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your hourly rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
