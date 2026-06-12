@@ -13,6 +13,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tradee">
 <link rel="apple-touch-icon" href="/icon-180.png">
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -73,6 +76,16 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .trade-pill:hover, .trade-pill.active { background: var(--amber); border-color: var(--amber); color: var(--charcoal); }
 .directory-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem; }
 .directory-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.view-toggle { display: flex; gap: 6px; }
+.view-toggle button { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--charcoal-6); padding: 6px 14px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.view-toggle button.active { background: var(--amber); border-color: var(--amber); color: var(--charcoal); }
+#map-container { height: 540px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--charcoal-3); margin-bottom: 1.5rem; display: none; }
+.leaflet-popup-content-wrapper { background: var(--charcoal-2) !important; border: 1px solid var(--charcoal-3) !important; border-radius: var(--radius) !important; color: var(--white) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important; }
+.leaflet-popup-tip { background: var(--charcoal-2) !important; }
+.leaflet-popup-content { margin: 12px 14px !important; }
+.map-popup-name { font-weight: 700; font-size: 14px; color: var(--white); margin-bottom: 2px; }
+.map-popup-trade { font-size: 12px; color: var(--amber); margin-bottom: 6px; }
+.map-popup-btn { display: inline-block; background: var(--amber); color: var(--charcoal); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 4px; cursor: pointer; border: none; margin-top: 4px; }
 .directory-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.04em; }
 .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--charcoal-3); }
 .filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 32px 8px 12px; border-radius: var(--radius); cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
@@ -332,7 +345,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <h2 id="dir-title">All Tradesmen</h2>
         <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;" id="dir-count"></div>
       </div>
+      <div class="view-toggle">
+        <button id="btn-list-view" class="active" onclick="setDirView('list')">☰ List</button>
+        <button id="btn-map-view" onclick="setDirView('map')">🗺 Map</button>
+      </div>
     </div>
+    <div id="map-container"></div>
     <div class="filters">
       <select id="filter-category" onchange="updateFilterTrades()"><option value="">All Categories</option></select>
       <select id="filter-trade" onchange="applyFilters()"><option value="">All Trades</option></select>
@@ -563,6 +581,24 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
       <div style="font-size:12px;color:var(--charcoal-6);margin-top:-0.5rem;">* Pricing is indicative for demo purposes</div>
     </div>
+    <div class="form-card" style="margin-bottom:1.5rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.06em;margin-bottom:1rem;">📍 Your Location & Service Radius</div>
+      <div style="margin-bottom:1rem;">
+        <label style="display:block;font-size:12px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Your Address or Area</label>
+        <div style="display:flex;gap:8px;">
+          <input id="f-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" style="flex:1;background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);padding:10px 12px;border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="geocodeListingLocation()" style="white-space:nowrap;">📍 Locate</button>
+        </div>
+        <div id="geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-top:6px;"></div>
+        <input type="hidden" id="f-lat">
+        <input type="hidden" id="f-lng">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Service Radius: <span id="radius-label">30 km</span></label>
+        <input id="f-service-radius" type="range" min="5" max="200" value="30" step="5" style="width:100%;accent-color:var(--amber);" oninput="document.getElementById('radius-label').textContent=this.value+' km'">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>200 km</span></div>
+      </div>
+    </div>
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="submitListing()">Publish My Listing →</button>
   </div>
   </div> <!-- end list-step-2 -->
@@ -741,6 +777,106 @@ function toggleFav(id,e) {
     btn.style.color=isFav(id)?'#ef4444':'var(--charcoal-6)';
   });
 }
+// ── MAP VIEW ──────────────────────────────────────────────
+let _map = null;
+let _dirView = 'list';
+
+function setDirView(view) {
+  _dirView = view;
+  document.getElementById('btn-list-view').classList.toggle('active', view === 'list');
+  document.getElementById('btn-map-view').classList.toggle('active', view === 'map');
+  document.getElementById('dir-cards').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('map-container').style.display = view === 'map' ? 'block' : 'none';
+  if (view === 'map') renderMap();
+}
+
+function renderMap() {
+  const container = document.getElementById('map-container');
+  if (!container) return;
+
+  if (!_map) {
+    _map = L.map('map-container', { zoomControl: true }).setView([-28.4793, 24.6727], 6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      maxZoom: 18
+    }).addTo(_map);
+  }
+
+  // clear existing markers
+  _map.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) _map.removeLayer(l); });
+
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="background:#F59E0B;width:14px;height:14px;border-radius:50%;border:2px solid #1C1917;box-shadow:0 0 6px rgba(245,158,11,0.6);"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
+  });
+
+  const filtered = getFilteredListings();
+  let placed = 0;
+  filtered.forEach(l => {
+    if (!l.lat || !l.lng) return;
+    placed++;
+    const radius = (l.service_radius || 30) * 1000;
+    L.circle([l.lat, l.lng], {
+      radius,
+      color: '#F59E0B',
+      fillColor: '#F59E0B',
+      fillOpacity: 0.08,
+      weight: 1
+    }).addTo(_map);
+
+    const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : ['Tradesman']);
+    const marker = L.marker([l.lat, l.lng], { icon }).addTo(_map);
+    marker.bindPopup(`
+      <div class="map-popup-name">${escHtml(l.name)}</div>
+      <div class="map-popup-trade">${allTrades.map(escHtml).join(' · ')}</div>
+      <div style="font-size:12px;color:#A8A29E;margin-bottom:4px;">${escHtml(l.city || l.province || '')}</div>
+      <button class="map-popup-btn" onclick="openProfile(${l.id})">View Profile →</button>
+    `);
+  });
+
+  if (placed === 0) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--charcoal-6);font-size:14px;">No listings with a location set yet.</div>';
+  } else {
+    setTimeout(() => _map.invalidateSize(), 100);
+  }
+}
+
+function getFilteredListings() {
+  const cat = document.getElementById('filter-category')?.value || '';
+  const trade = document.getElementById('filter-trade')?.value || '';
+  const province = document.getElementById('filter-province')?.value || '';
+  const tier = document.getElementById('filter-tier')?.value || '';
+  const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1';
+  return listings.filter(l => {
+    if (showFavsOnly && !isFav(l.id)) return false;
+    if (province && l.province !== province) return false;
+    if (tier && l.tier !== tier) return false;
+    const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : []);
+    if (trade && !allTrades.includes(trade)) return false;
+    return true;
+  });
+}
+
+async function geocodeListingLocation() {
+  const text = document.getElementById('f-location-text').value.trim();
+  const status = document.getElementById('geocode-status');
+  if (!text) { status.textContent = 'Please enter an address first.'; return; }
+  status.textContent = 'Locating...';
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text + ', South Africa')}&format=json&limit=1`);
+    const data = await res.json();
+    if (!data.length) { status.textContent = 'Location not found — try a nearby town or suburb.'; return; }
+    document.getElementById('f-lat').value = data[0].lat;
+    document.getElementById('f-lng').value = data[0].lon;
+    status.textContent = `✓ Found: ${data[0].display_name.split(',').slice(0,2).join(',')}`;
+    status.style.color = '#22C55E';
+  } catch (e) {
+    status.textContent = 'Could not locate — check your connection.';
+  }
+}
+
 function toggleFavsFilter() {
   const btn=document.getElementById('fav-filter-btn');
   if (!btn) return;
@@ -1346,11 +1482,14 @@ function submitListing() {
   const credsRaw=document.getElementById('f-creds')?.value.trim()||'';
   const years=parseInt(document.getElementById('f-years')?.value)||0;
   const creds=credsRaw?credsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
+  const lat=parseFloat(document.getElementById('f-lat')?.value)||null;
+  const lng=parseFloat(document.getElementById('f-lng')?.value)||null;
+  const service_radius=parseInt(document.getElementById('f-service-radius')?.value)||30;
   if (!name||selectedTrades.length===0||!province||selectedCities.length===0) { toast('Please fill in name, at least one trade, province and at least one city.'); return; }
   if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your rate or N/A.'); return; }
   if (!desc) { toast('Please add a business description.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
-  listings.push({id:newId,name,contact_name,trade,trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false});
+  listings.push({id:newId,name,contact_name,trade,trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
   addTradeToDropdowns(trade);
   toast(`${name} is now live on Tradee!`);
   ['f-name','f-phone','f-email','f-password','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });

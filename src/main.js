@@ -279,6 +279,19 @@ async function renderDashboard() {
               </div>`).join('')}
           </div>` : ''}
         </div>
+        <div class="form-group">
+          <label class="form-label">📍 Your Location & Service Radius</label>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input id="edit-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" class="form-input" style="flex:1;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="geocodeEditLocation()" style="white-space:nowrap;">📍 Locate</button>
+          </div>
+          <div id="edit-geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-bottom:8px;">${listing.lat ? '✓ Location set' : 'No location set yet'}</div>
+          <input type="hidden" id="edit-lat" value="${listing.lat || ''}">
+          <input type="hidden" id="edit-lng" value="${listing.lng || ''}">
+          <label class="form-label" style="margin-top:8px;">Service Radius: <span id="edit-radius-label">${listing.service_radius || 30} km</span></label>
+          <input id="edit-service-radius" type="range" min="5" max="200" value="${listing.service_radius || 30}" step="5" style="width:100%;accent-color:var(--amber);" oninput="document.getElementById('edit-radius-label').textContent=this.value+' km'">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>200 km</span></div>
+        </div>
         <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="saveListing(${listing.id})">Save Changes →</button>
       </div>
     </div>
@@ -438,8 +451,11 @@ window.saveListing = async function (id) {
 
   const phone = document.getElementById('edit-phone')?.value.trim() || ''
   const email = document.getElementById('edit-email')?.value.trim() || ''
+  const lat = parseFloat(document.getElementById('edit-lat')?.value) || null
+  const lng = parseFloat(document.getElementById('edit-lng')?.value) || null
+  const service_radius = parseInt(document.getElementById('edit-service-radius')?.value) || 30
   const { error } = await supabase.from('listings').update({
-    name, contact_name, phone, email, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls
+    name, contact_name, phone, email, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls, lat, lng, service_radius
   }).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving: ' + error.message); return }
   toast('Listing updated!')
@@ -763,6 +779,94 @@ window.applyFilters = function () {
   filterTierVal = document.getElementById('filter-tier').value
   filterSort = document.getElementById('filter-sort').value
   renderDirectory()
+}
+
+// ── MAP VIEW ────────────────────────────────────────────
+let _map = null
+let _dirView = 'list'
+
+window.setDirView = function (view) {
+  _dirView = view
+  document.getElementById('btn-list-view').classList.toggle('active', view === 'list')
+  document.getElementById('btn-map-view').classList.toggle('active', view === 'map')
+  document.getElementById('dir-cards').style.display = view === 'list' ? '' : 'none'
+  document.getElementById('map-container').style.display = view === 'map' ? 'block' : 'none'
+  if (view === 'map') renderMap()
+}
+
+function renderMap() {
+  if (typeof L === 'undefined') return
+  const container = document.getElementById('map-container')
+  if (!container) return
+
+  if (!_map) {
+    _map = L.map('map-container', { zoomControl: true }).setView([-28.4793, 24.6727], 6)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      maxZoom: 18,
+    }).addTo(_map)
+  }
+
+  _map.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) _map.removeLayer(l) })
+
+  const icon = L.divIcon({
+    className: '',
+    html: '<div style="background:#F59E0B;width:14px;height:14px;border-radius:50%;border:2px solid #1C1917;box-shadow:0 0 6px rgba(245,158,11,0.6);"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  })
+
+  let placed = 0
+  listings.forEach(l => {
+    if (!l.lat || !l.lng) return
+    placed++
+    const radius = (l.service_radius || 30) * 1000
+    L.circle([l.lat, l.lng], { radius, color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.08, weight: 1 }).addTo(_map)
+    const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : ['Tradesman'])
+    const marker = L.marker([l.lat, l.lng], { icon }).addTo(_map)
+    marker.bindPopup(`
+      <div class="map-popup-name">${escHtml(l.name)}</div>
+      <div class="map-popup-trade">${allTrades.map(escHtml).join(' · ')}</div>
+      <div style="font-size:12px;color:#A8A29E;margin-bottom:4px;">${escHtml(l.city || l.province || '')}</div>
+      <button class="map-popup-btn" onclick="openProfile(${l.id})">View Profile →</button>
+    `)
+  })
+
+  setTimeout(() => _map.invalidateSize(), 100)
+}
+
+window.geocodeListingLocation = async function () {
+  const text = document.getElementById('f-location-text')?.value.trim()
+  const status = document.getElementById('geocode-status')
+  if (!text) { if (status) status.textContent = 'Please enter an address first.'; return }
+  if (status) status.textContent = 'Locating...'
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text + ', South Africa')}&format=json&limit=1`)
+    const data = await res.json()
+    if (!data.length) { if (status) status.textContent = 'Location not found — try a nearby town or suburb.'; return }
+    document.getElementById('f-lat').value = data[0].lat
+    document.getElementById('f-lng').value = data[0].lon
+    if (status) { status.textContent = `✓ Found: ${data[0].display_name.split(',').slice(0, 2).join(',')}`; status.style.color = '#22C55E' }
+  } catch (e) {
+    if (status) status.textContent = 'Could not locate — check your connection.'
+  }
+}
+
+window.geocodeEditLocation = async function () {
+  const text = document.getElementById('edit-location-text')?.value.trim()
+  const status = document.getElementById('edit-geocode-status')
+  if (!text) { if (status) status.textContent = 'Please enter an address first.'; return }
+  if (status) status.textContent = 'Locating...'
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text + ', South Africa')}&format=json&limit=1`)
+    const data = await res.json()
+    if (!data.length) { if (status) status.textContent = 'Location not found — try a nearby town or suburb.'; return }
+    document.getElementById('edit-lat').value = data[0].lat
+    document.getElementById('edit-lng').value = data[0].lon
+    if (status) { status.textContent = `✓ Found: ${data[0].display_name.split(',').slice(0, 2).join(',')}`; status.style.color = '#22C55E' }
+  } catch (e) {
+    if (status) status.textContent = 'Could not locate — check your connection.'
+  }
 }
 
 window.toggleFavsFilter = function () {
@@ -1300,10 +1404,13 @@ window.submitListing = async function () {
     }
   }
 
+  const lat = parseFloat(document.getElementById('f-lat')?.value) || null
+  const lng = parseFloat(document.getElementById('f-lng')?.value) || null
+  const service_radius = parseInt(document.getElementById('f-service-radius')?.value) || 30
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const { error } = await supabase.from('listings').insert({
     name, contact_name, phone, email, trade, trades, province, city: cities[0] || city, cities, callout, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
-    user_id: userId, certificate_urls, photo_url
+    user_id: userId, certificate_urls, photo_url, lat, lng, service_radius
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
