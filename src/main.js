@@ -770,13 +770,6 @@ window.goBack = function () {
 }
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
-window.openReviewModal = function (id) {
-  reviewingId = id
-  document.getElementById('review-modal').classList.add('open')
-  document.getElementById('r-name').value = ''
-  document.getElementById('r-text').value = ''
-  document.getElementById('s5').checked = true
-}
 window.closeReviewModal = function () { document.getElementById('review-modal').classList.remove('open') }
 function getStarVal(name) {
   const el = document.querySelector(`input[name="${name}"]:checked`)
@@ -800,9 +793,18 @@ window.submitReview = async function () {
     stars, quality, service, cleanliness, communication, value
   })
   if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
+
+  // Recalculate rating_avg from all reviews for this listing and save it
+  const { data: allReviews } = await supabase.from('reviews').select('stars').eq('listing_id', reviewingId)
+  if (allReviews && allReviews.length) {
+    const avg = allReviews.reduce((s, r) => s + r.stars, 0) / allReviews.length
+    await supabase.from('listings').update({ rating_avg: parseFloat(avg.toFixed(2)) }).eq('id', reviewingId)
+  }
+
   trackEvent('review_left', reviewingId)
   closeReviewModal()
   toast('Review submitted — thank you!')
+  await loadListings()
   if (currentProfile && currentProfile.id === reviewingId) openProfile(reviewingId)
 }
 
@@ -1003,12 +1005,42 @@ selectTier('free')
 initAuth()
 loadListings().then(() => handleRoute())
 
-document.getElementById('star-select').addEventListener('mouseover', e => {
-  if (e.target.tagName === 'LABEL') {
-    const val = parseInt(e.target.getAttribute('for').replace('s', ''))
-    document.querySelectorAll('.star-select label').forEach((l, i) => l.classList.toggle('lit', i < val))
-  }
-})
-document.getElementById('star-select').addEventListener('mouseleave', () => {
-  document.querySelectorAll('.star-select label').forEach(l => l.classList.remove('lit'))
-})
+function initStarSelects() {
+  document.querySelectorAll('.star-select').forEach(group => {
+    const radios = [...group.querySelectorAll('input[type="radio"]')]
+    const labels = [...group.querySelectorAll('label')]
+
+    function updateLit(val) {
+      labels.forEach((l, i) => l.classList.toggle('lit', i < val))
+    }
+
+    // Show current checked value
+    const checked = radios.find(r => r.checked)
+    updateLit(checked ? parseInt(checked.value) : 5)
+
+    // Click to select
+    radios.forEach(r => r.addEventListener('change', () => updateLit(parseInt(r.value))))
+
+    // Hover preview
+    labels.forEach((l, i) => {
+      l.addEventListener('mouseenter', () => updateLit(i + 1))
+    })
+    group.addEventListener('mouseleave', () => {
+      const cur = radios.find(r => r.checked)
+      updateLit(cur ? parseInt(cur.value) : 5)
+    })
+  })
+}
+
+window.openReviewModal = function (id) {
+  reviewingId = id
+  document.getElementById('review-modal').classList.add('open')
+  document.getElementById('r-name').value = ''
+  document.getElementById('r-text').value = ''
+  // Reset all groups to 5 stars
+  ;['stars-quality','stars-service','stars-clean','stars-comms','stars-value'].forEach(name => {
+    const el = document.querySelector(`input[name="${name}"][value="5"]`)
+    if (el) el.checked = true
+  })
+  initStarSelects()
+}

@@ -835,7 +835,29 @@ function openProfile(id) {
   showPage('profile');
 }
 
-function openReviewModal(id) { reviewingId=id; document.getElementById('review-modal').classList.add('open'); document.getElementById('r-name').value=''; document.getElementById('r-text').value=''; document.getElementById('s5').checked=true; }
+function openReviewModal(id) {
+  reviewingId=id;
+  document.getElementById('review-modal').classList.add('open');
+  document.getElementById('r-name').value='';
+  document.getElementById('r-text').value='';
+  ['stars-quality','stars-service','stars-clean','stars-comms','stars-value'].forEach(name => {
+    const el = document.querySelector(`input[name="${name}"][value="5"]`);
+    if (el) el.checked = true;
+  });
+  initStarSelects();
+}
+function initStarSelects() {
+  document.querySelectorAll('.star-select').forEach(group => {
+    const radios = [...group.querySelectorAll('input[type="radio"]')];
+    const labels = [...group.querySelectorAll('label')];
+    function updateLit(val) { labels.forEach((l,i) => l.classList.toggle('lit', i < val)); }
+    const checked = radios.find(r => r.checked);
+    updateLit(checked ? parseInt(checked.value) : 5);
+    radios.forEach(r => r.addEventListener('change', () => updateLit(parseInt(r.value))));
+    labels.forEach((l,i) => l.addEventListener('mouseenter', () => updateLit(i+1)));
+    group.addEventListener('mouseleave', () => { const cur = radios.find(r => r.checked); updateLit(cur ? parseInt(cur.value) : 5); });
+  });
+}
 function closeReviewModal() { document.getElementById('review-modal').classList.remove('open'); }
 function getStarVal(name) {
   const el = document.querySelector(`input[name="${name}"]:checked`);
