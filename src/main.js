@@ -174,7 +174,7 @@ async function renderDashboard() {
         <div class="profile-trade">${escHtml(listing.trade)}</div>
         <div class="card-badges" style="margin-bottom:12px;">${tierBadge(listing.tier)}</div>
         <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${window.location.origin}/profile/${listing.id}</span>
+          <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${profileUrl(listing)}</span>
           <button class="btn btn-primary btn-sm" onclick="copyProfileLink(${listing.id})">🔗 Copy Link</button>
         </div>
       </div>
@@ -469,6 +469,13 @@ window.deleteListing = async function (id) {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+function slugify(name, id) {
+  const base = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  return `${base}-${id}`
+}
+function profileUrl(listing) {
+  return `${window.location.origin}/profile/${slugify(listing.name, listing.id)}`
+}
 function escHtml(str) {
   if (!str) return ''
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
@@ -930,7 +937,7 @@ window.openProfile = async function (id) {
     .single()
   if (error || !l) return
   currentProfile = l
-  window.history.pushState({}, '', `/profile/${id}`)
+  window.history.pushState({}, '', `/profile/${slugify(l.name, l.id)}`)
   trackEvent('profile_view', l.id, { trade: l.trade, province: l.province })
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviews = l.reviews || []
@@ -1043,7 +1050,8 @@ window.trackContact = function (id, type) {
 }
 
 window.copyProfileLink = function (id) {
-  const url = `${window.location.origin}/profile/${id}`
+  const listing = listings.find(l => l.id === id)
+  const url = listing ? profileUrl(listing) : `${window.location.origin}/profile/${id}`
   navigator.clipboard.writeText(url).then(() => {
     toast('Profile link copied! Send it to your clients.')
   }).catch(() => {
@@ -1312,9 +1320,16 @@ window.submitListing = async function () {
 // ── URL Routing ───────────────────────────────────────────────────────────────
 function handleRoute() {
   const path = window.location.pathname
-  const match = path.match(/^\/profile\/(\d+)$/)
+  const match = path.match(/^\/profile\/(.+)$/)
   if (match) {
-    window.openProfile(parseInt(match[1]))
+    const slug = match[1]
+    const numId = parseInt(slug)
+    if (!isNaN(numId) && String(numId) === slug) {
+      window.openProfile(numId)
+    } else {
+      const idMatch = slug.match(/-(\d+)$/)
+      if (idMatch) window.openProfile(parseInt(idMatch[1]))
+    }
   }
 }
 
