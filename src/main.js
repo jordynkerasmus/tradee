@@ -572,7 +572,7 @@ window.toggleFav = function (id, e) {
   localStorage.setItem('tradee_favs', JSON.stringify(favs))
   document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(btn => {
     btn.textContent = isFav(id) ? '♥' : '♡'
-    btn.style.color = isFav(id) ? '#ef4444' : 'var(--charcoal-6)'
+    btn.style.color = isFav(id) ? 'var(--amber)' : 'var(--charcoal-6)'
   })
 }
 function avgRating(l) {
@@ -928,8 +928,8 @@ window.toggleFavsFilter = function () {
   if (!btn) return
   const active = btn.dataset.active === '1'
   btn.dataset.active = active ? '0' : '1'
-  btn.style.color = active ? 'var(--charcoal-6)' : '#ef4444'
-  btn.style.borderColor = active ? 'var(--charcoal-4)' : '#ef4444'
+  btn.style.color = active ? 'var(--charcoal-6)' : 'var(--amber)'
+  btn.style.borderColor = active ? 'var(--charcoal-4)' : 'var(--amber)'
   renderDirectory()
 }
 
@@ -1036,7 +1036,7 @@ function featuredCardHTML(l) {
         ${l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')}, ${l.province}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? '#ef4444' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
+        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
         <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
       </div>
     </div>
@@ -1079,7 +1079,7 @@ function cardHTML(l) {
         ${escHtml(cityStr)}, ${escHtml(l.province)}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? '#ef4444' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
+        <button class="fav-btn" data-id="${l.id}" onclick="window.toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};padding:4px;" title="Save to favourites">${isFav(l.id) ? '♥' : '♡'}</button>
         <button class="btn btn-primary btn-sm" onclick="openProfile(${l.id})" style="white-space:nowrap;">More Info →</button>
       </div>
     </div>

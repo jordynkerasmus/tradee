@@ -882,8 +882,8 @@ function toggleFavsFilter() {
   if (!btn) return;
   const active=btn.dataset.active==='1';
   btn.dataset.active=active?'0':'1';
-  btn.style.color=active?'var(--charcoal-6)':'#ef4444';
-  btn.style.borderColor=active?'var(--charcoal-4)':'#ef4444';
+  btn.style.color=active?'var(--charcoal-6)':'var(--amber)';
+  btn.style.borderColor=active?'var(--charcoal-4)':'var(--amber)';
   renderDirectory();
 }
 function avgRating(l) { return l.reviews.length ? l.reviews.reduce((s,r)=>s+r.stars,0)/l.reviews.length : 0; }
