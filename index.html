@@ -387,7 +387,15 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     </div>
     <div class="form-card">
       <h3>Business Info</h3>
-      <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="f-business" placeholder="e.g. Themba Electrical Services"></div>
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label class="form-label" style="margin-bottom:0;">Business Name</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--charcoal-6);cursor:pointer;">
+            <input type="checkbox" id="f-same-as-contact" style="accent-color:var(--amber);" onchange="toggleSameAsContact(this)"> Same as my name
+          </label>
+        </div>
+        <input class="form-input" id="f-business" placeholder="e.g. Themba Electrical Services">
+      </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Province</label>
           <select class="form-select" id="f-province">
@@ -412,7 +420,15 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="f-callout" placeholder="e.g. 350 or N/A"><div class="form-hint">Enter a number or N/A</div></div>
-        <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="f-rate" placeholder="e.g. 650 or N/A"><div class="form-hint">Enter a number or N/A</div></div>
+        <div class="form-group">
+          <label class="form-label">Rate (R)</label>
+          <div style="display:flex;gap:12px;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--charcoal-6);cursor:pointer;"><input type="radio" name="f-rate-type" value="hour" checked style="accent-color:var(--amber);"> Per Hour</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--charcoal-6);cursor:pointer;"><input type="radio" name="f-rate-type" value="day" style="accent-color:var(--amber);"> Per Day</label>
+          </div>
+          <input class="form-input" id="f-rate" placeholder="e.g. 650 or N/A">
+          <div class="form-hint">Enter a number or N/A</div>
+        </div>
       </div>
       <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="f-desc" placeholder="Describe your services, experience, areas covered, etc."></textarea></div>
     </div>
@@ -796,13 +812,16 @@ function renderDirectory() {
 
 function cardHTML(l) {
   const rating=avgRating(l), rd=rating>0?rating.toFixed(1):'—';
+  const allTrades=l.trades&&l.trades.length?l.trades:(l.trade?[l.trade]:[]);
+  const rateLabel=l.rate_type==='day'?'Rate / Day':'Rate / Hr';
+  const cityStr=l.cities&&l.cities.length>1?l.cities.slice(0,2).join(', ')+(l.cities.length>2?` +${l.cities.length-2} more`:''):(l.city||'');
   return `<div class="tradesman-card" onclick="openProfile(${l.id})">
     <div class="card-header">
       <div class="card-avatar ${l.tier==='premium'?'premium-av':''}">${l.photo_url?`<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`:initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${l.name}</div>
-        ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>` : ''}
-        <div class="card-trade">${l.trade}</div>
+        ${l.contact_name?`<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>`:''}
+        <div class="card-trade">${allTrades.join(' · ')}</div>
         <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
@@ -813,12 +832,12 @@ function cardHTML(l) {
     </div>
     <div class="card-info">
       <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
-      <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
+      <div class="info-item"><div class="info-label">${rateLabel}</div><div class="info-value">${fmtRand(l.rate)}</div></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div class="card-area" style="border-top:none;padding-top:0;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        ${l.city}, ${l.province}
+        ${cityStr}, ${l.province}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="fav-btn" data-id="${l.id}" onclick="toggleFav(${l.id},event)" style="background:none;border:none;font-size:18px;cursor:pointer;color:${isFav(l.id)?'#ef4444':'var(--charcoal-6)'};padding:4px;">${isFav(l.id)?'♥':'♡'}</button>
@@ -1262,21 +1281,24 @@ function submitListing() {
   const contact_name=document.getElementById('f-name').value.trim();
   const name=document.getElementById('f-business').value.trim() || contact_name;
   const trade=getSelectedTrade();
+  const trades=[...selectedTrades];
   const province=document.getElementById('f-province').value;
   const city=selectedCities.length>0?selectedCities[0]:'';
   const calloutRaw=document.getElementById('f-callout').value.trim();
   const rateRaw=document.getElementById('f-rate').value.trim();
   const callout=calloutRaw.toUpperCase()==='N/A'?-1:(parseInt(calloutRaw)||0);
   const rate=rateRaw.toUpperCase()==='N/A'?-1:(parseInt(rateRaw)||0);
+  const rateTypeEl=document.querySelector('input[name="f-rate-type"]:checked');
+  const rate_type=rateTypeEl?rateTypeEl.value:'hour';
   const desc=document.getElementById('f-desc').value.trim();
   const credsRaw=document.getElementById('f-creds')?.value.trim()||'';
   const years=parseInt(document.getElementById('f-years')?.value)||0;
   const creds=credsRaw?credsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
   if (!name||selectedTrades.length===0||!province||selectedCities.length===0) { toast('Please fill in name, at least one trade, province and at least one city.'); return; }
-  if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your hourly rate or N/A.'); return; }
+  if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your rate or N/A.'); return; }
   if (!desc) { toast('Please add a business description.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
-  listings.push({id:newId,name,contact_name,trade,province,city,cities:selectedCities,callout,rate,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false});
+  listings.push({id:newId,name,contact_name,trade,trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false});
   addTradeToDropdowns(trade);
   toast(`${name} is now live on Tradee!`);
   ['f-name','f-phone','f-email','f-password','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -1286,6 +1308,21 @@ function submitListing() {
   selectedCities=[]; updateCityLabel();
   selectTier('free'); filterTrade=trade;
   setTimeout(()=>showPage('directory'),1500);
+}
+
+function toggleSameAsContact(cb) {
+  const biz = document.getElementById('f-business');
+  if (!biz) return;
+  if (cb.checked) {
+    biz.value = document.getElementById('f-name').value.trim();
+    biz.readOnly = true;
+    biz.style.opacity = '0.5';
+    document.getElementById('f-name').oninput = () => { biz.value = document.getElementById('f-name').value.trim(); };
+  } else {
+    biz.readOnly = false;
+    biz.style.opacity = '1';
+    document.getElementById('f-name').oninput = null;
+  }
 }
 
 // ── Auth (inline for single-file preview) ────────────────────────────────────

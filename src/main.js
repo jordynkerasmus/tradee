@@ -250,7 +250,14 @@ async function renderDashboard() {
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
-          <div class="form-group"><label class="form-label">Rate Per Hour (R)</label><input class="form-input" id="edit-rate" value="${listing.rate === -1 ? 'N/A' : listing.rate}" placeholder="e.g. 650 or N/A"></div>
+          <div class="form-group">
+            <label class="form-label">Rate (R)</label>
+            <div style="display:flex;gap:12px;margin-bottom:8px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--charcoal-6);cursor:pointer;"><input type="radio" name="edit-rate-type" value="hour" ${listing.rate_type !== 'day' ? 'checked' : ''} style="accent-color:var(--amber);"> Per Hour</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--charcoal-6);cursor:pointer;"><input type="radio" name="edit-rate-type" value="day" ${listing.rate_type === 'day' ? 'checked' : ''} style="accent-color:var(--amber);"> Per Day</label>
+            </div>
+            <input class="form-input" id="edit-rate" value="${listing.rate === -1 ? 'N/A' : listing.rate}" placeholder="e.g. 650 or N/A">
+          </div>
         </div>
         <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${escHtml(listing.description || '')}</textarea></div>
         <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${escHtml(listing.credentials ? listing.credentials.join(', ') : '')}"><div class="form-hint">Separate with commas</div></div>
@@ -386,6 +393,21 @@ window.updatePhoto = async function (input, id) {
   renderDashboard()
 }
 
+window.toggleSameAsContact = function (cb) {
+  const biz = document.getElementById('f-business')
+  if (!biz) return
+  if (cb.checked) {
+    biz.value = document.getElementById('f-name').value.trim()
+    biz.readOnly = true
+    biz.style.opacity = '0.5'
+    document.getElementById('f-name').oninput = () => { biz.value = document.getElementById('f-name').value.trim() }
+  } else {
+    biz.readOnly = false
+    biz.style.opacity = '1'
+    document.getElementById('f-name').oninput = null
+  }
+}
+
 window.saveListing = async function (id) {
   const name = document.getElementById('edit-business').value.trim()
   const contact_name = document.getElementById('edit-contact').value.trim()
@@ -393,6 +415,8 @@ window.saveListing = async function (id) {
   const rateRaw = document.getElementById('edit-rate').value.trim()
   const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
   const rate = rateRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(rateRaw) || 0)
+  const rateTypeEl = document.querySelector('input[name="edit-rate-type"]:checked')
+  const rate_type = rateTypeEl ? rateTypeEl.value : 'hour'
   const description = document.getElementById('edit-desc').value.trim()
   const credsRaw = document.getElementById('edit-creds').value.trim()
   const years_experience = parseInt(document.getElementById('edit-years').value) || 0
@@ -415,7 +439,7 @@ window.saveListing = async function (id) {
   const phone = document.getElementById('edit-phone')?.value.trim() || ''
   const email = document.getElementById('edit-email')?.value.trim() || ''
   const { error } = await supabase.from('listings').update({
-    name, contact_name, phone, email, callout, rate, description, credentials, years_experience, tier: editTier, certificate_urls
+    name, contact_name, phone, email, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls
   }).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving: ' + error.message); return }
   toast('Listing updated!')
@@ -814,6 +838,8 @@ function renderDirectory() {
 function featuredCardHTML(l) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviewCount = l.reviews ? l.reviews.length : 0
+  const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : [])
+  const rateLabel = l.rate_type === 'day' ? 'Rate / Day' : 'Rate / Hr'
   return `<div class="tradesman-card featured-card" onclick="openProfile(${l.id})" style="border-color:var(--amber);background:linear-gradient(135deg,var(--charcoal-2) 0%,rgba(245,158,11,0.06) 100%);box-shadow:0 0 24px rgba(245,158,11,0.12);">
     <div style="position:absolute;top:12px;right:12px;background:var(--amber);color:var(--charcoal);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;">⭐ Featured</div>
     <div class="card-header" style="margin-right:70px;">
@@ -821,7 +847,7 @@ function featuredCardHTML(l) {
       <div style="flex:1;min-width:0;">
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
-        <div class="card-trade">${escHtml(l.trade)}</div>
+        <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
         <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
@@ -832,7 +858,7 @@ function featuredCardHTML(l) {
     </div>
     <div class="card-info">
       <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
-      <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
+      <div class="info-item"><div class="info-label">${rateLabel}</div><div class="info-value">${fmtRand(l.rate)}</div></div>
     </div>
     ${l.phone || l.email ? `
     <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid rgba(245,158,11,0.2);border-bottom:1px solid rgba(245,158,11,0.2);margin-bottom:0.75rem;">
@@ -856,13 +882,15 @@ function cardHTML(l) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviewCount = l.reviews ? l.reviews.length : 0
   const cityStr = l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')
+  const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : [])
+  const rateLabel = l.rate_type === 'day' ? 'Rate / Day' : 'Rate / Hr'
   return `<div class="tradesman-card">
     <div class="card-header">
       <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
-        <div class="card-trade">${escHtml(l.trade)}</div>
+        <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
         <div class="card-badges">${tierBadge(l.tier)}</div>
       </div>
     </div>
@@ -873,7 +901,7 @@ function cardHTML(l) {
     </div>
     <div class="card-info">
       <div class="info-item"><div class="info-label">Call-out Fee</div><div class="info-value">${fmtRand(l.callout)}</div></div>
-      <div class="info-item"><div class="info-label">Rate / Hour</div><div class="info-value">${fmtRand(l.rate)}</div></div>
+      <div class="info-item"><div class="info-label">${rateLabel}</div><div class="info-value">${fmtRand(l.rate)}</div></div>
     </div>
     ${l.phone || l.email ? `
     <div style="display:grid;grid-template-columns:${l.phone && l.email ? '1fr 1fr' : '1fr'};gap:8px;padding:0.75rem 0;border-top:1px solid var(--charcoal-3);border-bottom:1px solid var(--charcoal-3);margin-bottom:0.75rem;">
@@ -906,6 +934,8 @@ window.openProfile = async function (id) {
   trackEvent('profile_view', l.id, { trade: l.trade, province: l.province })
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviews = l.reviews || []
+  const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : [])
+  const rateLabel = l.rate_type === 'day' ? 'Rate / Day' : 'Rate / Hr'
   const credsHTML = l.credentials && l.credentials.length
     ? l.credentials.map(c => `<div class="cred-item"><div class="cred-icon">✓</div><span>${escHtml(c)}</span></div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No credentials listed yet.</p>'
@@ -960,7 +990,7 @@ window.openProfile = async function (id) {
       <div style="flex:1;">
         <div class="profile-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${escHtml(l.contact_name)}</div>` : ''}
-        <div class="profile-trade">${escHtml(l.trade)}</div>
+        <div class="profile-trade">${allTrades.map(escHtml).join(' · ')}</div>
         <div class="card-badges" style="margin-bottom:12px;">${tierBadge(l.tier)}</div>
         <div class="profile-rating-row">
           <span class="profile-rating-big">${rd}</span>
@@ -981,7 +1011,7 @@ window.openProfile = async function (id) {
     </div>
     <div class="profile-stats">
       <div class="stat-box"><span class="value">${fmtRand(l.callout)}</span><div class="label">Call-out Fee</div></div>
-      <div class="stat-box"><span class="value">${fmtRand(l.rate)}/hr</span><div class="label">Hourly Rate</div></div>
+      <div class="stat-box"><span class="value">${fmtRand(l.rate)}${l.rate_type === 'day' ? '/day' : '/hr'}</span><div class="label">${rateLabel}</div></div>
       <div class="stat-box"><span class="value">${l.years_experience || '—'}</span><div class="label">Years Experience</div></div>
     </div>
     <div class="profile-section">
@@ -1209,12 +1239,15 @@ window.submitListing = async function () {
   const name = document.getElementById('f-business').value.trim() || contact_name
   const phone = document.getElementById('f-phone')?.value.trim() || ''
   const trade = getSelectedTrade()
+  const trades = [...selectedTrades]
   const province = document.getElementById('f-province').value
   const city = selectedCities.length > 0 ? selectedCities[0] : ''
   const calloutRaw = document.getElementById('f-callout').value.trim()
   const rateRaw = document.getElementById('f-rate').value.trim()
   const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
   const rate = rateRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(rateRaw) || 0)
+  const rateTypeEl = document.querySelector('input[name="f-rate-type"]:checked')
+  const rate_type = rateTypeEl ? rateTypeEl.value : 'hour'
   const description = document.getElementById('f-desc').value.trim()
   const credsRaw = document.getElementById('f-creds')?.value.trim() || ''
   const years_experience = parseInt(document.getElementById('f-years')?.value) || 0
@@ -1223,7 +1256,7 @@ window.submitListing = async function () {
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   if (phone && !/^\+?[\d\s\-()]{7,15}$/.test(phone)) { toast('Please enter a valid phone number.'); return }
   if (!name || selectedTrades.length === 0 || !province || selectedCities.length === 0) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
-  if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your hourly rate or N/A.'); return }
+  if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
 
   // Create account first
@@ -1261,7 +1294,7 @@ window.submitListing = async function () {
 
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const { error } = await supabase.from('listings').insert({
-    name, contact_name, phone, email, trade, province, city: cities[0] || city, cities, callout, rate, description, credentials, years_experience, tier: selectedTier,
+    name, contact_name, phone, email, trade, trades, province, city: cities[0] || city, cities, callout, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
     user_id: userId, certificate_urls, photo_url
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
