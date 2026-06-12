@@ -773,13 +773,15 @@ window.goBack = function () {
 window.closeReviewModal = function () { document.getElementById('review-modal').classList.remove('open') }
 function getStarVal(name) {
   const el = document.querySelector(`input[name="${name}"]:checked`)
-  return el ? parseInt(el.value) : 5
+  return el ? parseInt(el.value) : 0
 }
 
 window.submitReview = async function () {
   const reviewer_name = document.getElementById('r-name').value.trim()
   const review_text = document.getElementById('r-text').value.trim()
   if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return }
+  const cats = ['stars-quality','stars-service','stars-clean','stars-comms','stars-value']
+  if (cats.some(n => !document.querySelector(`input[name="${n}"]:checked`))) { toast('Please rate all 5 categories.'); return }
 
   const quality = getStarVal('stars-quality')
   const service = getStarVal('stars-service')
@@ -1007,28 +1009,16 @@ loadListings().then(() => handleRoute())
 
 function initStarSelects() {
   document.querySelectorAll('.star-select').forEach(group => {
-    const radios = [...group.querySelectorAll('input[type="radio"]')]
-    const labels = [...group.querySelectorAll('label')]
-
-    function updateLit(val) {
-      labels.forEach((l, i) => l.classList.toggle('lit', i < val))
-    }
-
-    // Show current checked value
+    const fresh = group.cloneNode(true)
+    group.parentNode.replaceChild(fresh, group)
+    const radios = [...fresh.querySelectorAll('input[type="radio"]')]
+    const labels = [...fresh.querySelectorAll('label')]
+    function updateLit(val) { labels.forEach((l, i) => l.classList.toggle('lit', i < val)) }
     const checked = radios.find(r => r.checked)
-    updateLit(checked ? parseInt(checked.value) : 5)
-
-    // Click to select
+    updateLit(checked ? parseInt(checked.value) : 0)
     radios.forEach(r => r.addEventListener('change', () => updateLit(parseInt(r.value))))
-
-    // Hover preview
-    labels.forEach((l, i) => {
-      l.addEventListener('mouseenter', () => updateLit(i + 1))
-    })
-    group.addEventListener('mouseleave', () => {
-      const cur = radios.find(r => r.checked)
-      updateLit(cur ? parseInt(cur.value) : 5)
-    })
+    labels.forEach((l, i) => l.addEventListener('mouseenter', () => updateLit(i + 1)))
+    fresh.addEventListener('mouseleave', () => { const cur = radios.find(r => r.checked); updateLit(cur ? parseInt(cur.value) : 0) })
   })
 }
 
@@ -1037,10 +1027,6 @@ window.openReviewModal = function (id) {
   document.getElementById('review-modal').classList.add('open')
   document.getElementById('r-name').value = ''
   document.getElementById('r-text').value = ''
-  // Reset all groups to 5 stars
-  ;['stars-quality','stars-service','stars-clean','stars-comms','stars-value'].forEach(name => {
-    const el = document.querySelector(`input[name="${name}"][value="5"]`)
-    if (el) el.checked = true
-  })
+  document.querySelectorAll('.star-select input[type="radio"]').forEach(r => r.checked = false)
   initStarSelects()
 }
