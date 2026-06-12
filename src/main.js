@@ -855,10 +855,11 @@ function renderMap() {
 
   if (!_map) {
     _map = L.map('map-container', { zoomControl: true }).setView([-28.4793, 24.6727], 6)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO',
       maxZoom: 18,
     }).addTo(_map)
+    tiles.getContainer && tiles.getContainer()?.style.setProperty('filter', 'grayscale(1)')
   }
 
   _map.eachLayer(l => { if (l instanceof L.Marker || l instanceof L.Circle) _map.removeLayer(l) })
