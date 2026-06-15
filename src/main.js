@@ -672,7 +672,7 @@ function renderHome() {
     : '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
 }
 
-window.filterByTrade = function (trade) { filterTrade = trade; document.getElementById('filter-trade').value = trade; showPage('directory') }
+window.filterByTrade = function (trade) { _smartMode = false; filterTrade = trade; document.getElementById('filter-trade').value = trade; showPage('directory') }
 window.updateHeroTrades = function () {
   const cat = document.getElementById('hero-category').value
   const tradeSelect = document.getElementById('hero-search')
@@ -693,11 +693,144 @@ window.updateFilterTrades = function () {
   window.applyFilters()
 }
 window.heroSearch = function () {
+  _smartMode = false
   filterTrade = document.getElementById('hero-search').value
   filterProvince = document.getElementById('hero-province').value
   filterCity = document.getElementById('hero-city')?.value || ''
   document.getElementById('filter-province').value = filterProvince
   window.showPage('directory')
+}
+
+// ── SMART SEARCH (keyword-based, no API key — upgradeable to AI later) ──────────
+const TRADE_SYNONYMS = {
+  'plumber':'Plumber','plumbing':'Plumber','pipe':'Plumber','pipes':'Plumber','leak':'Plumber','leaking':'Plumber','burst':'Plumber','drain':'Plumber','blocked drain':'Plumber','tap':'Plumber','toilet':'Plumber','blocked':'Plumber',
+  'geyser':'Geyser & Hot Water','hot water':'Geyser & Hot Water',
+  'gas':'Gas Fitter','gas fitter':'Gas Fitter',
+  'aircon':'Air Conditioning & HVAC','air con':'Air Conditioning & HVAC','air conditioning':'Air Conditioning & HVAC','a/c':'Air Conditioning & HVAC','hvac':'Air Conditioning & HVAC','cooling':'Air Conditioning & HVAC',
+  'pool':'Pool Service','borehole':'Borehole & Water','irrigation':'Irrigation & Sprinklers','sprinkler':'Irrigation & Sprinklers',
+  'electrician':'Electrician','electrical':'Electrician','sparky':'Electrician','wiring':'Electrician','plug':'Electrician','db board':'Electrician','power':'Electrician','lights':'Electrician','lighting':'Electrician',
+  'solar':'Solar Panel Installer','inverter':'Solar Panel Installer','pv':'Solar Panel Installer',
+  'generator':'Generator Installer','genny':'Generator Installer',
+  'cctv':'CCTV Installer','camera':'CCTV Installer','cameras':'CCTV Installer',
+  'alarm':'Alarm & Security Systems','security':'Alarm & Security Systems',
+  'gate motor':'Electric Gate & Intercom','gate':'Electric Gate & Intercom','intercom':'Electric Gate & Intercom',
+  'ev charger':'EV Charger Installer',
+  'builder':'Builder / General Contractor','building':'Builder / General Contractor','contractor':'Builder / General Contractor','construction':'Builder / General Contractor','renovation':'Builder / General Contractor','renovate':'Builder / General Contractor','extension':'Builder / General Contractor',
+  'carpenter':'Carpenter','carpentry':'Carpenter',
+  'tiler':'Tiler','tiling':'Tiler','tiles':'Tiler',
+  'roofer':'Roofer','roof':'Roofer','roofing':'Roofer',
+  'painter':'Painter','painting':'Painter','paint':'Painter',
+  'plasterer':'Plasterer','plaster':'Plasterer',
+  'bricklayer':'Bricklayer','brickwork':'Bricklayer',
+  'damp':'Damp Proofing','waterproofing':'Waterproofing','waterproof':'Waterproofing',
+  'ceiling':'Ceiling & Partitioning','glazier':'Glazier','glass':'Glazier','window':'Glazier',
+  'fence':'Fencer','fencing':'Fencer','concrete':'Concrete Contractor',
+  'flooring':'Flooring Installer','laminate':'Flooring Installer','vinyl':'Flooring Installer','architect':'Architect',
+  'kitchen':'Kitchen Fitter','cupboards':'Kitchen Fitter',
+  'interior designer':'Interior Designer','interior design':'Interior Designer','decor':'Interior Designer',
+  'curtains':'Curtains & Blinds','blinds':'Curtains & Blinds',
+  'wardrobe':'Wardrobe & Built-ins','built-in':'Wardrobe & Built-ins','built in':'Wardrobe & Built-ins',
+  'wallpaper':'Wallpaper Installer','upholstery':'Upholsterer','upholster':'Upholsterer',
+  'landscaper':'Landscaper','landscaping':'Landscaper','garden':'Landscaper',
+  'lawn':'Lawn Care','grass':'Lawn Care',
+  'tree feller':'Arborist / Tree Feller','tree':'Arborist / Tree Feller','arborist':'Arborist / Tree Feller',
+  'paving':'Paving & Driveways','driveway':'Paving & Driveways',
+  'pest':'Pest Control','pests':'Pest Control','fumigation':'Pest Control',
+  'pressure washing':'Pressure Washing','pressure wash':'Pressure Washing','skip':'Skip Hire',
+  'mobile mechanic':'Mobile Mechanic','mechanic':'Mobile Mechanic','auto electrician':'Auto Electrician',
+  'panel beater':'Auto Panel Beater','panelbeater':'Auto Panel Beater','dent':'Auto Panel Beater',
+  'tow':'Tow Truck','towing':'Tow Truck','tyre':'Tyre Fitting','tyres':'Tyre Fitting','tire':'Tyre Fitting',
+  'windscreen':'Windscreen Repair','roadworthy':'Roadworthy & Inspection','car detail':'Car Detailer','detailing':'Car Detailer',
+  'handyman':'Handyman','odd jobs':'Handyman','small jobs':'Handyman',
+  'locksmith':'Locksmith','locked out':'Locksmith','lock':'Locksmith','keys':'Locksmith',
+  'appliance':'Appliance Repair','fridge':'Appliance Repair','washing machine':'Appliance Repair','dishwasher':'Appliance Repair','stove':'Appliance Repair','oven repair':'Appliance Repair',
+  'welder':'Welder & Fabrication','welding':'Welder & Fabrication',
+  'moving':'Moving & Removals','removals':'Moving & Removals','movers':'Moving & Removals',
+  'carpet cleaning':'Carpet Cleaning','carpet':'Carpet Cleaning',
+  'window cleaning':'Window Cleaning','office cleaning':'Office Cleaning',
+  'rubbish':'Rubbish Removal','junk':'Rubbish Removal','oven cleaning':'Oven Cleaning',
+  'domestic':'Domestic Cleaner','maid':'Domestic Cleaner','housekeeper':'Housekeeper','cleaner':'Domestic Cleaner','cleaning':'Deep Cleaning',
+}
+
+let _smartMode = false, _smartRanked = [], _smartQuery = '', _smartInterp = ''
+
+function runSmartSearch(query, all) {
+  const q = query.toLowerCase()
+  const targetTrades = new Set()
+  Object.keys(TRADE_SYNONYMS).sort((a, b) => b.length - a.length).forEach(k => { if (q.includes(k)) targetTrades.add(TRADE_SYNONYMS[k]) })
+  TRADES_LIST.forEach(t => { if (q.includes(t.toLowerCase())) targetTrades.add(t) })
+  let province = '', city = ''
+  Object.keys(PROVINCE_CITIES).forEach(p => { if (q.includes(p.toLowerCase())) province = p })
+  Object.entries(PROVINCE_CITIES).forEach(([p, cities]) => { cities.forEach(c => { const bare = c.toLowerCase(); const stripped = bare.replace(/\s*\(.*\)/, ''); if (q.includes(stripped) || q.includes(bare)) { city = c; if (!province) province = p } }) })
+  const emergency = /(emergency|urgent|asap|24\/7|24 7|24hr|24 hour|after hour|after-hour|tonight|right now|same day|immediately)/.test(q)
+  const affordable = /(cheap|afford|budget|low cost|inexpensive|best price|reasonable|quote)/.test(q)
+  const topRated = /(best|top|reliable|trusted|highly rated|good review|recommended|quality|professional)/.test(q)
+  const words = q.split(/\W+/).filter(w => w.length > 3)
+
+  const ranked = all.map(l => {
+    let score = 0; const reasons = []
+    const lTrades = (l.trades && l.trades.length ? l.trades : [l.trade]).filter(Boolean)
+    if (targetTrades.size) {
+      const m = lTrades.find(t => targetTrades.has(t))
+      if (m) { score += 60; reasons.push(m) }
+      else if (lTrades.some(t => words.some(w => t.toLowerCase().includes(w)))) score += 15
+    }
+    if (city && (l.city === city || (l.cities || []).includes(city))) { score += 35; reasons.push(city) }
+    else if (province && l.province === province) { score += 20; if (!city) reasons.push(province) }
+    else if (city || province) score -= 12
+    const hay = (l.name + ' ' + (l.description || '') + ' ' + lTrades.join(' ')).toLowerCase()
+    words.forEach(w => { if (hay.includes(w)) score += 3 })
+    const r = avgRating(l)
+    score += r * 4
+    if (l.tier === 'premium') score += 6; else if (l.tier === 'verified') score += 3
+    if (emergency && /(emergency|24|after hour|same day|urgent)/.test(hay)) { score += 18; reasons.push('Emergency') }
+    if (topRated && r >= 4.5) score += 12
+    if (affordable && l.callout >= 0) score += Math.max(0, 12 - l.callout / 100)
+    return { l, score, reasons: [...new Set(reasons)] }
+  })
+
+  const hasCriteria = targetTrades.size || city || province
+  let filtered = hasCriteria ? ranked.filter(x => x.score >= 20) : ranked
+  if (hasCriteria && !filtered.length) filtered = ranked.filter(x => x.score > 0)
+  filtered.sort((a, b) => b.score - a.score)
+
+  const parts = []
+  if (targetTrades.size) parts.push([...targetTrades].slice(0, 3).join(', '))
+  if (city) parts.push('in ' + city); else if (province) parts.push('in ' + province)
+  if (emergency) parts.push('available for emergencies')
+  if (affordable) parts.push('budget-friendly')
+  if (topRated) parts.push('highly rated')
+  return { ranked: filtered.slice(0, 30), interp: parts.length ? parts.join(' · ') : 'best overall matches' }
+}
+
+window.smartSearch = function () {
+  const q = (document.getElementById('smart-q')?.value || '').trim()
+  if (!q) return
+  const res = runSmartSearch(q, listings)
+  _smartMode = true; _smartRanked = res.ranked; _smartQuery = q; _smartInterp = res.interp
+  window.showPage('directory')
+}
+
+window.clearSmartSearch = function () {
+  _smartMode = false; _smartRanked = []; _smartQuery = ''
+  const box = document.getElementById('smart-q'); if (box) box.value = ''
+  renderDirectory()
+}
+
+function renderSmartResults() {
+  document.getElementById('dir-title').textContent = `Results for "${_smartQuery}"`
+  document.getElementById('dir-count').textContent = `${_smartRanked.length} match${_smartRanked.length !== 1 ? 'es' : ''}`
+  let html = `<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div style="font-size:13px;color:var(--charcoal-6);"><span style="color:var(--amber);font-weight:600;">Smart match:</span> ${escHtml(_smartInterp)}</div>
+    <button class="btn btn-outline btn-sm" onclick="clearSmartSearch()">Clear search</button>
+  </div>`
+  if (!_smartRanked.length) {
+    html += `<div class="empty-state" style="grid-column:1/-1"><h3>No matches found</h3><p>Try rephrasing, or <a onclick="clearSmartSearch()" style="color:var(--amber);cursor:pointer;">browse all tradesmen</a>.</p></div>`
+  } else {
+    html += _smartRanked.map(x => cardHTML(x.l)).join('')
+  }
+  document.getElementById('dir-cards').innerHTML = html
+  _smartRanked.forEach(x => trackEvent('search_impression', x.l.id, { trade: x.l.trade, smart: true }))
 }
 
 window.updateHeroCities = function () {
@@ -860,6 +993,7 @@ function populateTradeFilter() {
 }
 
 window.applyFilters = function () {
+  _smartMode = false
   filterTrade = document.getElementById('filter-trade').value
   filterProvince = document.getElementById('filter-province').value
   filterSort = document.getElementById('filter-sort').value
@@ -1010,6 +1144,7 @@ window.toggleFavsFilter = function () {
 }
 
 function renderDirectory() {
+  if (_smartMode) { renderSmartResults(); return }
   populateTradeFilter()
   document.getElementById('filter-province').value = filterProvince
   document.getElementById('filter-sort').value = filterSort

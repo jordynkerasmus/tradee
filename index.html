@@ -61,6 +61,16 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 8rem); letter-spacing: 0.06em; line-height: 0.9; margin-bottom: 1.5rem; position: relative; }
 .hero h1 .accent { color: var(--amber); }
 .hero-sub { font-size: 1.1rem; color: var(--charcoal-6); max-width: 520px; margin: 0 auto 2.5rem; }
+.smart-search { max-width: 700px; margin: 0 auto 1.25rem; position: relative; }
+.smart-search-box { display: flex; gap: 0; background: var(--charcoal-3); border: 1.5px solid rgba(245,158,11,0.4); border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 24px rgba(245,158,11,0.08); transition: border-color 0.2s, box-shadow 0.2s; }
+.smart-search-box:focus-within { border-color: var(--amber); box-shadow: 0 0 28px rgba(245,158,11,0.18); }
+.smart-search-box input { flex: 1; background: transparent; border: none; outline: none; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 16px 18px; }
+.smart-search-box input::placeholder { color: var(--charcoal-6); }
+.smart-search-box .btn { border-radius: 0; padding: 14px 26px; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.smart-search-label { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 10px; font-weight: 600; }
+.smart-search-hint { font-size: 12px; color: var(--charcoal-6); margin-top: 8px; }
+.smart-divider { max-width: 700px; margin: 0 auto 1rem; display: flex; align-items: center; gap: 14px; color: var(--charcoal-6); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+.smart-divider::before, .smart-divider::after { content: ''; flex: 1; height: 1px; background: var(--charcoal-4); }
 .search-wrap { max-width: 700px; margin: 0 auto; display: flex; gap: 0; background: var(--charcoal-3); border: 1px solid var(--charcoal-4); border-radius: var(--radius); overflow: hidden; position: relative; }
 .search-wrap input, .search-wrap select { background: transparent; border: none; outline: none; color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 14px 16px; }
 .search-wrap input { flex: 1; }
@@ -307,6 +317,18 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <div class="hero-eyebrow">The Trade Directory</div>
     <h1>FIND THE<br><span class="accent">RIGHT</span><br>TRADESMAN</h1>
     <p class="hero-sub">Verified electricians, plumbers, builders and more — browse, compare, and book with confidence.</p>
+    <div class="smart-search">
+      <div class="smart-search-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/></svg>
+        Smart Search
+      </div>
+      <div class="smart-search-box">
+        <input type="text" id="smart-q" placeholder="Describe what you need, e.g. emergency plumber in Cape Town" onkeydown="if(event.key==='Enter')smartSearch()">
+        <button class="btn btn-primary" onclick="smartSearch()">Find</button>
+      </div>
+      <div class="smart-search-hint">Try: "reliable electrician in Sandton" or "someone to fix my geyser urgently"</div>
+    </div>
+    <div class="smart-divider">or browse manually</div>
     <div class="search-wrap" style="margin-bottom:8px;">
       <select id="hero-category" onchange="updateHeroTrades()" style="flex:1;border-left:none;">
         <option value="">All Categories</option>
@@ -728,7 +750,7 @@ let listings = [...SAMPLE];
 let currentProfile = null;
 let selectedTier = 'free';
 let reviewingId = null;
-let filterTrade = '', filterProvince = '', filterTierVal = '', filterSort = 'rating', dirSearchTerm = '';
+let filterTrade = '', filterProvince = '', filterSort = 'rating', dirSearchTerm = '';
 
 function toggleMobileMenu() {
   const menu = document.getElementById('nav-mobile-menu');
@@ -940,7 +962,7 @@ function renderHome() {
   document.getElementById('home-cards').innerHTML=featured.map(cardHTML).join('');
 }
 
-function filterByTrade(trade) { filterTrade=trade; document.getElementById('filter-trade').value=trade; showPage('directory'); }
+function filterByTrade(trade) { _smartMode=false; filterTrade=trade; document.getElementById('filter-trade').value=trade; showPage('directory'); }
 function updateHeroTrades() {
   const cat = document.getElementById('hero-category').value;
   const tradeSelect = document.getElementById('hero-search');
@@ -961,11 +983,143 @@ function updateFilterTrades() {
   applyFilters();
 }
 function heroSearch() {
+  _smartMode=false;
   filterTrade=document.getElementById('hero-search').value;
   filterProvince=document.getElementById('hero-province').value;
   filterCity=document.getElementById('hero-city').value;
   document.getElementById('filter-province').value=filterProvince;
   showPage('directory');
+}
+
+// ── SMART SEARCH (keyword-based, no API key — upgradeable to AI later) ──────────
+const TRADE_SYNONYMS = {
+  'plumber':'Plumber','plumbing':'Plumber','pipe':'Plumber','pipes':'Plumber','leak':'Plumber','leaking':'Plumber','burst':'Plumber','drain':'Plumber','blocked drain':'Plumber','tap':'Plumber','toilet':'Plumber','blocked':'Plumber',
+  'geyser':'Geyser & Hot Water','hot water':'Geyser & Hot Water',
+  'gas':'Gas Fitter','gas fitter':'Gas Fitter',
+  'aircon':'Air Conditioning & HVAC','air con':'Air Conditioning & HVAC','air conditioning':'Air Conditioning & HVAC','a/c':'Air Conditioning & HVAC','hvac':'Air Conditioning & HVAC','cooling':'Air Conditioning & HVAC',
+  'pool':'Pool Service','borehole':'Borehole & Water','irrigation':'Irrigation & Sprinklers','sprinkler':'Irrigation & Sprinklers',
+  'electrician':'Electrician','electrical':'Electrician','sparky':'Electrician','wiring':'Electrician','plug':'Electrician','db board':'Electrician','power':'Electrician','lights':'Electrician','lighting':'Electrician',
+  'solar':'Solar Panel Installer','inverter':'Solar Panel Installer','pv':'Solar Panel Installer',
+  'generator':'Generator Installer','genny':'Generator Installer',
+  'cctv':'CCTV Installer','camera':'CCTV Installer','cameras':'CCTV Installer',
+  'alarm':'Alarm & Security Systems','security':'Alarm & Security Systems',
+  'gate motor':'Electric Gate & Intercom','gate':'Electric Gate & Intercom','intercom':'Electric Gate & Intercom',
+  'ev charger':'EV Charger Installer',
+  'builder':'Builder / General Contractor','building':'Builder / General Contractor','contractor':'Builder / General Contractor','construction':'Builder / General Contractor','renovation':'Builder / General Contractor','renovate':'Builder / General Contractor','extension':'Builder / General Contractor',
+  'carpenter':'Carpenter','carpentry':'Carpenter',
+  'tiler':'Tiler','tiling':'Tiler','tiles':'Tiler',
+  'roofer':'Roofer','roof':'Roofer','roofing':'Roofer',
+  'painter':'Painter','painting':'Painter','paint':'Painter',
+  'plasterer':'Plasterer','plaster':'Plasterer',
+  'bricklayer':'Bricklayer','brickwork':'Bricklayer',
+  'damp':'Damp Proofing','waterproofing':'Waterproofing','waterproof':'Waterproofing',
+  'ceiling':'Ceiling & Partitioning','glazier':'Glazier','glass':'Glazier','window':'Glazier',
+  'fence':'Fencer','fencing':'Fencer','concrete':'Concrete Contractor',
+  'flooring':'Flooring Installer','laminate':'Flooring Installer','vinyl':'Flooring Installer','architect':'Architect',
+  'kitchen':'Kitchen Fitter','cupboards':'Kitchen Fitter',
+  'interior designer':'Interior Designer','interior design':'Interior Designer','decor':'Interior Designer',
+  'curtains':'Curtains & Blinds','blinds':'Curtains & Blinds',
+  'wardrobe':'Wardrobe & Built-ins','built-in':'Wardrobe & Built-ins','built in':'Wardrobe & Built-ins',
+  'wallpaper':'Wallpaper Installer','upholstery':'Upholsterer','upholster':'Upholsterer',
+  'landscaper':'Landscaper','landscaping':'Landscaper','garden':'Landscaper',
+  'lawn':'Lawn Care','grass':'Lawn Care',
+  'tree feller':'Arborist / Tree Feller','tree':'Arborist / Tree Feller','arborist':'Arborist / Tree Feller',
+  'paving':'Paving & Driveways','driveway':'Paving & Driveways',
+  'pest':'Pest Control','pests':'Pest Control','fumigation':'Pest Control',
+  'pressure washing':'Pressure Washing','pressure wash':'Pressure Washing','skip':'Skip Hire',
+  'mobile mechanic':'Mobile Mechanic','mechanic':'Mobile Mechanic','auto electrician':'Auto Electrician',
+  'panel beater':'Auto Panel Beater','panelbeater':'Auto Panel Beater','dent':'Auto Panel Beater',
+  'tow':'Tow Truck','towing':'Tow Truck','tyre':'Tyre Fitting','tyres':'Tyre Fitting','tire':'Tyre Fitting',
+  'windscreen':'Windscreen Repair','roadworthy':'Roadworthy & Inspection','car detail':'Car Detailer','detailing':'Car Detailer',
+  'handyman':'Handyman','odd jobs':'Handyman','small jobs':'Handyman',
+  'locksmith':'Locksmith','locked out':'Locksmith','lock':'Locksmith','keys':'Locksmith',
+  'appliance':'Appliance Repair','fridge':'Appliance Repair','washing machine':'Appliance Repair','dishwasher':'Appliance Repair','stove':'Appliance Repair','oven repair':'Appliance Repair',
+  'welder':'Welder & Fabrication','welding':'Welder & Fabrication',
+  'moving':'Moving & Removals','removals':'Moving & Removals','movers':'Moving & Removals',
+  'carpet cleaning':'Carpet Cleaning','carpet':'Carpet Cleaning',
+  'window cleaning':'Window Cleaning','office cleaning':'Office Cleaning',
+  'rubbish':'Rubbish Removal','junk':'Rubbish Removal','oven cleaning':'Oven Cleaning',
+  'domestic':'Domestic Cleaner','maid':'Domestic Cleaner','housekeeper':'Housekeeper','cleaner':'Domestic Cleaner','cleaning':'Deep Cleaning',
+};
+
+let _smartMode=false, _smartRanked=[], _smartQuery='', _smartInterp='';
+
+function runSmartSearch(query, all) {
+  const q = query.toLowerCase();
+  const targetTrades = new Set();
+  Object.keys(TRADE_SYNONYMS).sort((a,b)=>b.length-a.length).forEach(k=>{ if (q.includes(k)) targetTrades.add(TRADE_SYNONYMS[k]); });
+  TRADES_LIST.forEach(t=>{ if (q.includes(t.toLowerCase())) targetTrades.add(t); });
+  let province='', city='';
+  Object.keys(PROVINCE_CITIES).forEach(p=>{ if (q.includes(p.toLowerCase())) province=p; });
+  Object.entries(PROVINCE_CITIES).forEach(([p,cities])=>{ cities.forEach(c=>{ const bare=c.toLowerCase(); const stripped=bare.replace(/\s*\(.*\)/,''); if (q.includes(stripped)||q.includes(bare)) { city=c; if (!province) province=p; } }); });
+  const emergency=/(emergency|urgent|asap|24\/7|24 7|24hr|24 hour|after hour|after-hour|tonight|right now|same day|immediately)/.test(q);
+  const affordable=/(cheap|afford|budget|low cost|inexpensive|best price|reasonable|quote)/.test(q);
+  const topRated=/(best|top|reliable|trusted|highly rated|good review|recommended|quality|professional)/.test(q);
+  const words=q.split(/\W+/).filter(w=>w.length>3);
+
+  const ranked = all.map(l=>{
+    let score=0; const reasons=[];
+    const lTrades=(l.trades&&l.trades.length?l.trades:[l.trade]).filter(Boolean);
+    if (targetTrades.size) {
+      const m=lTrades.find(t=>targetTrades.has(t));
+      if (m) { score+=60; reasons.push(m); }
+      else if (lTrades.some(t=>words.some(w=>t.toLowerCase().includes(w)))) score+=15;
+    }
+    if (city && (l.city===city || (l.cities||[]).includes(city))) { score+=35; reasons.push(city); }
+    else if (province && l.province===province) { score+=20; if (!city) reasons.push(province); }
+    else if (city||province) score-=12;
+    const hay=(l.name+' '+(l.desc||l.description||'')+' '+lTrades.join(' ')).toLowerCase();
+    words.forEach(w=>{ if (hay.includes(w)) score+=3; });
+    const r=avgRating(l);
+    score += r*4;
+    if (l.tier==='premium') score+=6; else if (l.tier==='verified') score+=3;
+    if (emergency && /(emergency|24|after hour|same day|urgent)/.test(hay)) { score+=18; reasons.push('Emergency'); }
+    if (topRated && r>=4.5) score+=12;
+    if (affordable && l.callout>=0) score += Math.max(0,12-l.callout/100);
+    return { l, score, reasons:[...new Set(reasons)] };
+  });
+
+  const hasCriteria = targetTrades.size||city||province;
+  let filtered = hasCriteria ? ranked.filter(x=>x.score>=20) : ranked;
+  if (hasCriteria && !filtered.length) filtered = ranked.filter(x=>x.score>0);
+  filtered.sort((a,b)=>b.score-a.score);
+
+  const parts=[];
+  if (targetTrades.size) parts.push([...targetTrades].slice(0,3).join(', '));
+  if (city) parts.push('in '+city); else if (province) parts.push('in '+province);
+  if (emergency) parts.push('available for emergencies');
+  if (affordable) parts.push('budget-friendly');
+  if (topRated) parts.push('highly rated');
+  return { ranked: filtered.slice(0,30), interp: parts.length?parts.join(' · '):'best overall matches' };
+}
+
+function smartSearch() {
+  const q=(document.getElementById('smart-q')?.value||'').trim();
+  if (!q) return;
+  const res=runSmartSearch(q, listings);
+  _smartMode=true; _smartRanked=res.ranked; _smartQuery=q; _smartInterp=res.interp;
+  showPage('directory');
+}
+
+function clearSmartSearch() {
+  _smartMode=false; _smartRanked=[]; _smartQuery='';
+  const box=document.getElementById('smart-q'); if (box) box.value='';
+  renderDirectory();
+}
+
+function renderSmartResults() {
+  document.getElementById('dir-title').textContent = `Results for "${_smartQuery}"`;
+  document.getElementById('dir-count').textContent = `${_smartRanked.length} match${_smartRanked.length!==1?'es':''}`;
+  let html = `<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div style="font-size:13px;color:var(--charcoal-6);"><span style="color:var(--amber);font-weight:600;">Smart match:</span> ${_smartInterp}</div>
+    <button class="btn btn-outline btn-sm" onclick="clearSmartSearch()">Clear search</button>
+  </div>`;
+  if (!_smartRanked.length) {
+    html += `<div class="empty-state" style="grid-column:1/-1"><h3>No matches found</h3><p>Try rephrasing, or <a onclick="clearSmartSearch()" style="color:var(--amber);cursor:pointer;">browse all tradesmen</a>.</p></div>`;
+  } else {
+    html += _smartRanked.map(x=>cardHTML(x.l)).join('');
+  }
+  document.getElementById('dir-cards').innerHTML = html;
 }
 
 function buildTradeOptgroups() {
@@ -998,17 +1152,17 @@ function populateTradeFilter() {
 }
 
 function applyFilters() {
+  _smartMode=false;
   filterTrade=document.getElementById('filter-trade').value;
   filterProvince=document.getElementById('filter-province').value;
-  filterTierVal=document.getElementById('filter-tier').value;
   filterSort=document.getElementById('filter-sort').value;
   renderDirectory();
 }
 
 function renderDirectory() {
+  if (_smartMode) { renderSmartResults(); return; }
   populateTradeFilter();
   document.getElementById('filter-province').value=filterProvince;
-  document.getElementById('filter-tier').value=filterTierVal;
   document.getElementById('filter-sort').value=filterSort;
   const tierOrder={premium:0,verified:1,free:2};
   const showFavsOnly=document.getElementById('fav-filter-btn')?.dataset.active==='1';
@@ -1021,7 +1175,6 @@ function renderDirectory() {
     }
     if (filterTrade && l.trade!==filterTrade) return false;
     if (filterProvince && l.province!==filterProvince) return false;
-    if (filterTierVal && l.tier!==filterTierVal) return false;
     if (dirSearchTerm) { const term=dirSearchTerm.toLowerCase(); if (!l.name.toLowerCase().includes(term) && !l.trade.toLowerCase().includes(term) && !l.desc.toLowerCase().includes(term)) return false; }
     return true;
   }).sort((a,b)=>{
