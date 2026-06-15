@@ -28,15 +28,19 @@ idempotent.
    **Fix:** `protect_listing_columns` trigger forces `tier='free'` on insert for
    non-admins; only an admin can promote a tier.
 
-2. **Public exposure of registration/certificate documents.**
-   `loadListings()` selects `*` for every listing and ships it to every
-   anonymous visitor — including `certificate_urls`, which point at the
-   **public** `certifications-registrations` bucket. Anyone can download other
-   tradesmen's registration/ID documents.
-   **Fix (requires follow-up code change — not yet done):** move certificates to
-   a **private** bucket and serve them to the owner/admin via short-lived signed
-   URLs. Profile photos & portfolio images can stay in a public bucket. SQL stub
-   for the private-bucket policies is at the bottom of `security-policies.sql`.
+2. **Public exposure of registration/certificate documents.** ✅ FIXED
+   `loadListings()` selected `*` and shipped `certificate_urls` (pointing at the
+   **public** `certifications-registrations` bucket) to every visitor — anyone
+   could download other tradesmen's registration/ID documents.
+   **Fix (done):** certificates now upload to a **private** `certifications`
+   bucket and only the storage **path** is stored. They are served via
+   short-lived signed URLs (`viewCert()`) to the owner (dashboard) and admins
+   (admin panel “Docs” column) only. The public profile no longer shows the
+   documents — just a "verified by Tradee" trust note for paid tiers. Profile
+   photos & portfolio images stay in the public bucket.
+   **You must run** `supabase/storage-buckets.sql` to create the private bucket
+   and its owner/admin-only policies, and **delete any old certificate files**
+   still sitting in the public bucket (they remain downloadable until removed).
 
 3. **Reviews could be edited/forged.**
    The reply feature updates reviews by id with no ownership check in the client,
@@ -95,6 +99,7 @@ idempotent.
 ## Still to do (recommended order)
 
 1. **Run `supabase/security-policies.sql`** (edit the admin email first).
-2. **Split storage buckets** — public `avatars`, private `certifications` +
-   signed URLs (closes finding #2). Happy to implement on request.
-3. Lock down the edge functions (#8, #9) when they are deployed.
+2. **Run `supabase/storage-buckets.sql`** to create the private `certifications`
+   bucket + policies, then delete any old cert files from the public bucket.
+3. **Run `supabase/favourites.sql`** (saved-listings sync table).
+4. Lock down the edge functions (#8, #9) when they are deployed.

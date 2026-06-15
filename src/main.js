@@ -7,6 +7,26 @@ let currentProfile = null
 let currentUser = null
 let selectedTier = 'free'
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL || '').split(',').map(e => e.trim()).filter(Boolean)
+
+// Storage buckets:
+//  - BUCKET_PUBLIC holds profile photos & portfolio images (publicly readable).
+//  - BUCKET_CERTS is PRIVATE and holds registration/certificate documents.
+//    We store the object PATH (not a public URL) and mint short-lived signed
+//    URLs on demand for the owner and admins only. See supabase/security-policies.sql.
+const BUCKET_PUBLIC = 'certifications-registrations'
+const BUCKET_CERTS = 'certifications'
+
+// Open a private certificate via a freshly-minted signed URL.
+// Legacy entries were stored as full public URLs — open those directly.
+window.viewCert = async function (ref) {
+  if (!ref) return
+  if (/^https?:\/\//.test(ref)) { window.open(ref, '_blank'); return }
+  const { data, error } = await supabase.storage.from(BUCKET_CERTS).createSignedUrl(ref, 3600)
+  if (error || !data?.signedUrl) { toast('Could not open document — please try again.'); return }
+  window.open(data.signedUrl, '_blank')
+}
+// Filename for display from a path or URL.
+function certLabel(ref, i) { return `${(ref || '').toLowerCase().includes('.pdf') ? 'PDF' : 'IMG'} · Document ${i + 1}` }
 let editTier = 'free'
 let reviewingId = null
 let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = ''
@@ -341,11 +361,11 @@ async function renderDashboard() {
           <div id="edit-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
           ${listing.certificate_urls && listing.certificate_urls.length ? `
           <div style="margin-top:1rem;">
-            <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded Certificates</div>
-            ${listing.certificate_urls.map((url, i) => `
+            <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded Documents <span style="font-weight:400;text-transform:none;letter-spacing:0;">(private — only you & Tradee can see these)</span></div>
+            ${listing.certificate_urls.map((ref, i) => `
               <div style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:8px 12px;margin-bottom:6px;">
-                <span style="font-size:18px;">${url.includes('.pdf') ? 'PDF' : 'IMG'}</span>
-                <a href="${url}" target="_blank" style="flex:1;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Certificate ${i + 1}</a>
+                <span style="font-size:18px;">${(ref || '').includes('.pdf') ? 'PDF' : 'IMG'}</span>
+                <button type="button" onclick="viewCert('${escHtml(ref)}')" style="flex:1;text-align:left;background:none;border:none;cursor:pointer;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Document ${i + 1} ↗</button>
               </div>`).join('')}
           </div>` : ''}
         </div>
@@ -430,9 +450,9 @@ window.uploadPortfolioPhotos = async function (input, listingId) {
   const portfolio = existing?.portfolio_photos || []
   for (const file of files) {
     const path = `${currentUser.id}/portfolio-${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
+    const { error: uploadError } = await supabase.storage.from(BUCKET_PUBLIC).upload(path, file)
     if (!uploadError) {
-      const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
+      const { data: urlData } = supabase.storage.from(BUCKET_PUBLIC).getPublicUrl(path)
       portfolio.push({ url: urlData.publicUrl, caption: '' })
     }
   }
@@ -465,9 +485,9 @@ window.updatePhoto = async function (input, id) {
   if (file.size > 2 * 1024 * 1024) { toast('Photo must be under 2MB'); return }
   toast('Uploading photo...')
   const path = `${currentUser.id}/photo-${Date.now()}-${file.name}`
-  const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
+  const { error: uploadError } = await supabase.storage.from(BUCKET_PUBLIC).upload(path, file)
   if (uploadError) { toast('Upload failed: ' + uploadError.message); return }
-  const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
+  const { data: urlData } = supabase.storage.from(BUCKET_PUBLIC).getPublicUrl(path)
   const photo_url = urlData.publicUrl
   const { error } = await supabase.from('listings').update({ photo_url }).eq('id', id).eq('user_id', currentUser.id)
   if (error) { toast('Error saving photo'); return }
@@ -511,11 +531,9 @@ window.saveListing = async function (id) {
   const certificate_urls = existing?.certificate_urls || []
   for (const file of newFiles) {
     const path = `${currentUser.id}/${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
-    if (!uploadError) {
-      const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
-      certificate_urls.push(urlData.publicUrl)
-    }
+    // Certificates go to the PRIVATE bucket; store the path, not a public URL.
+    const { error: uploadError } = await supabase.storage.from(BUCKET_CERTS).upload(path, file)
+    if (!uploadError) certificate_urls.push(path)
   }
   window.editCertFiles = []
 
@@ -535,9 +553,9 @@ window.saveListing = async function (id) {
   const newPhoto = window.editPhotoFile
   if (newPhoto) {
     const photoPath = `${currentUser.id}/photo-${Date.now()}-${newPhoto.name}`
-    const { error: photoErr } = await supabase.storage.from('certifications-registrations').upload(photoPath, newPhoto)
+    const { error: photoErr } = await supabase.storage.from(BUCKET_PUBLIC).upload(photoPath, newPhoto)
     if (!photoErr) {
-      const { data: photoUrlData } = supabase.storage.from('certifications-registrations').getPublicUrl(photoPath)
+      const { data: photoUrlData } = supabase.storage.from(BUCKET_PUBLIC).getPublicUrl(photoPath)
       photo_url = photoUrlData.publicUrl
     }
     window.editPhotoFile = null
@@ -1364,13 +1382,14 @@ window.openProfile = async function (id) {
   const credsHTML = l.credentials && l.credentials.length
     ? l.credentials.map(c => `<div class="cred-item"><div class="cred-icon">✓</div><span>${escHtml(c)}</span></div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No credentials listed yet.</p>'
-  const certsHTML = l.certificate_urls && l.certificate_urls.length
-    ? l.certificate_urls.map((url, i) => `
-        <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:10px;background:var(--charcoal-3);border-radius:var(--radius);padding:10px 14px;text-decoration:none;transition:background 0.15s;" onmouseover="this.style.background='var(--charcoal-4)'" onmouseout="this.style.background='var(--charcoal-3)'">
-          <span style="font-size:20px;">${url.includes('.pdf') ? 'PDF' : 'IMG'}</span>
-          <span style="font-size:14px;color:var(--amber);">View Certificate ${i + 1}</span>
-          <span style="margin-left:auto;font-size:12px;color:var(--charcoal-6);">↗ Open</span>
-        </a>`).join('')
+  // Registration documents are PRIVATE (held only for Tradee verification).
+  // The public profile shows a trust note, never the documents themselves.
+  const hasDocs = l.certificate_urls && l.certificate_urls.length
+  const certsHTML = (hasDocs && (l.tier === 'verified' || l.tier === 'premium'))
+    ? `<div style="display:flex;align-items:center;gap:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:10px 14px;">
+         <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#22C55E"/><path d="M6 10.5l3 3 5-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+         <span style="font-size:13px;color:var(--charcoal-6);">Registration & credential documents verified by Tradee.</span>
+       </div>`
     : ''
   const portfolio = l.portfolio_photos || []
   const portfolioSection = portfolio.length ? `
@@ -1696,9 +1715,9 @@ window.submitListing = async function () {
   const photoFile = window.photoFile
   if (photoFile) {
     const photoPath = `${userId}/photo-${Date.now()}-${photoFile.name}`
-    const { error: photoUploadError } = await supabase.storage.from('certifications-registrations').upload(photoPath, photoFile)
+    const { error: photoUploadError } = await supabase.storage.from(BUCKET_PUBLIC).upload(photoPath, photoFile)
     if (!photoUploadError) {
-      const { data: photoUrlData } = supabase.storage.from('certifications-registrations').getPublicUrl(photoPath)
+      const { data: photoUrlData } = supabase.storage.from(BUCKET_PUBLIC).getPublicUrl(photoPath)
       photo_url = photoUrlData.publicUrl
     }
   }
@@ -1708,11 +1727,9 @@ window.submitListing = async function () {
   const certificate_urls = []
   for (const file of certFiles) {
     const path = `${userId}/${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabase.storage.from('certifications-registrations').upload(path, file)
-    if (!uploadError) {
-      const { data: urlData } = supabase.storage.from('certifications-registrations').getPublicUrl(path)
-      certificate_urls.push(urlData.publicUrl)
-    }
+    // Certificates go to the PRIVATE bucket; store the path, not a public URL.
+    const { error: uploadError } = await supabase.storage.from(BUCKET_CERTS).upload(path, file)
+    if (!uploadError) certificate_urls.push(path)
   }
 
   const lat = parseFloat(document.getElementById('f-lat')?.value) || null
@@ -1829,6 +1846,7 @@ async function renderAdmin() {
             <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Name</th>
             <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Trade</th>
             <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Tier</th>
+            <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Docs</th>
             <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Reviews</th>
             <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Actions</th>
           </tr></thead>
@@ -1837,6 +1855,7 @@ async function renderAdmin() {
               <td style="padding:8px 12px;color:var(--white);">${escHtml(l.name)}</td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${escHtml(l.trade)}</td>
               <td style="padding:8px 12px;">${tierBadge(l.tier) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
+              <td style="padding:8px 12px;white-space:nowrap;">${l.certificate_urls && l.certificate_urls.length ? l.certificate_urls.map((ref, i) => `<button class="btn btn-outline btn-sm" style="margin:0 2px;padding:2px 8px;" onclick="viewCert('${escHtml(ref)}')" title="Verify document">Doc ${i + 1}</button>`).join('') : '<span style="color:var(--charcoal-6);">—</span>'}</td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${l.reviews?.length || 0}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
                 <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
