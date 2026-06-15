@@ -217,7 +217,14 @@ async function renderDashboard() {
     </div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No photos yet. Upload before/after shots and completed work to build client trust.</p>'
 
+  const promoNote = (listing.promo_verified && listing.tier_expires_at) ? `
+    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(245,158,11,0.06));border:1.5px solid rgba(245,158,11,0.45);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:1.5rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:0.04em;font-size:1.1rem;color:var(--amber);margin-bottom:2px;">Founding Member — Verified Free</div>
+      <div style="font-size:13px;color:var(--charcoal-6);">Your free Verified badge is active until <strong style="color:var(--white);">${new Date(listing.tier_expires_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>. We'll remind you by email before it ends.</div>
+    </div>` : ''
+
   el.innerHTML = `
+    ${promoNote}
     <div class="profile-hero" style="margin-bottom:1.5rem;">
       <div style="position:relative;display:inline-block;">
         <div class="profile-avatar" id="dash-avatar">${listing.photo_url ? `<img src="${listing.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
@@ -708,7 +715,27 @@ window.showPage = function (name) {
     const s2 = document.getElementById('list-step-2')
     if (s1) s1.style.display = 'block'
     if (s2) s2.style.display = 'none'
+    updatePromoBanner()
   }
+}
+
+// Founding-member offer: show a live "spots left" banner on the list page
+// while fewer than 100 tradesmen have claimed the free 6-month Verified deal.
+const PROMO_LIMIT = 100
+async function updatePromoBanner() {
+  const banner = document.getElementById('promo-banner')
+  const spotsEl = document.getElementById('promo-spots')
+  if (!banner || !spotsEl) return
+  try {
+    const { count } = await supabase.from('listings').select('id', { count: 'exact', head: true }).eq('promo_verified', true)
+    const left = PROMO_LIMIT - (count || 0)
+    if (left > 0) {
+      spotsEl.textContent = `Only ${left} of ${PROMO_LIMIT} free spots left — claim yours now.`
+      banner.style.display = 'block'
+    } else {
+      banner.style.display = 'none'
+    }
+  } catch (_) { banner.style.display = 'none' }
 }
 
 // ── Home ──────────────────────────────────────────────────────────────────────

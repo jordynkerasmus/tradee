@@ -154,6 +154,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .form-page h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
 .form-page .subtitle { color: var(--charcoal-6); margin-bottom: 2rem; }
 .form-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 1.5rem; }
+.promo-banner { background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06)); border: 1.5px solid rgba(245,158,11,0.45); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 1.5rem; text-align: center; }
+.promo-banner-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; font-size: 1.15rem; color: var(--amber); margin-bottom: 4px; }
+.promo-banner-text { font-size: 14px; color: var(--white); line-height: 1.5; }
+.promo-banner-text .promo-spots { display: inline-block; margin-top: 6px; font-weight: 700; color: var(--amber); }
 .disclaimer-box { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); border-radius: var(--radius); padding: 14px 16px; margin: 1rem 0; }
 .disclaimer-box .disclaimer-text { font-size: 12px; line-height: 1.6; color: var(--charcoal-6); max-height: 130px; overflow-y: auto; margin-bottom: 12px; }
 .disclaimer-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--white); }
@@ -435,6 +439,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <div id="list-step-1" class="form-page" style="max-width:520px;">
     <h2>List Your Business</h2>
     <p class="subtitle">Get discovered, build your reputation, and grow your client base.</p>
+    <div id="promo-banner" class="promo-banner" style="display:none;">
+      <div class="promo-banner-title">Founding Member Offer</div>
+      <div class="promo-banner-text">The first <strong>100 tradesmen</strong> to join get the <strong>Verified badge free for 6 months</strong>.<span class="promo-spots" id="promo-spots"></span></div>
+    </div>
     <div class="form-card">
       <h3>Create Your Account</h3>
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-email" type="email" placeholder="you@example.com"></div>
@@ -799,7 +807,10 @@ function showPage(name) {
   if (name==='rankings') renderRankings();
   if (name==='dashboard') renderDashboard();
   if (name==='admin') renderAdmin();
-  if (name==='list') { document.getElementById('list-step-1').style.display='block'; document.getElementById('list-step-2').style.display='none'; }
+  if (name==='list') { document.getElementById('list-step-1').style.display='block'; document.getElementById('list-step-2').style.display='none';
+    const pb=document.getElementById('promo-banner'), ps=document.getElementById('promo-spots');
+    if (pb && ps) { ps.textContent='Only 100 of 100 free spots left — claim yours now.'; pb.style.display='block'; }
+  }
 }
 
 function starsHTML(n) { const f=Math.round(n); return '★'.repeat(f)+'☆'.repeat(5-f); }
