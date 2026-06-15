@@ -6,6 +6,7 @@ These send transactional email via [Resend](https://resend.com):
 |---|---|---|
 | `welcome-email` | new sign-up | `welcome@tradee.org` |
 | `review-notification` | a client leaves a review | `reviews@tradee.org` |
+| `daily-report` | daily cron → emails the owner sign-up stats | `reports@tradee.org` |
 | `monthly-report` | monthly cron (separate task) | `reports@tradee.org` |
 
 I can't deploy these for you — deployment is tied to your Supabase account
@@ -44,11 +45,39 @@ supabase secrets set RESEND_API_KEY=re_your_key_here
 ```bash
 supabase functions deploy welcome-email
 supabase functions deploy review-notification
+supabase functions deploy daily-report
 ```
 
 (Or use the helper: `./supabase/deploy-functions.sh`)
 
 Verify they appear under **Supabase Dashboard → Edge Functions**.
+
+---
+
+## Scheduling the daily report (owner stats email)
+
+`daily-report` emails sign-up stats to `jordynkerasmus@gmail.com`. To send it
+every morning:
+
+**Easiest — Dashboard:** Supabase Dashboard → **Edge Functions** → `daily-report`
+→ **Schedules** (or **Cron**) → add a schedule with cron expression
+`0 5 * * *` (that's 05:00 UTC = **07:00 South Africa**). Supabase handles auth.
+
+**Or via SQL** (needs `pg_cron` + `pg_net` enabled under Database → Extensions):
+```sql
+select cron.schedule(
+  'tradee-daily-report', '0 5 * * *',
+  $$ select net.http_post(
+       url := 'https://hbqivzqhmuaidolernek.supabase.co/functions/v1/daily-report',
+       headers := jsonb_build_object(
+         'Authorization', 'Bearer <YOUR_SERVICE_ROLE_KEY>',
+         'Content-Type', 'application/json')
+     ); $$
+);
+```
+To change the recipient or send time, edit `REPORT_TO` in the function and the
+cron expression. Test it immediately from the dashboard with **"Invoke"** /
+**"Run now"**.
 
 ---
 
