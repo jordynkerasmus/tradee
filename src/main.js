@@ -1458,12 +1458,8 @@ window.submitReview = async function () {
   })
   if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
 
-  // Recalculate rating_avg from all reviews for this listing and save it
-  const { data: allReviews } = await supabase.from('reviews').select('stars').eq('listing_id', reviewingId)
-  if (allReviews && allReviews.length) {
-    const avg = allReviews.reduce((s, r) => s + r.stars, 0) / allReviews.length
-    await supabase.from('listings').update({ rating_avg: parseFloat(avg.toFixed(2)) }).eq('id', reviewingId)
-  }
+  // rating_avg is recomputed server-side by the on-review DB trigger —
+  // clients are not trusted to write it (see supabase/security-policies.sql).
 
   trackEvent('review_left', reviewingId)
   // Notify tradesman by email
@@ -1745,7 +1741,9 @@ window.openReviewModal = function (id) {
 async function renderAdmin() {
   const el = document.getElementById('admin-content')
   if (!el) return
-  if (!currentUser || (!ADMIN_EMAILS.includes(currentUser.email) && ADMIN_EMAILS.length > 0)) {
+  // Fail closed: no admin list configured = nobody gets in.
+  // (This is only UX gating — actual admin actions are enforced by RLS.)
+  if (!currentUser || ADMIN_EMAILS.length === 0 || !ADMIN_EMAILS.includes(currentUser.email)) {
     el.innerHTML = '<div class="empty-state"><h3>Access Denied</h3><p>Admin only.</p></div>'
     return
   }
