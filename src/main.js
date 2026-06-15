@@ -702,6 +702,18 @@ async function loadListings() {
   renderRankings()
 }
 
+// ── FAQ tabs ──────────────────────────────────────────────────────────────────
+window.showFaqTab = function (which) {
+  const trades = document.getElementById('faq-trades')
+  const clients = document.getElementById('faq-clients')
+  if (!trades || !clients) return
+  const showTrades = which === 'trades'
+  trades.style.display = showTrades ? 'block' : 'none'
+  clients.style.display = showTrades ? 'none' : 'block'
+  document.getElementById('faq-tab-trades').classList.toggle('active', showTrades)
+  document.getElementById('faq-tab-clients').classList.toggle('active', !showTrades)
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────────
 window.showPage = function (name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))

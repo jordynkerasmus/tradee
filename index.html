@@ -163,6 +163,22 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .disclaimer-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--white); }
 .disclaimer-check input { accent-color: var(--amber); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
 .disclaimer-check a { color: var(--amber); }
+.faq-wrap { max-width: 760px; margin: 0 auto; padding: 3rem 2rem; }
+.faq-tabs { display: flex; gap: 8px; margin-bottom: 1.75rem; }
+.faq-tab { flex: 1; background: var(--charcoal-2); border: 1px solid var(--charcoal-3); color: var(--charcoal-6); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 12px; border-radius: var(--radius); cursor: pointer; transition: all 0.15s; }
+.faq-tab:hover { border-color: var(--amber); color: var(--amber); }
+.faq-tab.active { background: var(--amber); border-color: var(--amber); color: #1C1917; }
+.faq-item { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius); margin-bottom: 10px; }
+.faq-item summary { padding: 16px 18px; cursor: pointer; font-weight: 600; color: var(--white); font-size: 15px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after { content: '+'; color: var(--amber); font-size: 20px; flex-shrink: 0; }
+.faq-item[open] summary { color: var(--amber); }
+.faq-item[open] summary::after { content: '–'; }
+.faq-answer { padding: 0 18px 16px; color: var(--charcoal-6); line-height: 1.65; font-size: 14px; }
+.faq-answer strong { color: var(--white); }
+.faq-highlight { background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06)); border: 1.5px solid rgba(245,158,11,0.45); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 1.5rem; }
+.faq-highlight .faq-highlight-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; font-size: 1.25rem; color: var(--amber); margin-bottom: 6px; }
+.faq-highlight p { color: var(--white); font-size: 14px; line-height: 1.6; margin: 0; }
 .stat-period-btn { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--charcoal-6); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .stat-period-btn:hover { border-color: var(--amber); color: var(--amber); }
 .stat-period-btn.active { background: var(--amber); border-color: var(--amber); color: #1C1917; }
@@ -266,6 +282,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <div class="nav-links">
     <a onclick="showPage('directory')" id="nav-directory">Directory</a>
     <a onclick="showPage('rankings')" id="nav-rankings">Rankings</a>
+    <a onclick="showPage('faq')" id="nav-faq">How It Works</a>
     <a onclick="showPage('dashboard')" id="nav-dashboard-btn" style="display:none;">My Listing</a>
     <a onclick="showPage('admin')" id="nav-admin" style="display:none;">Admin</a>
     <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">Trades Login</button>
@@ -279,6 +296,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 <div class="nav-mobile-menu" id="nav-mobile-menu">
   <a onclick="showPage('directory');closeMobileMenu()">Directory</a>
   <a onclick="showPage('rankings');closeMobileMenu()">Rankings</a>
+  <a onclick="showPage('faq');closeMobileMenu()">How It Works</a>
   <a id="nav-mobile-dashboard" onclick="showPage('dashboard');closeMobileMenu()" style="display:none;">My Listing</a>
   <button id="nav-mobile-auth" onclick="(currentUser?showPage('dashboard'):showPage('login'));closeMobileMenu()">My Listing</button>
   <button id="nav-mobile-install" onclick="showInstallPrompt();closeMobileMenu()" style="color:var(--amber);">📲 Install App</button>
@@ -429,6 +447,61 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </select>
     </div>
     <div class="rank-list" id="rank-list"></div>
+  </div>
+</div>
+
+<!-- FAQ / HOW IT WORKS -->
+<div id="page-faq" class="page">
+  <div class="faq-wrap">
+    <h2 style="text-align:center;">How Tradee Works</h2>
+    <p class="subtitle" style="text-align:center;">Everything you need to know — pick your view below.</p>
+    <div class="faq-tabs">
+      <button class="faq-tab active" id="faq-tab-trades" onclick="showFaqTab('trades')">For Tradesmen</button>
+      <button class="faq-tab" id="faq-tab-clients" onclick="showFaqTab('clients')">For Clients</button>
+    </div>
+
+    <!-- TRADESMEN -->
+    <div id="faq-trades">
+      <div class="faq-highlight">
+        <div class="faq-highlight-title">The #1 way to climb the rankings</div>
+        <p>Your ranking is driven by your reviews. After <strong>every job</strong>, send your clients your Tradee profile link and ask them to rate you. The more genuine reviews you collect — and the higher they are — the higher you appear in search and rankings, and the more new clients you win. Tap <strong>“Share”</strong> on your profile to copy your link and send it on WhatsApp.</p>
+      </div>
+
+      <details class="faq-item"><summary>How does Tradee work for me?</summary><div class="faq-answer">You create a free listing for your business. Clients in your area find you by trade and location, see your ratings and reviews, and contact you <strong>directly</strong> by call, WhatsApp or email. Tradee takes no commission and is not a middleman — the job is between you and your client.</div></details>
+
+      <details class="faq-item"><summary>How do reviews work?</summary><div class="faq-answer">After you've done a job, your client opens your profile and rates you on five things — <strong>quality, service, cleanliness, communication and value</strong>. Those combine into your overall star rating shown on your profile and listing. More positive reviews lift your average; that average is what clients look at first.</div></details>
+
+      <details class="faq-item"><summary>How do I get better rankings?</summary><div class="faq-answer">Three things, in order of impact:<br><br><strong>1. Collect reviews.</strong> The Rankings page and search are driven by your average rating and how many reviews you have. After every job, send clients your profile link and ask them to review you — this is the single biggest lever.<br><strong>2. Complete your profile.</strong> Add a photo, a clear description, your rates, portfolio photos and credentials. Full profiles get far more clicks.<br><strong>3. Upgrade to Verified or Premium.</strong> Paid members are featured at the top of the directory with a highlighted card.</div></details>
+
+      <details class="faq-item"><summary>How do I send my listing to clients for a review?</summary><div class="faq-answer">Open your listing (or your dashboard) and tap <strong>“Share” / “Copy Link”</strong>. Paste that link into a WhatsApp or SMS to your client right after the job — e.g. <em>“Thanks for the work today! If you were happy, I'd really appreciate a quick review here: [your link]”</em>. The easier you make it, the more reviews you'll get.</div></details>
+
+      <details class="faq-item"><summary>What's the difference between Free, Verified and Premium?</summary><div class="faq-answer"><strong>Free (Standard):</strong> a full listing, client reviews and a public profile — free forever.<br><strong>Verified:</strong> a green Verified badge (Tradee has checked your registration/credential documents) plus featured placement above free listings.<br><strong>Premium:</strong> top featured placement with a highlighted amber card for maximum visibility.<br><br><em>Founding offer: the first 100 tradesmen to join get Verified free for 6 months.</em></div></details>
+
+      <details class="faq-item"><summary>Can I reply to reviews?</summary><div class="faq-answer">Yes. From your dashboard you can reply to any review. A polite, professional reply — even to a critical review — builds trust with future clients reading your profile.</div></details>
+
+      <details class="faq-item"><summary>How do clients contact me?</summary><div class="faq-answer">Directly — your call, WhatsApp and email buttons are on your profile. Enquiries come straight to you with no commission and no middleman.</div></details>
+
+      <details class="faq-item"><summary>Is it really free to list?</summary><div class="faq-answer">Yes. A Standard listing is free forever. Verified and Premium are optional paid upgrades for more visibility and the trust badge.</div></details>
+    </div>
+
+    <!-- CLIENTS -->
+    <div id="faq-clients" style="display:none;">
+      <details class="faq-item"><summary>What is Tradee?</summary><div class="faq-answer">Tradee is a directory of South African tradesmen — electricians, plumbers, builders and more. You can browse, compare ratings and reviews, and contact tradesmen <strong>directly</strong>. It's completely free to use.</div></details>
+
+      <details class="faq-item"><summary>How do I find the right tradesman?</summary><div class="faq-answer">Search by trade and area, or use <strong>Smart Search</strong> (just describe what you need), the map, or “Near Me”. Compare each tradesman's star rating, reviews, rates and portfolio before you contact them.</div></details>
+
+      <details class="faq-item"><summary>How do reviews work?</summary><div class="faq-answer">Reviews come from real clients who've used a tradesman. They rate five things — quality, service, cleanliness, communication and value — and those combine into the star rating you see. The more reviews a tradesman has, the more reliable that rating is.</div></details>
+
+      <details class="faq-item"><summary>How do I leave a review?</summary><div class="faq-answer">Open the tradesman's profile and tap <strong>“Leave a Review”</strong>, rate the five categories and submit. Honest reviews help other homeowners choose well — and help good tradesmen get the recognition they deserve.</div></details>
+
+      <details class="faq-item"><summary>What does the green Verified badge mean?</summary><div class="faq-answer">It means Tradee has checked that tradesman's registration and credential documents. It's an extra layer of trust — but we still recommend you confirm details and references yourself before any work begins.</div></details>
+
+      <details class="faq-item"><summary>How are tradesmen ranked?</summary><div class="faq-answer">The <strong>Rankings</strong> page is based purely on genuine client reviews — average rating first, then number of reviews — never paid placement. In the main directory, Verified and Premium members are featured at the top, but you can always see every tradesman's real rating and reviews to judge for yourself.</div></details>
+
+      <details class="faq-item"><summary>Does Tradee vet or guarantee tradesmen?</summary><div class="faq-answer">Tradee is a directory that helps you find and compare tradesmen. We show credentials and a Verified badge where documents have been checked, but we don't employ or guarantee any tradesman. Please verify credentials, insurance and references yourself before engaging anyone — Tradee isn't liable for work arranged through the platform.</div></details>
+
+      <details class="faq-item"><summary>Is it free, and how do I make contact?</summary><div class="faq-answer">Tradee is free for clients. Contact tradesmen directly using the call, WhatsApp or email buttons on their profile — no booking fees, no middleman.</div></details>
+    </div>
   </div>
 </div>
 
@@ -997,6 +1070,14 @@ function renderHome() {
 }
 
 function filterByTrade(trade) { _smartMode=false; filterTrade=trade; document.getElementById('filter-trade').value=trade; showPage('directory'); }
+function showFaqTab(which) {
+  const trades=document.getElementById('faq-trades'), clients=document.getElementById('faq-clients');
+  if (!trades||!clients) return;
+  const t = which==='trades';
+  trades.style.display = t?'block':'none'; clients.style.display = t?'none':'block';
+  document.getElementById('faq-tab-trades').classList.toggle('active', t);
+  document.getElementById('faq-tab-clients').classList.toggle('active', !t);
+}
 function updateHeroTrades() {
   const cat = document.getElementById('hero-category').value;
   const tradeSelect = document.getElementById('hero-search');
