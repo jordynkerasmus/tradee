@@ -1,6 +1,11 @@
 import { supabase } from './supabaseClient.js'
 import { PROVINCE_CITIES } from './cities.js'
 import { trackEvent } from './analytics.js'
+import { inject } from '@vercel/analytics'
+
+// Vercel Web Analytics — tracks unique visitors, page views, traffic sources.
+// View the numbers in Vercel Dashboard → Analytics (enable Web Analytics there once).
+inject()
 
 let listings = []
 let currentProfile = null
@@ -1839,32 +1844,91 @@ async function renderAdmin() {
     return
   }
   el.innerHTML = '<div class="empty-state"><p>Loading...</p></div>'
-  const [{ data: allListings }, { data: allReviews }] = await Promise.all([
+  const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const since1 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const [{ data: allListings }, { data: allReviews }, { data: events }] = await Promise.all([
     supabase.from('listings').select('*, reviews(*)').order('created_at', { ascending: false }),
-    supabase.from('reviews').select('*, listings(name)').order('created_at', { ascending: false }).limit(50)
+    supabase.from('reviews').select('*, listings(name)').order('created_at', { ascending: false }).limit(50),
+    supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since30)
   ])
   const ls = allListings || []
   const rs = allReviews || []
+  const ev = events || []
+
+  // Tier & sign-up breakdown
+  const free = ls.filter(l => l.tier === 'free').length
+  const verified = ls.filter(l => l.tier === 'verified').length
+  const premium = ls.filter(l => l.tier === 'premium').length
+  const promoUsed = ls.filter(l => l.promo_verified).length
+  const spotsLeft = Math.max(0, 100 - promoUsed)
+  const new7 = ls.filter(l => l.created_at >= since7).length
+  const new1 = ls.filter(l => l.created_at >= since1).length
+
+  // 30-day activity
+  const ct = (t) => ev.filter(e => e.event_type === t).length
+  const views = ct('profile_view'), phone = ct('phone_click'), wa = ct('whatsapp_click'), email = ct('email_click'), searches = ct('search_impression')
+  const contacts = phone + wa + email
+  const ctr = views > 0 ? Math.round((contacts / views) * 100) : 0
+
+  // Top-viewed listings (30 days)
+  const viewBy = {}
+  ev.filter(e => e.event_type === 'profile_view' && e.listing_id).forEach(e => { viewBy[e.listing_id] = (viewBy[e.listing_id] || 0) + 1 })
+  const topViewed = Object.entries(viewBy).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([id, n]) => ({ name: ls.find(l => String(l.id) === String(id))?.name || 'Unknown', n }))
+
+  const statCard = (value, label, color = 'var(--white)') =>
+    `<div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
+      <div style="font-size:2rem;font-weight:700;color:${color};">${value}</div>
+      <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${label}</div>
+    </div>`
+
   el.innerHTML = `
     <h2 style="margin-bottom:1.5rem;">Admin Dashboard</h2>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:2rem;">
-      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-        <div style="font-size:2rem;font-weight:700;color:var(--white);">${ls.length}</div>
-        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Total Listings</div>
-      </div>
-      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-        <div style="font-size:2rem;font-weight:700;color:var(--amber);">${ls.filter(l => l.tier === 'verified').length}</div>
-        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Verified</div>
-      </div>
-      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-        <div style="font-size:2rem;font-weight:700;color:var(--amber);">${ls.filter(l => l.tier === 'premium').length}</div>
-        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Premium</div>
-      </div>
-      <div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;">
-        <div style="font-size:2rem;font-weight:700;color:var(--white);">${rs.length}</div>
-        <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;">Recent Reviews</div>
-      </div>
+
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:8px;">Sign-ups by package</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;">
+      ${statCard(ls.length, 'Total Tradesmen')}
+      ${statCard(free, 'Free / Standard')}
+      ${statCard(verified, 'Verified', 'var(--amber)')}
+      ${statCard(premium, 'Premium', 'var(--amber)')}
     </div>
+
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:8px;">Growth & founding-member offer</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;">
+      ${statCard(new1, 'New (last 24h)', '#22C55E')}
+      ${statCard(new7, 'New (last 7 days)', '#22C55E')}
+      ${statCard(`${promoUsed}/100`, 'Founding spots used')}
+      ${statCard(spotsLeft, 'Free spots left', 'var(--amber)')}
+    </div>
+
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:8px;">Activity — last 30 days</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:6px;">
+      ${statCard(views, 'Profile Views')}
+      ${statCard(contacts, 'Contact Clicks', 'var(--amber)')}
+      ${statCard(`${ctr}%`, 'View → Contact')}
+      ${statCard(searches, 'Search Appearances')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;">
+      ${statCard(phone, 'Phone Calls')}
+      ${statCard(wa, 'WhatsApp', '#25D366')}
+      ${statCard(email, 'Emails')}
+      ${statCard(ct('review_left'), 'Reviews Left')}
+    </div>
+
+    <div class="form-card" style="margin-bottom:1.25rem;">
+      <h3 style="margin-bottom:1rem;">Top Viewed Listings (30 days)</h3>
+      ${topViewed.length ? topViewed.map((t, i) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--charcoal-3);">
+          <span style="color:var(--white);font-size:14px;">${i + 1}. ${escHtml(t.name)}</span>
+          <span style="color:var(--amber);font-weight:700;">${t.n} views</span>
+        </div>`).join('') : '<p style="color:var(--charcoal-6);font-size:14px;">No views recorded yet.</p>'}
+    </div>
+
+    <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius);padding:12px 16px;margin-bottom:2rem;font-size:13px;color:var(--charcoal-6);">
+      <strong style="color:var(--amber);">Site-wide visitors &amp; page views</strong> (unique daily visitors, traffic sources, devices) are tracked by Vercel — see your <strong style="color:var(--white);">Vercel dashboard → Analytics</strong>. The numbers above measure engagement with tradesman listings specifically.
+    </div>
+
     <div class="form-card" style="margin-bottom:1rem;">
       <h3 style="margin-bottom:1rem;">All Listings</h3>
       <div style="overflow-x:auto;">
