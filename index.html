@@ -154,6 +154,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .form-page h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
 .form-page .subtitle { color: var(--charcoal-6); margin-bottom: 2rem; }
 .form-card { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 1.5rem; }
+.disclaimer-box { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); border-radius: var(--radius); padding: 14px 16px; margin: 1rem 0; }
+.disclaimer-box .disclaimer-text { font-size: 12px; line-height: 1.6; color: var(--charcoal-6); max-height: 130px; overflow-y: auto; margin-bottom: 12px; }
+.disclaimer-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--white); }
+.disclaimer-check input { accent-color: var(--amber); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
+.disclaimer-check a { color: var(--amber); }
 .stat-period-btn { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--charcoal-6); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 100px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .stat-period-btn:hover { border-color: var(--amber); color: var(--amber); }
 .stat-period-btn.active { background: var(--amber); border-color: var(--amber); color: #1C1917; }
@@ -625,6 +630,15 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>200 km</span></div>
       </div>
     </div>
+    <div class="disclaimer-box">
+      <div class="disclaimer-text">
+        <strong style="color:var(--white);">Important — please read:</strong> Tradee is an online directory only. We do not employ, supervise, endorse, or guarantee the tradesmen listed, and we are not party to any work or agreement arranged through the platform. To the fullest extent permitted by law, Tradee accepts no liability for the conduct, workmanship, omissions, loss, damage, injury or dispute arising from dealings between clients and tradesmen. You confirm the information you have provided is true and that you hold any licences or registrations required for your trade.
+      </div>
+      <label class="disclaimer-check">
+        <input type="checkbox" id="f-agree">
+        <span>I confirm my details are accurate and I accept Tradee's disclaimer, Terms of Service and Privacy Policy.</span>
+      </label>
+    </div>
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="submitListing()">Publish My Listing →</button>
   </div>
   </div> <!-- end list-step-2 -->
@@ -654,6 +668,15 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="you@example.com"></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signup-password" type="password" placeholder="Create a password"></div>
       <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="signup-password2" type="password" placeholder="Repeat your password"></div>
+      <div class="disclaimer-box">
+        <div class="disclaimer-text">
+          <strong style="color:var(--white);">Important — please read:</strong> Tradee is an online directory only. We do not employ, supervise, endorse, vet beyond listed credentials, or guarantee any tradesman listed on the platform. Any agreement, payment, or work is strictly between you and the tradesman. To the fullest extent permitted by law, Tradee accepts no liability for the conduct, workmanship, conduct, omissions, loss, damage, injury or dispute arising from your dealings with any tradesman found through this platform. You are responsible for verifying credentials, insurance and references before engaging anyone.
+        </div>
+        <label class="disclaimer-check">
+          <input type="checkbox" id="signup-agree">
+          <span>I have read and accept the disclaimer above, and I agree to Tradee's Terms of Service and Privacy Policy.</span>
+        </label>
+      </div>
       <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="if(window.handleSignup)window.handleSignup();else handleSignup()">Create Account →</button>
       <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Already have an account? <a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a></p>
     </div>
@@ -1685,6 +1708,7 @@ function submitListing() {
   if (!name||selectedTrades.length===0||!province||selectedCities.length===0) { toast('Please fill in name, at least one trade, province and at least one city.'); return; }
   if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your rate or N/A.'); return; }
   if (!desc) { toast('Please add a business description.'); return; }
+  if (!document.getElementById('f-agree')?.checked) { toast('Please confirm your details and accept the disclaimer to publish.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
   listings.push({id:newId,name,contact_name,trade,trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
   addTradeToDropdowns(trade);
@@ -1754,6 +1778,7 @@ async function handleSignup() {
   if (!email || !password) { toast('Please fill in all fields.'); return; }
   if (password !== password2) { toast('Passwords do not match.'); return; }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return; }
+  if (!document.getElementById('signup-agree')?.checked) { toast('Please accept the disclaimer and terms to continue.'); return; }
   toast('Please use the live site at tradee-dusky.vercel.app to sign up.');
 }
 

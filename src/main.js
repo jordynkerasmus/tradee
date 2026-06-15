@@ -17,9 +17,12 @@ async function initAuth() {
   const { data: { session } } = await supabase.auth.getSession()
   currentUser = session?.user ?? null
   updateNavForAuth()
+  if (currentUser) syncFavsOnLogin()
   supabase.auth.onAuthStateChange((_event, session) => {
+    const wasLoggedOut = !currentUser
     currentUser = session?.user ?? null
     updateNavForAuth()
+    if (currentUser && wasLoggedOut) syncFavsOnLogin()
   })
 }
 
@@ -55,15 +58,23 @@ window.handleSignup = async function () {
   const email = document.getElementById('signup-email').value.trim()
   const password = document.getElementById('signup-password').value
   const password2 = document.getElementById('signup-password2').value
+  const agreed = document.getElementById('signup-agree')?.checked
   if (!email || !password) { toast('Please fill in all fields.'); return }
   if (password !== password2) { toast('Passwords do not match.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
-  const { error } = await supabase.auth.signUp({ email, password })
+  if (!agreed) { toast('Please accept the disclaimer and terms to continue.'); return }
+  const { data, error } = await supabase.auth.signUp({ email, password })
   if (error) { toast('Sign up failed: ' + error.message); return }
   // Send welcome email via Edge Function
   supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {})
-  toast('Account created! You can now list your business.')
-  window.showPage('list')
+  if (!data.session) {
+    // Email confirmation is enabled in Supabase — user must verify before logging in
+    toast('Account created! Check your email to confirm your address, then log in.')
+    window.showPage('login')
+  } else {
+    toast('Account created! You can now list your business.')
+    window.showPage('list')
+  }
 }
 
 window.handleSignOut = async function () {
@@ -594,18 +605,53 @@ function toast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show')
   setTimeout(() => t.classList.remove('show'), 3000)
 }
-function getFavs() { return JSON.parse(localStorage.getItem('tradee_favs') || '[]') }
-function isFav(id) { return getFavs().includes(id) }
-window.toggleFav = function (id, e) {
-  if (e) e.stopPropagation()
-  const favs = getFavs()
-  const idx = favs.indexOf(id)
-  if (idx >= 0) favs.splice(idx, 1); else favs.push(id)
-  localStorage.setItem('tradee_favs', JSON.stringify(favs))
+// Favourites live in an in-memory Set, mirrored to localStorage for anon/offline
+// use, and synced to the `favourites` table in Supabase when logged in so they
+// follow the user across devices.
+const FAV_HEART_FILLED = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+const FAV_HEART_EMPTY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+
+let _favs = new Set(JSON.parse(localStorage.getItem('tradee_favs') || '[]'))
+function getFavs() { return [..._favs] }
+function isFav(id) { return _favs.has(id) }
+function persistFavsLocal() { localStorage.setItem('tradee_favs', JSON.stringify([..._favs])) }
+function updateFavButton(id) {
   document.querySelectorAll(`.fav-btn[data-id="${id}"]`).forEach(btn => {
-    btn.innerHTML = isFav(id) ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+    btn.innerHTML = isFav(id) ? FAV_HEART_FILLED : FAV_HEART_EMPTY
     btn.style.color = isFav(id) ? 'var(--amber)' : 'var(--charcoal-6)'
   })
+}
+
+// On login: merge any locally-saved favourites up to the server, then adopt the
+// server set as the source of truth (so favourites saved on another device appear).
+async function syncFavsOnLogin() {
+  if (!currentUser) return
+  try {
+    const { data } = await supabase.from('favourites').select('listing_id').eq('user_id', currentUser.id)
+    const merged = new Set((data || []).map(r => r.listing_id))
+    const localOnly = [..._favs].filter(id => !merged.has(id))
+    if (localOnly.length) {
+      await supabase.from('favourites').insert(localOnly.map(listing_id => ({ user_id: currentUser.id, listing_id })))
+      localOnly.forEach(id => merged.add(id))
+    }
+    _favs = merged
+    persistFavsLocal()
+    document.querySelectorAll('.fav-btn[data-id]').forEach(btn => updateFavButton(Number(btn.dataset.id)))
+  } catch (_) { /* offline / table missing — keep local favourites */ }
+}
+
+window.toggleFav = async function (id, e) {
+  if (e) e.stopPropagation()
+  const wasFav = _favs.has(id)
+  if (wasFav) _favs.delete(id); else _favs.add(id)
+  persistFavsLocal()
+  updateFavButton(id)
+  if (currentUser) {
+    try {
+      if (wasFav) await supabase.from('favourites').delete().eq('user_id', currentUser.id).eq('listing_id', id)
+      else await supabase.from('favourites').insert({ user_id: currentUser.id, listing_id: id })
+    } catch (_) { /* best-effort; localStorage still holds the change */ }
+  }
 }
 function avgRating(l) {
   if (l.rating_avg && l.rating_avg > 0) return parseFloat(l.rating_avg)
@@ -1634,6 +1680,7 @@ window.submitListing = async function () {
   if (!name || selectedTrades.length === 0 || !province || selectedCities.length === 0) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
   if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
+  if (!document.getElementById('f-agree')?.checked) { toast('Please confirm your details and accept the disclaimer to publish.'); return }
 
   // Create account first
   let userId = currentUser?.id ?? null
