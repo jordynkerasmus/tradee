@@ -166,6 +166,17 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .disclaimer-check input { accent-color: var(--amber); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
 .disclaimer-check a { color: var(--amber); }
 .faq-wrap { max-width: 760px; margin: 0 auto; padding: 3rem 2rem; }
+.legal-wrap { max-width: 760px; margin: 0 auto; padding: 3rem 2rem; }
+.legal-wrap h2 { margin-bottom: 4px; }
+.legal-wrap .legal-updated { color: var(--charcoal-6); font-size: 13px; margin-bottom: 2rem; }
+.legal-wrap h3 { color: var(--amber); font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
+.legal-wrap p, .legal-wrap li { color: var(--charcoal-6); font-size: 14px; line-height: 1.7; }
+.legal-wrap strong { color: var(--white); }
+.legal-wrap a { color: var(--amber); }
+.legal-back { display: inline-block; margin-top: 2rem; color: var(--amber); cursor: pointer; font-size: 14px; }
+.site-footer { border-top: 1px solid var(--charcoal-3); padding: 1.5rem 2rem; text-align: center; display: flex; gap: 1.25rem; justify-content: center; flex-wrap: wrap; }
+.site-footer a { color: var(--charcoal-6); font-size: 13px; cursor: pointer; text-decoration: none; }
+.site-footer a:hover { color: var(--amber); }
 .faq-tabs { display: flex; gap: 8px; margin-bottom: 1.75rem; }
 .faq-tab { flex: 1; background: var(--charcoal-2); border: 1px solid var(--charcoal-3); color: var(--charcoal-6); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 12px; border-radius: var(--radius); cursor: pointer; transition: all 0.15s; }
 .faq-tab:hover { border-color: var(--amber); color: var(--amber); }
@@ -393,6 +404,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     </div>
     <div class="card-grid" id="home-cards"></div>
   </div>
+  <footer class="site-footer">
+    <a onclick="showPage('faq')">How It Works</a>
+    <a onclick="showPage('privacy')">Privacy Policy</a>
+    <a onclick="showPage('terms')">Terms of Service</a>
+    <a href="mailto:support@tradee.org">Contact</a>
+  </footer>
 </div>
 
 <!-- DIRECTORY -->
@@ -517,6 +534,89 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <div style="text-align:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--charcoal-3);color:var(--charcoal-6);font-size:14px;">
       Still need help? Email us at <a href="mailto:support@tradee.org" style="color:var(--amber);">support@tradee.org</a>
     </div>
+  </div>
+</div>
+
+<!-- PRIVACY POLICY -->
+<div id="page-privacy" class="page">
+  <div class="legal-wrap">
+    <h2>Privacy Policy</h2>
+    <div class="legal-updated">Last updated: 16 June 2026</div>
+
+    <h3>1. Who we are</h3>
+    <p>Tradee ("we", "us") operates the tradee.org online directory. For privacy questions or requests, contact our Information Officer at <a href="mailto:support@tradee.org">support@tradee.org</a>.</p>
+
+    <h3>2. What we collect</h3>
+    <p>Depending on how you use Tradee, we collect: account details (name, email, password); for tradesmen — business details, contact details, location, photos, and identity/credential documents you upload; for reviewers — your name and review; and usage/analytics data (pages viewed, listing interactions, and device/approximate location and IP processed by our hosting and analytics providers).</p>
+
+    <h3>3. Why we process it</h3>
+    <p>To provide the service and your listing (performance of a contract), with your consent (for example publishing your listing or uploading documents), and for our legitimate interests in running and improving a safe, trusted directory. Reviews are published as part of the service.</p>
+
+    <h3>4. Identity &amp; credential documents</h3>
+    <p>Documents you upload for verification are stored <strong>privately</strong> and are visible only to you and Tradee's review team. We use them solely to review your Verified badge — we do <strong>not</strong> publish them.</p>
+
+    <h3>5. Who we share with</h3>
+    <p>Service providers who process data on our behalf under contract: Supabase (database, authentication and file storage), Resend (email) and Vercel (hosting &amp; analytics). Your public listing information — the details you choose to publish — is visible to anyone using the directory.</p>
+
+    <h3>6. Where it's stored</h3>
+    <p>Our providers host data outside South Africa (including in the United States). They are bound by data-processing terms providing an adequate level of protection, as permitted under section 72 of POPIA.</p>
+
+    <h3>7. How we protect it</h3>
+    <p>We use access controls, encryption of secrets, private storage for sensitive documents, and database row-level security. No system is completely secure, but we take reasonable steps to safeguard your information.</p>
+
+    <h3>8. How long we keep it</h3>
+    <p>While your account or listing is active and for a reasonable period afterwards, or as required by law. You can ask us to delete your data.</p>
+
+    <h3>9. Your rights</h3>
+    <p>Under POPIA you may request access to, correction or deletion of your personal information, object to processing, and lodge a complaint with the Information Regulator (inforegulator.org.za). Contact <a href="mailto:support@tradee.org">support@tradee.org</a>.</p>
+
+    <h3>10. Cookies &amp; analytics</h3>
+    <p>We use privacy-friendly analytics to measure traffic; it does not use advertising cookies.</p>
+
+    <h3>11. Changes</h3>
+    <p>We may update this policy and will post the new version on this page.</p>
+
+    <a class="legal-back" onclick="showPage('home')">← Back to Tradee</a>
+  </div>
+</div>
+
+<!-- TERMS OF SERVICE -->
+<div id="page-terms" class="page">
+  <div class="legal-wrap">
+    <h2>Terms of Service</h2>
+    <div class="legal-updated">Last updated: 16 June 2026</div>
+
+    <h3>1. Acceptance</h3>
+    <p>By using Tradee or listing a business, you agree to these Terms.</p>
+
+    <h3>2. What Tradee is</h3>
+    <p>Tradee is an online directory that helps people find and compare tradesmen. <strong>We are not a party to any agreement, booking, payment or work</strong> arranged between users and tradesmen, take no commission on such work, and do not employ, supervise or control any tradesman.</p>
+
+    <h3>3. No guarantee — your responsibility</h3>
+    <p>We do not guarantee the quality, workmanship, licensing, insurance, conduct or availability of any tradesman. You are responsible for verifying a tradesman's credentials, insurance and references and for any agreement you enter into. <strong>To the fullest extent permitted by law, Tradee is not liable for any loss, damage, injury or dispute arising from dealings between users and tradesmen.</strong></p>
+
+    <h3>4. The Verified badge</h3>
+    <p>The Verified badge means a tradesman submitted identity and credential documents which we reviewed before granting it. It is <strong>not</strong> a guarantee of their work, licensing or insurance.</p>
+
+    <h3>5. Tradesman obligations</h3>
+    <p>You confirm your information is true and that you hold any licences, registrations and insurance required for your trade. You may not post false, misleading or unlawful content.</p>
+
+    <h3>6. Reviews</h3>
+    <p>Reviews must be genuine and based on real experiences. We may remove reviews that are fraudulent, abusive or unlawful.</p>
+
+    <h3>7. Payments</h3>
+    <p>Paid plans, where available, are billed as described at sign-up. Detailed payment, renewal and refund terms will be provided when paid plans launch.</p>
+
+    <h3>8. Termination</h3>
+    <p>We may suspend or remove listings that breach these Terms.</p>
+
+    <h3>9. Governing law</h3>
+    <p>These Terms are governed by the laws of South Africa.</p>
+
+    <h3>10. Contact</h3>
+    <p><a href="mailto:support@tradee.org">support@tradee.org</a></p>
+
+    <a class="legal-back" onclick="showPage('home')">← Back to Tradee</a>
   </div>
 </div>
 
@@ -732,7 +832,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
       <label class="disclaimer-check">
         <input type="checkbox" id="f-agree">
-        <span>I confirm my details are accurate and I accept Tradee's disclaimer, Terms of Service and Privacy Policy.</span>
+        <span>I confirm my details are accurate and I accept Tradee's disclaimer, <a onclick="event.preventDefault();event.stopPropagation();showPage('terms')" style="color:var(--amber);">Terms of Service</a> and <a onclick="event.preventDefault();event.stopPropagation();showPage('privacy')" style="color:var(--amber);">Privacy Policy</a>.</span>
       </label>
     </div>
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="submitListing()">Publish My Listing →</button>
@@ -770,7 +870,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         </div>
         <label class="disclaimer-check">
           <input type="checkbox" id="signup-agree">
-          <span>I have read and accept the disclaimer above, and I agree to Tradee's Terms of Service and Privacy Policy.</span>
+          <span>I have read and accept the disclaimer above, and I agree to Tradee's <a onclick="event.preventDefault();event.stopPropagation();showPage('terms')" style="color:var(--amber);">Terms of Service</a> and <a onclick="event.preventDefault();event.stopPropagation();showPage('privacy')" style="color:var(--amber);">Privacy Policy</a>.</span>
         </label>
       </div>
       <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="if(window.handleSignup)window.handleSignup();else handleSignup()">Create Account →</button>
