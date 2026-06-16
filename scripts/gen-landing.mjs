@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
-const BASE = 'https://tradee.org'
+const BASE = 'https://www.tradee.org'
 
 // slug -> exact trade name (must match listing.trade) + friendly label
 const TRADES = [
@@ -93,7 +93,7 @@ ul{color:var(--grey);padding-left:1.2rem}
 <div class="links">${otherCities}</div>
 <p style="margin-top:1.5rem"><strong style="color:var(--white)">Other trades in ${esc(cLabel)}:</strong></p>
 <div class="links">${otherTrades}</div>
-<div class="foot">Are you a ${esc(tLabel.toLowerCase())} in ${esc(cLabel)}? <a href="${BASE}/">List your business free on Tradee &rarr;</a><br><br><a href="${BASE}/">Tradee — South Africa's Trade Directory</a></div>
+<div class="foot">Are you a ${esc(tLabel.toLowerCase())} in ${esc(cLabel)}? <a href="${BASE}/">List your business free on Tradee &rarr;</a><br><br><a href="${BASE}/">Tradee — The Trade Directory</a></div>
 </div></body></html>`
 }
 
