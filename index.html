@@ -287,7 +287,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <a onclick="showPage('faq')" id="nav-faq">How It Works</a>
     <a onclick="showPage('dashboard')" id="nav-dashboard-btn" style="display:none;">My Listing</a>
     <a onclick="showPage('admin')" id="nav-admin" style="display:none;">Admin</a>
-    <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">Trades Login</button>
+    <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">My Listing</button>
     <button class="btn btn-primary btn-sm" onclick="showPage('list')">List Your Business</button>
   </div>
   <button class="btn btn-primary btn-sm nav-list-mobile" onclick="showPage('list')">List Your Business</button>
@@ -1888,7 +1888,7 @@ function updateNavForAuth() {
     if (mobileAuth) { mobileAuth.textContent = 'My Listing'; mobileAuth.onclick = () => { showPage('dashboard'); closeMobileMenu(); }; }
     if (mobileDash) mobileDash.style.display = 'block';
   } else {
-    authBtn.textContent = 'Trades Login';
+    authBtn.textContent = 'My Listing';
     authBtn.onclick = () => showPage('login');
     if (dashBtn) dashBtn.style.display = 'none';
     if (mobileAuth) { mobileAuth.textContent = 'My Listing'; mobileAuth.onclick = () => { showPage('login'); closeMobileMenu(); }; }

@@ -62,7 +62,7 @@ function updateNavForAuth() {
     if (dashBtn) dashBtn.style.display = 'inline-flex'
     if (adminLink) adminLink.style.display = ADMIN_EMAILS.includes(currentUser.email) ? 'inline' : 'none'
   } else {
-    authBtn.textContent = 'Trades Login'
+    authBtn.textContent = 'My Listing'
     authBtn.onclick = () => window.showPage('login')
     if (dashBtn) dashBtn.style.display = 'none'
     if (adminLink) adminLink.style.display = 'none'
