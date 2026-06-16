@@ -222,10 +222,13 @@ async function renderDashboard() {
     </div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No photos yet. Upload before/after shots and completed work to build client trust.</p>'
 
+  const promoUntil = listing.tier_expires_at ? new Date(listing.tier_expires_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
   const promoNote = (listing.promo_verified && listing.tier_expires_at) ? `
     <div style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(245,158,11,0.06));border:1.5px solid rgba(245,158,11,0.45);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:1.5rem;">
       <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:0.04em;font-size:1.1rem;color:var(--amber);margin-bottom:2px;">Founding Member — Verified Free</div>
-      <div style="font-size:13px;color:var(--charcoal-6);">Your free Verified badge is active until <strong style="color:var(--white);">${new Date(listing.tier_expires_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>. We'll remind you by email before it ends.</div>
+      ${listing.verified_approved
+        ? `<div style="font-size:13px;color:var(--charcoal-6);">Your Verified badge is active until <strong style="color:var(--white);">${promoUntil}</strong>. We'll remind you by email before it ends.</div>`
+        : `<div style="font-size:13px;color:var(--charcoal-6);">You're featured free until <strong style="color:var(--white);">${promoUntil}</strong>. To switch on your green <strong>Verified badge</strong>, upload your ID and credential documents below — our team will review them and activate it.</div>`}
     </div>` : ''
 
   el.innerHTML = `
@@ -240,7 +243,7 @@ async function renderDashboard() {
         <div class="profile-name">${escHtml(listing.name)}</div>
         ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${escHtml(listing.contact_name)}</div>` : ''}
         <div class="profile-trade">${escHtml(listing.trade)}</div>
-        ${tierBadge(listing.tier) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(listing.tier)}</div>` : ''}
+        ${tierBadge(listing) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(listing)}</div>` : ''}
         <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${profileUrl(listing)}</span>
           <button class="btn btn-primary btn-sm" onclick="copyProfileLink(${listing.id})">🔗 Copy Link</button>
@@ -627,9 +630,11 @@ function escHtml(str) {
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
-function tierBadge(tier) {
-  if (tier === 'premium' || tier === 'verified') return '<span class="badge badge-verified">Verified</span>'
-  return ''
+// The green Verified badge shows only once an admin has reviewed the tradesman's
+// uploaded documents and approved them (verified_approved = true) — not just from
+// being on a paid/founding tier. Accepts the listing object.
+function tierBadge(l) {
+  return (l && l.verified_approved) ? '<span class="badge badge-verified">Verified</span>' : ''
 }
 function toast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show')
@@ -1346,7 +1351,7 @@ function featuredCardHTML(l) {
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
         <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        ${tierBadge(l.tier) ? `<div class="card-badges">${tierBadge(l.tier)}</div>` : ''}
+        ${tierBadge(l) ? `<div class="card-badges">${tierBadge(l)}</div>` : ''}
       </div>
     </div>
     <div class="card-rating">
@@ -1389,7 +1394,7 @@ function cardHTML(l) {
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
         <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        ${tierBadge(l.tier) ? `<div class="card-badges">${tierBadge(l.tier)}</div>` : ''}
+        ${tierBadge(l) ? `<div class="card-badges">${tierBadge(l)}</div>` : ''}
       </div>
     </div>
     <div class="card-rating">
@@ -1490,7 +1495,7 @@ window.openProfile = async function (id) {
         <div class="profile-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${escHtml(l.contact_name)}</div>` : ''}
         <div class="profile-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        ${tierBadge(l.tier) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(l.tier)}</div>` : ''}
+        ${tierBadge(l) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(l)}</div>` : ''}
         <div class="profile-rating-row">
           <span class="profile-rating-big">${rd}</span>
           <div>
@@ -1968,7 +1973,7 @@ async function renderAdmin() {
             <tr style="border-bottom:1px solid var(--charcoal-3);">
               <td style="padding:8px 12px;color:var(--white);">${escHtml(l.name)}</td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${escHtml(l.trade)}</td>
-              <td style="padding:8px 12px;">${tierBadge(l.tier) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
+              <td style="padding:8px 12px;">${tierBadge(l) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">${l.certificate_urls && l.certificate_urls.length ? l.certificate_urls.map((ref, i) => `<button class="btn btn-outline btn-sm" style="margin:0 2px;padding:2px 8px;" onclick="viewCert('${escHtml(ref)}')" title="Verify document">Doc ${i + 1}</button>`).join('') : '<span style="color:var(--charcoal-6);">—</span>'}</td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${l.reviews?.length || 0}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
@@ -1977,6 +1982,7 @@ async function renderAdmin() {
                   <option value="verified" ${l.tier === 'verified' ? 'selected' : ''}>Verified</option>
                   <option value="premium" ${l.tier === 'premium' ? 'selected' : ''}>Premium</option>
                 </select>
+                <button class="btn btn-outline btn-sm" style="margin-left:6px;${l.verified_approved ? 'color:#22C55E;border-color:#22C55E;' : 'color:var(--amber);border-color:var(--amber);'}" onclick="adminSetVerified(${l.id},${!l.verified_approved})" title="${l.verified_approved ? 'Click to remove the Verified badge' : 'Review the docs above, then approve the Verified badge'}">${l.verified_approved ? 'Verified ✓' : 'Approve badge'}</button>
                 <button class="btn btn-outline btn-sm" style="margin-left:6px;color:var(--danger);border-color:var(--danger);" onclick="adminDeleteListing(${l.id})">Delete</button>
               </td>
             </tr>`).join('')}
@@ -2002,6 +2008,16 @@ window.adminSetTier = async function (id, tier) {
   await supabase.from('listings').update({ tier }).eq('id', id)
   toast('Tier updated.')
   await loadListings()
+}
+
+// Grant or remove the Verified badge after reviewing the tradesman's documents.
+window.adminSetVerified = async function (id, approved) {
+  if (approved && !confirm("Confirm you've reviewed this tradesman's documents and they're satisfactory? This shows the Verified badge publicly.")) return
+  const { error } = await supabase.from('listings').update({ verified_approved: approved }).eq('id', id)
+  if (error) { toast('Could not update — did you run the SQL? ' + error.message); return }
+  toast(approved ? 'Verified badge granted.' : 'Verified badge removed.')
+  await loadListings()
+  renderAdmin()
 }
 
 window.adminDeleteListing = async function (id) {

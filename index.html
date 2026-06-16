@@ -853,12 +853,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 
 <script>
 const SAMPLE = [
-  {id:1,name:'Themba Electrical',trade:'Electrician',province:'Gauteng',city:'Sandton, Johannesburg',callout:300,rate:750,desc:'Licensed master electrician with 15+ years in residential and commercial installations. ECSA registered. COC issuer. Available 24/7 for emergencies.',creds:['ECSA Registered','COC Issuer','City & Guilds Certified'],years:15,reviews:[{name:'Karen D.',stars:5,date:'May 2025',text:"Themba was professional, fast and tidy. Had our DB board replaced within hours. Highly recommend!"},{name:'Sipho M.',stars:5,date:'Apr 2025',text:"Fixed an issue 3 other electricians couldn't diagnose. Brilliant."}],tier:'premium',sample:true},
-  {id:2,name:'Cape Plumb Pro',trade:'Plumber',province:'Western Cape',city:'Claremont, Cape Town',callout:350,rate:680,desc:'Family-run plumbing business serving the Southern Suburbs for over a decade. Burst pipes, geysers, reticulation, drainage. Fully insured.',creds:['PIRB Registered','SAQCC Gas Certified'],years:11,reviews:[{name:'Annika P.',stars:5,date:'May 2025',text:"Arrived within 2 hours of calling. Very reasonable pricing and no surprises on the invoice."},{name:'James O.',stars:4,date:'Mar 2025',text:"Good work on the geyser replacement."}],tier:'verified',sample:true},
-  {id:3,name:'Durban Build Co.',trade:'Builder / Contractor',province:'KwaZulu-Natal',city:'Umhlanga, Durban',callout:0,rate:850,desc:'Full-scope building contractors. Extensions, renovations, new builds. NHBRC enrolled. Project management included in all contracts.',creds:['NHBRC Enrolled','CIDB Grade 4 CE'],years:18,reviews:[{name:'Priya N.',stars:5,date:'Apr 2025',text:"Built our double-storey extension on time and on budget. Exceptional."}],tier:'premium',sample:true},
+  {id:1,name:'Themba Electrical',trade:'Electrician',province:'Gauteng',city:'Sandton, Johannesburg',callout:300,rate:750,desc:'Licensed master electrician with 15+ years in residential and commercial installations. ECSA registered. COC issuer. Available 24/7 for emergencies.',creds:['ECSA Registered','COC Issuer','City & Guilds Certified'],years:15,reviews:[{name:'Karen D.',stars:5,date:'May 2025',text:"Themba was professional, fast and tidy. Had our DB board replaced within hours. Highly recommend!"},{name:'Sipho M.',stars:5,date:'Apr 2025',text:"Fixed an issue 3 other electricians couldn't diagnose. Brilliant."}],tier:'premium',verified_approved:true,sample:true},
+  {id:2,name:'Cape Plumb Pro',trade:'Plumber',province:'Western Cape',city:'Claremont, Cape Town',callout:350,rate:680,desc:'Family-run plumbing business serving the Southern Suburbs for over a decade. Burst pipes, geysers, reticulation, drainage. Fully insured.',creds:['PIRB Registered','SAQCC Gas Certified'],years:11,reviews:[{name:'Annika P.',stars:5,date:'May 2025',text:"Arrived within 2 hours of calling. Very reasonable pricing and no surprises on the invoice."},{name:'James O.',stars:4,date:'Mar 2025',text:"Good work on the geyser replacement."}],tier:'verified',verified_approved:true,sample:true},
+  {id:3,name:'Durban Build Co.',trade:'Builder / Contractor',province:'KwaZulu-Natal',city:'Umhlanga, Durban',callout:0,rate:850,desc:'Full-scope building contractors. Extensions, renovations, new builds. NHBRC enrolled. Project management included in all contracts.',creds:['NHBRC Enrolled','CIDB Grade 4 CE'],years:18,reviews:[{name:'Priya N.',stars:5,date:'Apr 2025',text:"Built our double-storey extension on time and on budget. Exceptional."}],tier:'premium',verified_approved:true,sample:true},
   {id:4,name:'Handy Hassan',trade:'Handyman',province:'Gauteng',city:'Pretoria East',callout:200,rate:400,desc:'No job too small. Fixing, patching, painting, assembling — you name it. Available weekends.',creds:[],years:6,reviews:[{name:'Ronel V.',stars:4,date:'May 2025',text:"Quick, friendly and affordable. Will call again."}],tier:'free',sample:true},
-  {id:5,name:'BrightCoat Painters',trade:'Painter',province:'Western Cape',city:'Bellville, Cape Town',callout:0,rate:520,desc:'Interior and exterior painting specialists. Clean lines, quality finishes, no mess. Portfolio available on request.',creds:['Master Painters SA'],years:9,reviews:[{name:'Denise F.',stars:5,date:'May 2025',text:"Transformed our living room completely. Highly professional."},{name:'Mark T.',stars:4,date:'Feb 2025',text:"Great work, punctual and cleaned up thoroughly."}],tier:'verified',sample:true},
-  {id:6,name:'Roof Shield SA',trade:'Roofer',province:'Gauteng',city:'Midrand',callout:500,rate:900,desc:'Waterproofing, IBR, tile and corrugated roofing solutions. Emergency leak repairs. 5-year workmanship warranty.',creds:['IWF Waterproofing Certified','NRCS Approved'],years:14,reviews:[{name:'Theo B.',stars:5,date:'Apr 2025',text:"Fixed a persistent leak that had been a nightmare. Could not be happier."}],tier:'premium',sample:true}
+  {id:5,name:'BrightCoat Painters',trade:'Painter',province:'Western Cape',city:'Bellville, Cape Town',callout:0,rate:520,desc:'Interior and exterior painting specialists. Clean lines, quality finishes, no mess. Portfolio available on request.',creds:['Master Painters SA'],years:9,reviews:[{name:'Denise F.',stars:5,date:'May 2025',text:"Transformed our living room completely. Highly professional."},{name:'Mark T.',stars:4,date:'Feb 2025',text:"Great work, punctual and cleaned up thoroughly."}],tier:'verified',verified_approved:true,sample:true},
+  {id:6,name:'Roof Shield SA',trade:'Roofer',province:'Gauteng',city:'Midrand',callout:500,rate:900,desc:'Waterproofing, IBR, tile and corrugated roofing solutions. Emergency leak repairs. 5-year workmanship warranty.',creds:['IWF Waterproofing Certified','NRCS Approved'],years:14,reviews:[{name:'Theo B.',stars:5,date:'Apr 2025',text:"Fixed a persistent leak that had been a nightmare. Could not be happier."}],tier:'premium',verified_approved:true,sample:true}
 ];
 
 let listings = [...SAMPLE];
@@ -900,9 +900,8 @@ function showPage(name) {
 function starsHTML(n) { const f=Math.round(n); return '★'.repeat(f)+'☆'.repeat(5-f); }
 function initials(name) { return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
 function fmtRand(n) { return n===0?'Free':'R'+n; }
-function tierBadge(tier) {
-  if (tier==='premium' || tier==='verified') return '<span class="badge badge-verified">Verified</span>';
-  return '';
+function tierBadge(l) {
+  return (l && l.verified_approved) ? '<span class="badge badge-verified">Verified</span>' : '';
 }
 function toast(msg) {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
@@ -1333,7 +1332,7 @@ function cardHTML(l) {
         <div class="card-name">${l.name}</div>
         ${l.contact_name?`<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${l.contact_name}</div>`:''}
         <div class="card-trade">${allTrades.join(' · ')}</div>
-        ${tierBadge(l.tier) ? `<div class="card-badges">${tierBadge(l.tier)}</div>` : ''}
+        ${tierBadge(l) ? `<div class="card-badges">${tierBadge(l)}</div>` : ''}
       </div>
     </div>
     <div class="card-rating">
@@ -1372,7 +1371,7 @@ function openProfile(id) {
         <div class="profile-name">${l.name}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${l.contact_name}</div>` : ''}
         <div class="profile-trade">${l.trade}</div>
-        ${tierBadge(l.tier) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(l.tier)}</div>` : ''}
+        ${tierBadge(l) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(l)}</div>` : ''}
         <div class="profile-rating-row">
           <span class="profile-rating-big">${rd}</span>
           <div>
