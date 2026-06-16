@@ -254,7 +254,7 @@ async function renderDashboard() {
     <div class="form-card" style="margin-bottom:1rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
         <h3 style="margin:0;" id="stat-period-label">Last 30 Days</h3>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="stat-period-row" style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="stat-period-btn" onclick="switchStatPeriod(this,'7d')">7 Days</button>
           <button class="stat-period-btn active" onclick="switchStatPeriod(this,'30d')">30 Days</button>
           <button class="stat-period-btn" onclick="switchStatPeriod(this,'6m')">6 Months</button>
