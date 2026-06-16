@@ -916,17 +916,24 @@ function runSmartSearch(query, all) {
   return { ranked: filtered.slice(0, 30), interp: parts.length ? parts.join(' · ') : 'best overall matches' }
 }
 
-window.smartSearch = function () {
-  const q = (document.getElementById('smart-q')?.value || '').trim()
+// Works from any smart-search box (home, directory, rankings). `el` is the button
+// or input that triggered it; we read the query from the input in the same box.
+window.smartSearch = function (el) {
+  let input = null
+  if (el && el.closest) input = el.closest('.smart-search')?.querySelector('.smart-q-input')
+  if (!input) input = document.querySelector('.smart-q-input')
+  const q = (input?.value || '').trim()
   if (!q) return
   const res = runSmartSearch(q, listings)
   _smartMode = true; _smartRanked = res.ranked; _smartQuery = q; _smartInterp = res.interp
+  // mirror the query into every box so it shows consistently
+  document.querySelectorAll('.smart-q-input').forEach(i => { i.value = q })
   window.showPage('directory')
 }
 
 window.clearSmartSearch = function () {
   _smartMode = false; _smartRanked = []; _smartQuery = ''
-  const box = document.getElementById('smart-q'); if (box) box.value = ''
+  document.querySelectorAll('.smart-q-input').forEach(i => { i.value = '' })
   renderDirectory()
 }
 

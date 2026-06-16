@@ -365,8 +365,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         Smart Search
       </div>
       <div class="smart-search-box">
-        <input type="text" id="smart-q" placeholder="Describe what you need, e.g. emergency plumber in Cape Town" onkeydown="if(event.key==='Enter')smartSearch()">
-        <button class="btn btn-primary" onclick="smartSearch()">Find</button>
+        <input type="text" class="smart-q-input" placeholder="Describe what you need, e.g. emergency plumber in Cape Town" onkeydown="if(event.key==='Enter')smartSearch(this)">
+        <button class="btn btn-primary" onclick="smartSearch(this)">Find</button>
       </div>
       <div class="smart-search-hint">Try: "reliable electrician in Sandton" or "someone to fix my geyser urgently"</div>
     </div>
@@ -425,6 +425,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <button id="btn-map-view" onclick="setDirView('map')">Map</button>
       </div>
     </div>
+    <div class="smart-search" style="max-width:none;margin:0 0 1rem;">
+      <div class="smart-search-box">
+        <input type="text" class="smart-q-input" placeholder="Smart search — e.g. emergency plumber in Cape Town" onkeydown="if(event.key==='Enter')smartSearch(this)">
+        <button class="btn btn-primary" onclick="smartSearch(this)">Find</button>
+      </div>
+    </div>
     <div id="near-me-status" style="display:none;font-size:13px;color:var(--amber);margin-bottom:1rem;"></div>
     <div id="map-container"></div>
     <div class="filters">
@@ -466,6 +472,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <select id="rank-trade-filter" onchange="renderRankings()" style="background:var(--charcoal-2);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 32px 8px 12px;border-radius:var(--radius);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%2710%27 viewBox=%270 0 10 10%27%3E%3Cpolygon points=%270,2 10,2 5,8%27 fill=%27%23A8A29E%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;">
         <option value="">All Trades</option>
       </select>
+    </div>
+    <div class="smart-search" style="max-width:none;margin:0 0 1.5rem;">
+      <div class="smart-search-box">
+        <input type="text" class="smart-q-input" placeholder="Smart search — e.g. reliable electrician in Sandton" onkeydown="if(event.key==='Enter')smartSearch(this)">
+        <button class="btn btn-primary" onclick="smartSearch(this)">Find</button>
+      </div>
     </div>
     <div class="rank-list" id="rank-list"></div>
   </div>
@@ -1352,17 +1364,21 @@ function runSmartSearch(query, all) {
   return { ranked: filtered.slice(0,30), interp: parts.length?parts.join(' · '):'best overall matches' };
 }
 
-function smartSearch() {
-  const q=(document.getElementById('smart-q')?.value||'').trim();
+function smartSearch(el) {
+  let input=null;
+  if (el && el.closest) input=el.closest('.smart-search')?.querySelector('.smart-q-input');
+  if (!input) input=document.querySelector('.smart-q-input');
+  const q=(input?.value||'').trim();
   if (!q) return;
   const res=runSmartSearch(q, listings);
   _smartMode=true; _smartRanked=res.ranked; _smartQuery=q; _smartInterp=res.interp;
+  document.querySelectorAll('.smart-q-input').forEach(i=>{ i.value=q; });
   showPage('directory');
 }
 
 function clearSmartSearch() {
   _smartMode=false; _smartRanked=[]; _smartQuery='';
-  const box=document.getElementById('smart-q'); if (box) box.value='';
+  document.querySelectorAll('.smart-q-input').forEach(i=>{ i.value=''; });
   renderDirectory();
 }
 
