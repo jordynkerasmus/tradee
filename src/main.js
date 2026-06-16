@@ -1825,6 +1825,17 @@ function handleRoute() {
       const idMatch = slug.match(/-(\d+)$/)
       if (idMatch) window.openProfile(parseInt(idMatch[1]))
     }
+    return
+  }
+  // Deep link from an SEO landing page, e.g. /?trade=Plumber&city=Umhlanga&province=KwaZulu-Natal
+  const params = new URLSearchParams(window.location.search)
+  const t = params.get('trade'), c = params.get('city'), p = params.get('province')
+  if (t || c || p) {
+    _smartMode = false
+    filterTrade = t || ''
+    filterCity = c || ''
+    filterProvince = p || ''
+    window.showPage('directory')
   }
 }
 
