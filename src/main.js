@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js'
-import { PROVINCE_CITIES } from './cities.js'
+import { PROVINCE_CITIES, CITY_COORDS, PROVINCE_COORDS } from './cities.js'
 import { trackEvent } from './analytics.js'
 import { inject } from '@vercel/analytics'
 
@@ -1145,12 +1145,13 @@ function renderMap() {
 
   let placed = 0
   listings.forEach(l => {
-    if (!l.lat || !l.lng) return
+    const c = listingCoords(l)
+    if (!c) return
     placed++
     const radius = (l.service_radius || 30) * 1000
-    L.circle([l.lat, l.lng], { radius, color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.08, weight: 1 }).addTo(_map)
+    L.circle(c, { radius, color: '#F59E0B', fillColor: '#F59E0B', fillOpacity: 0.08, weight: 1 }).addTo(_map)
     const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : ['Tradesman'])
-    const marker = L.marker([l.lat, l.lng], { icon }).addTo(_map)
+    const marker = L.marker(c, { icon }).addTo(_map)
     marker.bindPopup(`
       <div class="map-popup-name">${escHtml(l.name)}</div>
       <div class="map-popup-trade">${allTrades.map(escHtml).join(' · ')}</div>
@@ -1211,6 +1212,14 @@ window.geocodeEditLocation = async function () {
 // ── NEAR ME ───────────────────────────────────────────────
 let _userLat = null, _userLng = null, _nearMeActive = false
 
+// Best-available coordinates for a listing: exact → city centre → province centre.
+function listingCoords(l) {
+  if (l.lat && l.lng) return [l.lat, l.lng]
+  if (l.city && CITY_COORDS[l.city]) return CITY_COORDS[l.city]
+  if (l.province && PROVINCE_COORDS[l.province]) return PROVINCE_COORDS[l.province]
+  return null
+}
+
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2
@@ -1261,9 +1270,11 @@ function renderDirectory() {
   let filtered = listings.filter(l => {
     if (showFavsOnly && !isFav(l.id)) return false
     if (_nearMeActive && _userLat && _userLng) {
-      if (!l.lat || !l.lng) return false
-      const dist = haversineKm(_userLat, _userLng, l.lat, l.lng)
-      if (dist > (l.service_radius || 30)) return false
+      const c = listingCoords(l)
+      if (!c) return false
+      const dist = haversineKm(_userLat, _userLng, c[0], c[1])
+      // Allow the wider of the tradesman's service radius or 50km (city-centre fallback is approximate).
+      if (dist > Math.max(l.service_radius || 30, 50)) return false
     }
     if (filterTrade && l.trade !== filterTrade) return false
     if (filterProvince && l.province !== filterProvince) return false

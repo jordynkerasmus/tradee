@@ -456,12 +456,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <h2 style="text-align:center;">How Tradee Works</h2>
     <p class="subtitle" style="text-align:center;">Everything you need to know — pick your view below.</p>
     <div class="faq-tabs">
-      <button class="faq-tab active" id="faq-tab-trades" onclick="showFaqTab('trades')">For Tradesmen</button>
-      <button class="faq-tab" id="faq-tab-clients" onclick="showFaqTab('clients')">For Clients</button>
+      <button class="faq-tab active" id="faq-tab-clients" onclick="showFaqTab('clients')">For Clients</button>
+      <button class="faq-tab" id="faq-tab-trades" onclick="showFaqTab('trades')">For Tradesmen</button>
     </div>
 
     <!-- TRADESMEN -->
-    <div id="faq-trades">
+    <div id="faq-trades" style="display:none;">
       <div class="faq-highlight">
         <div class="faq-highlight-title">The #1 way to climb the rankings</div>
         <p>Your ranking is driven by your reviews. After <strong>every job</strong>, send your clients your Tradee profile link and ask them to rate you. The more genuine reviews you collect — and the higher they are — the higher you appear in search and rankings, and the more new clients you win. Tap <strong>“Share”</strong> on your profile to copy your link and send it on WhatsApp.</p>
@@ -485,7 +485,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     </div>
 
     <!-- CLIENTS -->
-    <div id="faq-clients" style="display:none;">
+    <div id="faq-clients">
+      <div class="faq-highlight">
+        <div class="faq-highlight-title">How tradesmen are ranked — and why you can trust it</div>
+        <p>Rankings on Tradee are earned, not bought. The <strong>Rankings</strong> page is based purely on <strong>genuine client reviews</strong> — a tradesman's average star rating first, then how many reviews they have — never on who paid the most. Every rating comes from a real client who used that tradesman, so a high ranking reflects real, consistent work. Verified and Premium members may appear featured at the top of the directory, but you can always see each tradesman's true rating and read their reviews to decide for yourself.</p>
+      </div>
+
       <details class="faq-item"><summary>What is Tradee?</summary><div class="faq-answer">Tradee is a directory of South African tradesmen — electricians, plumbers, builders and more. You can browse, compare ratings and reviews, and contact tradesmen <strong>directly</strong>. It's completely free to use.</div></details>
 
       <details class="faq-item"><summary>How do I find the right tradesman?</summary><div class="faq-answer">Search by trade and area, or use <strong>Smart Search</strong> (just describe what you need), the map, or “Near Me”. Compare each tradesman's star rating, reviews, rates and portfolio before you contact them.</div></details>
@@ -501,6 +506,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <details class="faq-item"><summary>Does Tradee vet or guarantee tradesmen?</summary><div class="faq-answer">Tradee is a directory that helps you find and compare tradesmen. We show credentials and a Verified badge where documents have been checked, but we don't employ or guarantee any tradesman. Please verify credentials, insurance and references yourself before engaging anyone — Tradee isn't liable for work arranged through the platform.</div></details>
 
       <details class="faq-item"><summary>Is it free, and how do I make contact?</summary><div class="faq-answer">Tradee is free for clients. Contact tradesmen directly using the call, WhatsApp or email buttons on their profile — no booking fees, no middleman.</div></details>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--charcoal-3);color:var(--charcoal-6);font-size:14px;">
+      Still need help? Email us at <a href="mailto:support@tradee.org" style="color:var(--amber);">support@tradee.org</a>
     </div>
   </div>
 </div>
