@@ -404,6 +404,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <button id="btn-map-view" onclick="setDirView('map')">Map</button>
       </div>
     </div>
+    <div id="near-me-status" style="display:none;font-size:13px;color:var(--amber);margin-bottom:1rem;"></div>
     <div id="map-container"></div>
     <div class="filters">
       <select id="filter-category" onchange="updateFilterTrades()"><option value="">All Categories</option></select>
@@ -424,7 +425,6 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <button id="fav-filter-btn" data-active="0" onclick="toggleFavsFilter()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">Saved</button>
       <button id="near-me-btn" onclick="toggleNearMe()" class="btn btn-outline btn-sm" style="color:var(--charcoal-6);white-space:nowrap;">Near Me</button>
     </div>
-    <div id="near-me-status" style="display:none;font-size:13px;color:var(--amber);margin-bottom:1rem;"></div>
     <div class="card-grid" id="dir-cards"></div>
   </div>
 </div>
