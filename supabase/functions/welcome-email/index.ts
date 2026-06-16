@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       <div style="font-size:2.2rem;font-weight:900;letter-spacing:0.08em;">
         <span style="color:#FFFDF9;">TRA</span><span style="color:#F59E0B;">DEE</span>
       </div>
-      <div style="color:#A8A29E;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;">South Africa's Trade Directory</div>
+      <div style="color:#A8A29E;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;">The Trade Directory</div>
     </div>
 
     <!-- Hero -->
@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       <div style="font-size:3rem;margin-bottom:1rem;">🎉</div>
       <h1 style="color:#FFFDF9;margin:0 0 12px;font-size:1.5rem;font-weight:700;">Welcome to Tradee, ${displayName}!</h1>
       <p style="color:#A8A29E;font-size:15px;line-height:1.7;margin:0 0 1.5rem;">
-        You're now part of South Africa's fastest-growing trade directory. Thousands of homeowners, interior designers and property managers are looking for skilled tradesmen just like you.
+        You're now part of a fast-growing trade directory. Homeowners, interior designers and property managers are looking for skilled tradesmen just like you.
       </p>
       <a href="https://tradee-dusky.vercel.app" style="display:inline-block;background:#F59E0B;color:#1C1917;font-weight:700;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:15px;">Complete My Listing →</a>
     </div>
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     <!-- Footer -->
     <div style="text-align:center;color:#57534E;font-size:12px;border-top:1px solid #292524;padding-top:1.5rem;">
       <div>You're receiving this because you signed up on Tradee.</div>
-      <div style="margin-top:4px;">© ${new Date().getFullYear()} Tradee · South Africa's Trade Directory</div>
+      <div style="margin-top:4px;">© ${new Date().getFullYear()} Tradee · The Trade Directory</div>
     </div>
 
   </div>

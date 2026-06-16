@@ -160,7 +160,7 @@ Deno.serve(async (_req) => {
     <!-- Footer -->
     <div style="text-align:center;color:#57534E;font-size:12px;border-top:1px solid #292524;padding-top:1.5rem;">
       <div>You're receiving this because your business is listed on Tradee.</div>
-      <div style="margin-top:4px;">© ${new Date().getFullYear()} Tradee · South Africa's Trade Directory</div>
+      <div style="margin-top:4px;">© ${new Date().getFullYear()} Tradee · The Trade Directory</div>
     </div>
 
   </div>

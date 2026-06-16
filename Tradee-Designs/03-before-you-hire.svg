@@ -1,0 +1,28 @@
+<svg viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="1080" fill="#1C1917"/>
+  <text x="540" y="140" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="56" letter-spacing="7">
+    <tspan fill="#FFFDF9">TRA</tspan><tspan fill="#F59E0B">DEE</tspan>
+  </text>
+
+  <text x="540" y="280" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="92" fill="#FFFDF9">BEFORE YOU HIRE</text>
+  <text x="540" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#A8A29E">3 things to always check</text>
+
+  <g font-family="Arial, sans-serif">
+    <!-- item 1 -->
+    <circle cx="230" cy="470" r="34" fill="#22C55E"/>
+    <path d="M214 470 l12 12 l20 -24" stroke="#FFFFFF" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="300" y="485" font-size="44" font-weight="bold" fill="#FFFDF9">Real client reviews</text>
+    <!-- item 2 -->
+    <circle cx="230" cy="600" r="34" fill="#22C55E"/>
+    <path d="M214 600 l12 12 l20 -24" stroke="#FFFFFF" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="300" y="615" font-size="44" font-weight="bold" fill="#FFFDF9">Credentials &amp; references</text>
+    <!-- item 3 -->
+    <circle cx="230" cy="730" r="34" fill="#22C55E"/>
+    <path d="M214 730 l12 12 l20 -24" stroke="#FFFFFF" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="300" y="745" font-size="44" font-weight="bold" fill="#FFFDF9">A clear, written quote</text>
+  </g>
+
+  <text x="540" y="870" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#A8A29E">See ratings &amp; reviews before you call.</text>
+  <rect x="390" y="910" width="300" height="80" rx="40" fill="#F59E0B"/>
+  <text x="540" y="962" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#1C1917">tradee.org</text>
+</svg>
