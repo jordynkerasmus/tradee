@@ -6,6 +6,7 @@
 -- ============================================================
 
 alter table listings add column if not exists verified_approved boolean not null default false;
+alter table listings add column if not exists verification jsonb not null default '{}'::jsonb;
 
 -- Keep the column protected: only an admin (or backend) can set it.
 -- This replaces protect_listing_columns with a version that also guards
@@ -38,6 +39,7 @@ begin
       new.promo_verified    := old.promo_verified;
       new.tier_expires_at   := old.tier_expires_at;
       new.verified_approved := old.verified_approved;   -- only admin can grant/revoke the badge
+      new.verification      := old.verification;        -- only admin can set the check record
     end if;
   end if;
   return new;

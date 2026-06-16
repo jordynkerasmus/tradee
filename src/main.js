@@ -1982,7 +1982,7 @@ async function renderAdmin() {
                   <option value="verified" ${l.tier === 'verified' ? 'selected' : ''}>Verified</option>
                   <option value="premium" ${l.tier === 'premium' ? 'selected' : ''}>Premium</option>
                 </select>
-                <button class="btn btn-outline btn-sm" style="margin-left:6px;${l.verified_approved ? 'color:#22C55E;border-color:#22C55E;' : 'color:var(--amber);border-color:var(--amber);'}" onclick="adminSetVerified(${l.id},${!l.verified_approved})" title="${l.verified_approved ? 'Click to remove the Verified badge' : 'Review the docs above, then approve the Verified badge'}">${l.verified_approved ? 'Verified ✓' : 'Approve badge'}</button>
+                <button class="btn btn-outline btn-sm" style="margin-left:6px;${l.verified_approved ? 'color:#22C55E;border-color:#22C55E;' : 'color:var(--amber);border-color:var(--amber);'}" onclick="openVerifyModal(${l.id})" title="Review documents and verify this tradesman">${l.verified_approved ? 'Verified ✓' : 'Review & verify'}</button>
                 <button class="btn btn-outline btn-sm" style="margin-left:6px;color:var(--danger);border-color:var(--danger);" onclick="adminDeleteListing(${l.id})">Delete</button>
               </td>
             </tr>`).join('')}
@@ -2010,15 +2010,54 @@ window.adminSetTier = async function (id, tier) {
   await loadListings()
 }
 
-// Grant or remove the Verified badge after reviewing the tradesman's documents.
-window.adminSetVerified = async function (id, approved) {
-  if (approved && !confirm("Confirm you've reviewed this tradesman's documents and they're satisfactory? This shows the Verified badge publicly.")) return
-  const { error } = await supabase.from('listings').update({ verified_approved: approved }).eq('id', id)
-  if (error) { toast('Could not update — did you run the SQL? ' + error.message); return }
-  toast(approved ? 'Verified badge granted.' : 'Verified badge removed.')
+// ── Verification review modal (admin) ─────────────────────────────────────────
+let _verifyId = null
+window.openVerifyModal = function (id) {
+  const l = listings.find(x => x.id === id)
+  if (!l) return
+  _verifyId = id
+  document.getElementById('verify-business').textContent = l.name
+  const certs = l.certificate_urls || []
+  document.getElementById('verify-docs').innerHTML = certs.length
+    ? certs.map((ref, i) => `<button class="btn btn-outline btn-sm" style="text-align:left;" onclick="viewCert('${escHtml(ref)}')">View Document ${i + 1} ↗</button>`).join('')
+    : '<span style="font-size:13px;color:var(--charcoal-6);">No documents uploaded yet.</span>'
+  const v = l.verification || {}
+  document.getElementById('vc-id').checked = !!v.id
+  document.getElementById('vc-cert').checked = !!v.cert
+  document.getElementById('vc-reg').checked = !!v.reg
+  document.getElementById('vc-ins').checked = !!v.ins
+  document.getElementById('vc-notes').value = v.notes || ''
+  document.getElementById('verify-modal').classList.add('open')
+}
+window.closeVerifyModal = function () { document.getElementById('verify-modal').classList.remove('open') }
+
+function collectVerifyChecks() {
+  return {
+    id: document.getElementById('vc-id').checked,
+    cert: document.getElementById('vc-cert').checked,
+    reg: document.getElementById('vc-reg').checked,
+    ins: document.getElementById('vc-ins').checked,
+    notes: document.getElementById('vc-notes').value.trim(),
+    reviewed_at: new Date().toISOString(),
+  }
+}
+async function saveVerification(approved) {
+  if (_verifyId == null) return
+  const update = { verification: collectVerifyChecks() }
+  if (approved !== undefined) update.verified_approved = approved
+  const { error } = await supabase.from('listings').update(update).eq('id', _verifyId)
+  if (error) { toast('Could not save — did you run the SQL? ' + error.message); return }
+  toast(approved === true ? 'Verified badge granted.' : approved === false ? 'Badge removed.' : 'Checks saved.')
+  closeVerifyModal()
   await loadListings()
   renderAdmin()
 }
+window.grantVerified = function () {
+  if (!document.getElementById('vc-id').checked && !confirm('Identity isn\'t ticked. Grant the badge anyway?')) return
+  saveVerification(true)
+}
+window.saveVerificationOnly = function () { saveVerification(undefined) }
+window.revokeVerified = function () { saveVerification(false) }
 
 window.adminDeleteListing = async function (id) {
   if (!confirm('Delete this listing? This cannot be undone.')) return

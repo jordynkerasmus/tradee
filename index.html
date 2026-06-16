@@ -160,6 +160,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .promo-banner-text .promo-spots { display: inline-block; margin-top: 6px; font-weight: 700; color: var(--amber); }
 .disclaimer-box { background: var(--charcoal-3); border: 1px solid var(--charcoal-4); border-radius: var(--radius); padding: 14px 16px; margin: 1rem 0; }
 .disclaimer-box .disclaimer-text { font-size: 12px; line-height: 1.6; color: var(--charcoal-6); max-height: 130px; overflow-y: auto; margin-bottom: 12px; }
+.verify-check { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--white); }
+.verify-check input { accent-color: var(--amber); width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
 .disclaimer-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--white); }
 .disclaimer-check input { accent-color: var(--amber); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
 .disclaimer-check a { color: var(--amber); }
@@ -847,6 +849,36 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <textarea id="r-text" placeholder="Describe the work done and your experience…"></textarea>
       </div>
       <button class="btn btn-primary" style="width:100%;" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- VERIFICATION REVIEW MODAL (admin) -->
+<div class="modal-overlay" id="verify-modal">
+  <div class="modal-box" style="max-width:560px;">
+    <button class="modal-close" onclick="closeVerifyModal()">×</button>
+    <h3>Verify Tradesman</h3>
+    <div id="verify-business" style="font-size:14px;color:var(--amber);font-weight:600;margin-bottom:4px;"></div>
+    <p style="font-size:13px;color:var(--charcoal-6);margin-bottom:1rem;">Review the uploaded documents, then tick what you've confirmed. The green Verified badge only shows once you grant it.</p>
+
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Uploaded documents</div>
+    <div id="verify-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem;"></div>
+
+    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--charcoal-6);margin-bottom:8px;">Checks</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1rem;">
+      <label class="verify-check"><input type="checkbox" id="vc-id"> Identity (ID / passport) confirmed &amp; matches the name</label>
+      <label class="verify-check"><input type="checkbox" id="vc-cert"> Trade certificate / qualification</label>
+      <label class="verify-check"><input type="checkbox" id="vc-reg"> Industry registration (PIRB / NHBRC / ECSA etc.) checked</label>
+      <label class="verify-check"><input type="checkbox" id="vc-ins"> Proof of insurance</label>
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <div class="form-label" style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:6px;">Notes (optional)</div>
+      <textarea id="vc-notes" placeholder="e.g. PIRB number verified on their site; ID matches." style="width:100%;min-height:60px;"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1;" onclick="grantVerified()">Save &amp; Grant Verified Badge</button>
+      <button class="btn btn-outline btn-sm" onclick="saveVerificationOnly()">Save checks only</button>
+      <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="revokeVerified()">Remove badge</button>
     </div>
   </div>
 </div>
