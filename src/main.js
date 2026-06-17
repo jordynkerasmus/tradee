@@ -365,6 +365,13 @@ async function renderDashboard() {
           </div>
         </div>
         <div class="form-group"><label class="form-label">Business Description</label><textarea class="form-textarea" id="edit-desc">${escHtml(listing.description || '')}</textarea></div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--white);">
+            <input type="checkbox" id="edit-emergency" ${listing.after_hours ? 'checked' : ''} style="accent-color:var(--amber);width:18px;height:18px;">
+            Available for after-hours / emergency call-outs
+          </label>
+          <div class="form-hint">Shows an "After-hours" badge and helps you appear for urgent searches.</div>
+        </div>
         <div class="form-group"><label class="form-label">Credentials</label><input class="form-input" id="edit-creds" value="${escHtml(listing.credentials ? listing.credentials.join(', ') : '')}"><div class="form-hint">Separate with commas</div></div>
         <div class="form-group"><label class="form-label">Years Experience</label><input class="form-input" id="edit-years" type="number" value="${listing.years_experience || 0}"></div>
         <div class="form-group">
@@ -576,7 +583,8 @@ window.saveListing = async function (id) {
     window.editPhotoFile = null
   }
 
-  const updateData = { name, contact_name, phone, email, trade, trades, province, city, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls, lat, lng, service_radius }
+  const after_hours = !!document.getElementById('edit-emergency')?.checked
+  const updateData = { name, contact_name, phone, email, trade, trades, province, city, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls, lat, lng, service_radius, after_hours }
   if (photo_url !== undefined) updateData.photo_url = photo_url
 
   const { error } = await supabase.from('listings').update(updateData).eq('id', id).eq('user_id', currentUser.id)
@@ -635,6 +643,14 @@ function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 // being on a paid/founding tier. Accepts the listing object.
 function tierBadge(l) {
   return (l && l.verified_approved) ? '<span class="badge badge-verified">Verified</span>' : ''
+}
+function afterHoursBadge(l) {
+  return (l && l.after_hours) ? '<span class="badge badge-afterhours">After-hours</span>' : ''
+}
+// Combined badge row (Verified + After-hours) for cards.
+function cardBadges(l) {
+  const b = tierBadge(l) + afterHoursBadge(l)
+  return b ? `<div class="card-badges">${b}</div>` : ''
 }
 function toast(msg) {
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show')
@@ -896,7 +912,8 @@ function runSmartSearch(query, all) {
     const r = avgRating(l)
     score += r * 4
     if (l.tier === 'premium') score += 6; else if (l.tier === 'verified') score += 3
-    if (emergency && /(emergency|24|after hour|same day|urgent)/.test(hay)) { score += 18; reasons.push('Emergency') }
+    if (emergency && l.after_hours) { score += 25; reasons.push('After-hours') }
+    else if (emergency && /(emergency|24|after hour|same day|urgent)/.test(hay)) { score += 18; reasons.push('Emergency') }
     if (topRated && r >= 4.5) score += 12
     if (affordable && l.callout >= 0) score += Math.max(0, 12 - l.callout / 100)
     return { l, score, reasons: [...new Set(reasons)] }
@@ -1272,6 +1289,17 @@ window.toggleFavsFilter = function () {
   renderDirectory()
 }
 
+window.toggleAfterHoursFilter = function () {
+  const btn = document.getElementById('afterhours-filter-btn')
+  if (!btn) return
+  const active = btn.dataset.active === '1'
+  btn.dataset.active = active ? '0' : '1'
+  btn.style.color = active ? 'var(--charcoal-6)' : 'var(--amber)'
+  btn.style.borderColor = active ? 'var(--charcoal-4)' : 'var(--amber)'
+  _smartMode = false
+  renderDirectory()
+}
+
 function renderDirectory() {
   if (_smartMode) { renderSmartResults(); return }
   populateTradeFilter()
@@ -1279,8 +1307,10 @@ function renderDirectory() {
   document.getElementById('filter-sort').value = filterSort
   const tierOrder = { premium: 0, verified: 1, free: 2 }
   const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1'
+  const afterHoursOnly = document.getElementById('afterhours-filter-btn')?.dataset.active === '1'
   let filtered = listings.filter(l => {
     if (showFavsOnly && !isFav(l.id)) return false
+    if (afterHoursOnly && !l.after_hours) return false
     if (_nearMeActive && _userLat && _userLng) {
       const c = listingCoords(l)
       if (!c) return false
@@ -1358,7 +1388,7 @@ function featuredCardHTML(l) {
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
         <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        ${tierBadge(l) ? `<div class="card-badges">${tierBadge(l)}</div>` : ''}
+        ${cardBadges(l)}
       </div>
     </div>
     <div class="card-rating">
@@ -1401,7 +1431,7 @@ function cardHTML(l) {
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
         <div class="card-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        ${tierBadge(l) ? `<div class="card-badges">${tierBadge(l)}</div>` : ''}
+        ${cardBadges(l)}
       </div>
     </div>
     <div class="card-rating">
@@ -1502,7 +1532,7 @@ window.openProfile = async function (id) {
         <div class="profile-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${escHtml(l.contact_name)}</div>` : ''}
         <div class="profile-trade">${allTrades.map(escHtml).join(' · ')}</div>
-        ${tierBadge(l) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(l)}</div>` : ''}
+        ${(tierBadge(l) || afterHoursBadge(l)) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(l)}${afterHoursBadge(l)}</div>` : ''}
         <div class="profile-rating-row">
           <span class="profile-rating-big">${rd}</span>
           <div>
@@ -1803,9 +1833,10 @@ window.submitListing = async function () {
   const lng = parseFloat(document.getElementById('f-lng')?.value) || null
   const service_radius = parseInt(document.getElementById('f-service-radius')?.value) || 30
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
+  const after_hours = !!document.getElementById('f-emergency')?.checked
   const { error } = await supabase.from('listings').insert({
     name, contact_name, phone, email, trade, trades, province, city: cities[0] || city, cities, callout, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
-    user_id: userId, certificate_urls, photo_url, lat, lng, service_radius
+    user_id: userId, certificate_urls, photo_url, lat, lng, service_radius, after_hours
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
