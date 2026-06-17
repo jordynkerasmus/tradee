@@ -231,6 +231,20 @@ async function renderDashboard() {
         : `<div style="font-size:13px;color:var(--charcoal-6);">You're featured free until <strong style="color:var(--white);">${promoUntil}</strong>. To switch on your green <strong>Verified badge</strong>, upload your ID and credential documents below — our team will review them and activate it.</div>`}
     </div>` : ''
 
+  const planLabels = { free: 'Standard (Free)', verified: 'Verified', premium: 'Premium' }
+  const upBtn = (t, price) => `<button class="btn btn-primary" onclick="startCheckout(${listing.id},'${t}')" style="flex:1;min-width:200px;">Upgrade to ${planLabels[t]} — R${price}/mo</button>`
+  let upgrades = ''
+  if (listing.tier === 'free') upgrades = upBtn('verified', '149') + upBtn('premium', '249')
+  else if (listing.tier === 'verified') upgrades = upBtn('premium', '249')
+  const planCard = `
+    <div class="form-card" style="margin-bottom:1rem;">
+      <h3 style="margin-bottom:1rem;">Your Plan</h3>
+      <div style="font-size:14px;color:var(--charcoal-6);">Current plan: <strong style="color:var(--white);">${planLabels[listing.tier] || listing.tier}</strong>${(listing.promo_verified && listing.tier_expires_at) ? ` · founding offer until ${promoUntil}` : ''}</div>
+      ${upgrades
+        ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">${upgrades}</div><div style="font-size:12px;color:var(--charcoal-6);margin-top:10px;">Secure payment via PayFast. Cancel anytime. Your Verified badge still requires document approval.</div>`
+        : `<div style="font-size:13px;color:var(--charcoal-6);margin-top:8px;">You're on our top plan. 🎉</div>`}
+    </div>`
+
   el.innerHTML = `
     ${promoNote}
     <div class="profile-hero" style="margin-bottom:1.5rem;">
@@ -292,6 +306,8 @@ async function renderDashboard() {
         ${tips.length ? `<div style="margin-top:8px;font-size:12px;color:var(--charcoal-6);">${tips.map(t => '• ' + t).join(' &nbsp;')}</div>` : ''}
       </div>
     </div>
+
+    ${planCard}
 
     <div class="form-card" style="margin-bottom:1rem;">
       <h3 style="margin-bottom:1rem;">Client Reviews (${reviews.length})</h3>
@@ -952,6 +968,16 @@ window.clearSmartSearch = function () {
   _smartMode = false; _smartRanked = []; _smartQuery = ''
   document.querySelectorAll('.smart-q-input').forEach(i => { i.value = '' })
   renderDirectory()
+}
+
+// PayFast checkout: ask the edge function for a signed payment link, then redirect.
+window.startCheckout = async function (listingId, tier) {
+  toast('Taking you to secure checkout…')
+  try {
+    const { data, error } = await supabase.functions.invoke('payfast-checkout', { body: { listing_id: listingId, tier, email: currentUser?.email } })
+    if (error || !data?.url) { toast('Could not start checkout — please try again.'); return }
+    window.location.href = data.url
+  } catch (e) { toast('Could not start checkout — please try again.') }
 }
 
 function renderSmartResults() {
@@ -1852,6 +1878,16 @@ window.submitListing = async function () {
 
 // ── URL Routing ───────────────────────────────────────────────────────────────
 function handleRoute() {
+  // Return from PayFast checkout
+  const sp = new URLSearchParams(window.location.search)
+  const pay = sp.get('payment')
+  if (pay) {
+    if (pay === 'success') toast('Payment received — your upgrade will activate within a minute. 🎉')
+    else if (pay === 'cancelled') toast('Payment cancelled — no charge made.')
+    window.history.replaceState({}, '', '/')
+    setTimeout(() => { if (currentUser) loadListings() }, 4000)
+    return
+  }
   const path = window.location.pathname
   const match = path.match(/^\/profile\/(.+)$/)
   if (match) {
