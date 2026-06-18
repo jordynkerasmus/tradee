@@ -56,16 +56,20 @@ function updateNavForAuth() {
   const dashBtn = document.getElementById('nav-dashboard-btn')
   if (!authBtn) return
   const adminLink = document.getElementById('nav-admin')
+  const mobileAdmin = document.getElementById('nav-mobile-admin')
   if (currentUser) {
     authBtn.textContent = 'Log Out'
     authBtn.onclick = handleSignOut
     if (dashBtn) dashBtn.style.display = 'inline-flex'
-    if (adminLink) adminLink.style.display = ADMIN_EMAILS.includes(currentUser.email) ? 'inline' : 'none'
+    const isAdmin = ADMIN_EMAILS.includes(currentUser.email)
+    if (adminLink) adminLink.style.display = isAdmin ? 'inline' : 'none'
+    if (mobileAdmin) mobileAdmin.style.display = isAdmin ? 'block' : 'none'
   } else {
     authBtn.textContent = 'My Listing'
     authBtn.onclick = () => window.showPage('login')
     if (dashBtn) dashBtn.style.display = 'none'
     if (adminLink) adminLink.style.display = 'none'
+    if (mobileAdmin) mobileAdmin.style.display = 'none'
   }
 }
 
