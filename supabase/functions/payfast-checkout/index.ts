@@ -13,7 +13,7 @@ const SITE = 'https://www.tradee.org'
 const ITN_URL = 'https://hbqivzqhmuaidolernek.supabase.co/functions/v1/payfast-itn'
 
 const PRICES: Record<string, string> = { verified: '149.00', premium: '249.00' }
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' }
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 
 function pfEncode(v: string) {
   return encodeURIComponent(v.trim()).replace(/%20/g, '+').replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
