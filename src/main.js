@@ -368,10 +368,24 @@ async function renderDashboard() {
           <div class="form-group">
             <label class="form-label">Province</label>
             <select class="form-input" id="edit-province">
-              ${['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Free State','Northern Cape'].map(p => `<option value="${p}" ${listing.province === p ? 'selected' : ''}>${p}</option>`).join('')}
+              ${['Nationwide / All Provinces','Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Free State','Northern Cape'].map(p => `<option value="${p}" ${listing.province === p ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
           </div>
           <div class="form-group"><label class="form-label">Primary City</label><input class="form-input" id="edit-city" value="${escHtml(listing.city || '')}"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your base town / address</label>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input id="edit-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" class="form-input" style="flex:1;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="geocodeEditLocation()" style="white-space:nowrap;">Locate</button>
+          </div>
+          <div class="form-hint">Where you're based — used to place you on the map and show you to nearby clients.</div>
+          <div id="edit-geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-bottom:8px;">${listing.lat ? '✓ Location set' : 'No location set yet'}</div>
+          <input type="hidden" id="edit-lat" value="${listing.lat || ''}">
+          <input type="hidden" id="edit-lng" value="${listing.lng || ''}">
+          <label class="form-label" style="margin-top:8px;">How far you'll travel — Service Radius: <span id="edit-radius-label" style="color:var(--amber);">${(listing.service_radius || 30) >= 500 ? '500+ km (nationwide)' : (listing.service_radius || 30) + ' km'}</span></label>
+          <input id="edit-service-radius" type="range" min="5" max="500" value="${listing.service_radius || 30}" step="5" style="width:100%;accent-color:var(--amber);" oninput="document.getElementById('edit-radius-label').textContent=(this.value>=500?'500+ km (nationwide)':this.value+' km')">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>500+ km</span></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
@@ -410,19 +424,6 @@ async function renderDashboard() {
                 <button type="button" onclick="viewCert('${escHtml(ref)}')" style="flex:1;text-align:left;background:none;border:none;cursor:pointer;font-size:13px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">View Document ${i + 1} ↗</button>
               </div>`).join('')}
           </div>` : ''}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Your Location & Service Radius</label>
-          <div style="display:flex;gap:8px;margin-bottom:8px;">
-            <input id="edit-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" class="form-input" style="flex:1;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="geocodeEditLocation()" style="white-space:nowrap;">Locate</button>
-          </div>
-          <div id="edit-geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-bottom:8px;">${listing.lat ? '✓ Location set' : 'No location set yet'}</div>
-          <input type="hidden" id="edit-lat" value="${listing.lat || ''}">
-          <input type="hidden" id="edit-lng" value="${listing.lng || ''}">
-          <label class="form-label" style="margin-top:8px;">Service Radius: <span id="edit-radius-label">${listing.service_radius || 30} km</span></label>
-          <input id="edit-service-radius" type="range" min="5" max="200" value="${listing.service_radius || 30}" step="5" style="width:100%;accent-color:var(--amber);" oninput="document.getElementById('edit-radius-label').textContent=this.value+' km'">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>200 km</span></div>
         </div>
         <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;" onclick="saveListing(${listing.id})">Save Changes →</button>
       </div>
@@ -1355,7 +1356,7 @@ function renderDirectory() {
       if (dist > Math.max(l.service_radius || 30, 50)) return false
     }
     if (filterTrade && l.trade !== filterTrade) return false
-    if (filterProvince && l.province !== filterProvince) return false
+    if (filterProvince && l.province !== filterProvince && l.province !== 'Nationwide / All Provinces') return false
     if (filterCity) {
       const listingCities = l.cities && l.cities.length ? l.cities : [l.city]
       if (!listingCities.some(c => c === filterCity)) return false
@@ -1530,8 +1531,8 @@ window.openProfile = async function (id) {
       <div class="section-title">Portfolio</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
         ${portfolio.map(p => `
-          <div style="position:relative;aspect-ratio:1;border-radius:var(--radius);overflow:hidden;cursor:pointer;" onclick="window.open('${escHtml(p.url)}','_blank')">
-            <img src="${escHtml(p.url)}" style="width:100%;height:100%;object-fit:cover;">
+          <div style="position:relative;aspect-ratio:1;border-radius:var(--radius);overflow:hidden;cursor:pointer;" onclick="openLightbox('${escHtml(p.url)}','${escHtml(p.caption || '')}')">
+            <img src="${escHtml(p.url)}" style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
             ${p.caption ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.65);padding:4px 8px;font-size:11px;color:#fff;">${escHtml(p.caption)}</div>` : ''}
           </div>`).join('')}
       </div>
@@ -1697,6 +1698,21 @@ window.renderRankings = function () {
 }
 
 // ── List your business ────────────────────────────────────────────────────────
+window.openLightbox = function (url, caption) {
+  let box = document.getElementById('tradee-lightbox')
+  if (!box) {
+    box = document.createElement('div')
+    box.id = 'tradee-lightbox'
+    box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:zoom-out;padding:2rem;'
+    box.onclick = () => { box.style.display = 'none' }
+    document.body.appendChild(box)
+  }
+  box.innerHTML = `<img src="${escHtml(url)}" style="max-width:92vw;max-height:82vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.6);">
+    ${caption ? `<div style="color:#fff;font-size:14px;margin-top:14px;max-width:80vw;text-align:center;">${escHtml(caption)}</div>` : ''}
+    <div style="color:#A8A29E;font-size:12px;margin-top:10px;">Click anywhere to close</div>`
+  box.style.display = 'flex'
+}
+
 window.selectTier = function (tier) {
   selectedTier = tier
   ;['free', 'verified', 'premium'].forEach(t => document.getElementById('tier-' + t).classList.toggle('selected', t === tier))
@@ -1711,6 +1727,9 @@ window.selectTier = function (tier) {
   const credsUnlocked = document.getElementById('credentials-unlocked')
   if (credsLocked) credsLocked.style.display = isPaid ? 'none' : 'block'
   if (credsUnlocked) credsUnlocked.style.display = isPaid ? 'block' : 'none'
+  // Mandatory ID confirmation (Verified/Premium only)
+  const idWrap = document.getElementById('f-id-confirm-wrap')
+  if (idWrap) idWrap.style.display = isPaid ? 'flex' : 'none'
 }
 
 window.goToStep2 = function () {
@@ -1832,6 +1851,7 @@ window.submitListing = async function () {
   if (!name || selectedTrades.length === 0 || !province || selectedCities.length === 0) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
   if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
+  if ((selectedTier === 'verified' || selectedTier === 'premium') && !document.getElementById('f-id-confirm')?.checked) { toast('Verified & Premium require a valid ID / registration document — please upload it and tick the confirmation box.'); return }
   if (!document.getElementById('f-agree')?.checked) { toast('Please confirm your details and accept the disclaimer to publish.'); return }
 
   // Create account first

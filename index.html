@@ -712,6 +712,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <div class="form-group"><label class="form-label">Province</label>
           <select class="form-select" id="f-province">
             <option value="">Select province…</option>
+            <option>Nationwide / All Provinces</option>
             <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
             <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
             <option>North West</option><option>Free State</option><option>Northern Cape</option>
@@ -729,6 +730,22 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
             </div>
           </div>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your base town / address</label>
+        <div style="display:flex;gap:8px;">
+          <input id="f-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" style="flex:1;background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);padding:10px 12px;border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="geocodeListingLocation()" style="white-space:nowrap;">Locate</button>
+        </div>
+        <div class="form-hint">Where you're based — used to place you on the map and show you to nearby clients.</div>
+        <div id="geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-top:6px;"></div>
+        <input type="hidden" id="f-lat">
+        <input type="hidden" id="f-lng">
+      </div>
+      <div class="form-group">
+        <label class="form-label">How far you'll travel — Service Radius: <span id="radius-label" style="color:var(--amber);">30 km</span></label>
+        <input id="f-service-radius" type="range" min="5" max="500" value="30" step="5" style="width:100%;accent-color:var(--amber);" oninput="document.getElementById('radius-label').textContent=(this.value>=500?'500+ km (nationwide)':this.value+' km')">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>500+ km</span></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="f-callout" placeholder="e.g. 350 or N/A"><div class="form-hint">Enter a number or N/A</div></div>
@@ -783,7 +800,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
           <input type="file" id="f-cert-files" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewCertFiles(this.files)">
           <div id="f-cert-preview" style="margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;"></div>
         </div>
-        <div class="form-hint">Clients will be able to view these on your profile.</div>
+        <div class="form-hint">🔒 Private — only the Tradee review team can see these. They are used to verify your badge and are <strong>never shown publicly</strong>.</div>
+        <label class="disclaimer-check" id="f-id-confirm-wrap" style="display:none;margin-top:0.75rem;">
+          <input type="checkbox" id="f-id-confirm">
+          <span>I confirm I have uploaded a valid ID document and/or trade registration for verification. <span style="color:var(--charcoal-6);">(required for Verified &amp; Premium)</span></span>
+        </label>
       </div>
       </div> <!-- end credentials-unlocked -->
     </div>
@@ -829,24 +850,6 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         </div>
       </div>
       <div style="font-size:12px;color:var(--charcoal-6);margin-top:-0.5rem;">* Pricing is indicative for demo purposes</div>
-    </div>
-    <div class="form-card" style="margin-bottom:1.5rem;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.06em;margin-bottom:1rem;">Your Location & Service Radius</div>
-      <div style="margin-bottom:1rem;">
-        <label style="display:block;font-size:12px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Your Address or Area</label>
-        <div style="display:flex;gap:8px;">
-          <input id="f-location-text" type="text" placeholder="e.g. Sandton, Johannesburg" style="flex:1;background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);padding:10px 12px;border-radius:var(--radius);font-size:14px;font-family:'DM Sans',sans-serif;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="geocodeListingLocation()" style="white-space:nowrap;">Locate</button>
-        </div>
-        <div id="geocode-status" style="font-size:12px;color:var(--charcoal-6);margin-top:6px;"></div>
-        <input type="hidden" id="f-lat">
-        <input type="hidden" id="f-lng">
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Service Radius: <span id="radius-label">30 km</span></label>
-        <input id="f-service-radius" type="range" min="5" max="200" value="30" step="5" style="width:100%;accent-color:var(--amber);" oninput="document.getElementById('radius-label').textContent=this.value+' km'">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--charcoal-5);margin-top:2px;"><span>5 km</span><span>200 km</span></div>
-      </div>
     </div>
     <div class="disclaimer-box">
       <div class="disclaimer-text">
@@ -1149,7 +1152,7 @@ function getFilteredListings() {
   const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1';
   return listings.filter(l => {
     if (showFavsOnly && !isFav(l.id)) return false;
-    if (province && l.province !== province) return false;
+    if (province && l.province !== province && l.province !== 'Nationwide / All Provinces') return false;
     if (tier && l.tier !== tier) return false;
     const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : []);
     if (trade && !allTrades.includes(trade)) return false;
@@ -1459,7 +1462,7 @@ function renderDirectory() {
       if (dist > (l.service_radius || 30)) return false;
     }
     if (filterTrade && l.trade!==filterTrade) return false;
-    if (filterProvince && l.province!==filterProvince) return false;
+    if (filterProvince && l.province!==filterProvince && l.province!=='Nationwide / All Provinces') return false;
     if (dirSearchTerm) { const term=dirSearchTerm.toLowerCase(); if (!l.name.toLowerCase().includes(term) && !l.trade.toLowerCase().includes(term) && !l.desc.toLowerCase().includes(term)) return false; }
     return true;
   }).sort((a,b)=>{
@@ -1945,6 +1948,9 @@ function selectTier(tier) {
   const credsUnlocked = document.getElementById('credentials-unlocked');
   if (credsLocked) credsLocked.style.display = isPaid ? 'none' : 'block';
   if (credsUnlocked) credsUnlocked.style.display = isPaid ? 'block' : 'none';
+  // Mandatory ID confirmation (Verified/Premium only)
+  const idWrap = document.getElementById('f-id-confirm-wrap');
+  if (idWrap) idWrap.style.display = isPaid ? 'flex' : 'none';
 }
 
 function submitListing() {
@@ -1970,6 +1976,7 @@ function submitListing() {
   if (!name||selectedTrades.length===0||!province||selectedCities.length===0) { toast('Please fill in name, at least one trade, province and at least one city.'); return; }
   if (!rate&&rateRaw.toUpperCase()!=='N/A') { toast('Please enter your rate or N/A.'); return; }
   if (!desc) { toast('Please add a business description.'); return; }
+  if ((selectedTier === 'verified' || selectedTier === 'premium') && !document.getElementById('f-id-confirm')?.checked) { toast('Verified & Premium require a valid ID / registration document — please upload it and tick the confirmation box.'); return; }
   if (!document.getElementById('f-agree')?.checked) { toast('Please confirm your details and accept the disclaimer to publish.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
   listings.push({id:newId,name,contact_name,trade,trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
