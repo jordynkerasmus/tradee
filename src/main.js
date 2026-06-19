@@ -430,27 +430,31 @@ async function renderDashboard() {
 
     <div class="form-card">
       <h3>Subscription Plan</h3>
+      <div style="font-size:13px;color:var(--charcoal-6);margin-bottom:1rem;">Your current plan is highlighted. To change plans, use the <strong style="color:var(--white);">“Your Plan”</strong> card at the top of your dashboard — paid plans are activated securely through PayFast. 🔒</div>
       <div class="tier-grid">
-        <div class="tier-card ${editTier === 'free' ? 'selected' : ''}" id="edit-tier-free" onclick="selectEditTier('free')">
+        <div class="tier-card ${listing.tier === 'free' ? 'selected' : ''}" style="opacity:${listing.tier === 'free' ? '1' : '0.55'};">
           <div class="tier-name">Standard</div><div class="tier-price">R0<span>/mo</span></div>
           <ul class="tier-features">
             <li><span class="tick">✓</span> Basic profile</li><li><span class="tick">✓</span> Client reviews</li>
             <li><span class="cross">✗</span> Priority ranking</li><li><span class="cross">✗</span> Verified badge</li><li><span class="cross">✗</span> Featured placement</li>
           </ul>
+          ${listing.tier === 'free' ? '<div style="font-size:12px;color:var(--amber);font-weight:600;margin-top:8px;">Your current plan</div>' : ''}
         </div>
-        <div class="tier-card featured ${editTier === 'verified' ? 'selected' : ''}" id="edit-tier-verified" onclick="selectEditTier('verified')">
+        <div class="tier-card featured ${listing.tier === 'verified' ? 'selected' : ''}" style="opacity:${listing.tier === 'verified' ? '1' : '0.55'};">
           <div class="popular-tag">Most Popular</div><div class="tier-name">Verified</div><div class="tier-price">R149<span>/mo</span></div>
           <ul class="tier-features">
             <li><span class="tick">✓</span> Basic profile</li><li><span class="tick">✓</span> Client reviews</li>
             <li><span class="tick">✓</span> Priority ranking</li><li><span class="tick">✓</span> Verified badge</li><li><span class="cross">✗</span> Featured placement</li>
           </ul>
+          ${listing.tier === 'verified' ? '<div style="font-size:12px;color:var(--amber);font-weight:600;margin-top:8px;">Your current plan</div>' : ''}
         </div>
-        <div class="tier-card ${editTier === 'premium' ? 'selected' : ''}" id="edit-tier-premium" onclick="selectEditTier('premium')">
+        <div class="tier-card ${listing.tier === 'premium' ? 'selected' : ''}" style="opacity:${listing.tier === 'premium' ? '1' : '0.55'};">
           <div class="tier-name">Premium</div><div class="tier-price">R249<span>/mo</span></div>
           <ul class="tier-features">
             <li><span class="tick">✓</span> Basic profile</li><li><span class="tick">✓</span> Client reviews</li>
             <li><span class="tick">✓</span> Priority ranking</li><li><span class="tick">✓</span> Verified badge</li><li><span class="tick">✓</span> Featured placement</li>
           </ul>
+          ${listing.tier === 'premium' ? '<div style="font-size:12px;color:var(--amber);font-weight:600;margin-top:8px;">Your current plan</div>' : ''}
         </div>
       </div>
     </div>
@@ -604,7 +608,9 @@ window.saveListing = async function (id) {
   }
 
   const after_hours = !!document.getElementById('edit-emergency')?.checked
-  const updateData = { name, contact_name, phone, email, trade, trades, province, city, callout, rate, rate_type, description, credentials, years_experience, tier: editTier, certificate_urls, lat, lng, service_radius, after_hours }
+  // NOTE: tier is intentionally NOT set here. The plan can only be changed via the
+  // PayFast checkout flow (or by an admin) — never by saving the edit form.
+  const updateData = { name, contact_name, phone, email, trade, trades, province, city, callout, rate, rate_type, description, credentials, years_experience, certificate_urls, lat, lng, service_radius, after_hours }
   if (photo_url !== undefined) updateData.photo_url = photo_url
 
   const { error } = await supabase.from('listings').update(updateData).eq('id', id).eq('user_id', currentUser.id)
