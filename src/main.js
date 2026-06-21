@@ -1670,8 +1670,10 @@ window.closeReviewModal = function () { document.getElementById('review-modal').
 
 window.submitReview = async function () {
   const reviewer_name = document.getElementById('r-name').value.trim()
+  const reviewer_email = document.getElementById('r-email')?.value.trim() || ''
   const review_text = document.getElementById('r-text').value.trim()
   if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return }
+  if (!reviewer_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reviewer_email)) { toast('Please enter a valid email — it’s used to verify your review and is never shown publicly.'); return }
 
   const quality = getStarVal('star-quality')
   const service = getStarVal('star-service')
@@ -1681,11 +1683,15 @@ window.submitReview = async function () {
   if (!quality || !service || !cleanliness || !communication || !value) { toast('Please rate all 5 categories.'); return }
   const stars = Math.round((quality + service + cleanliness + communication + value) / 5)
 
-  const { error } = await supabase.from('reviews').insert({
+  const { data: insertedReview, error } = await supabase.from('reviews').insert({
     listing_id: reviewingId, reviewer_name, review_text,
     stars, quality, service, cleanliness, communication, value
-  })
+  }).select('id').single()
   if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
+  // Store the reviewer's email privately (admin-only table — never publicly readable).
+  if (insertedReview?.id && reviewer_email) {
+    await supabase.from('review_emails').insert({ review_id: insertedReview.id, email: reviewer_email }).catch(() => {})
+  }
 
   // rating_avg is recomputed server-side by the on-review DB trigger —
   // clients are not trusted to write it (see supabase/security-policies.sql).
@@ -2009,6 +2015,7 @@ window.openReviewModal = function (id) {
   reviewingId = id
   document.getElementById('review-modal').classList.add('open')
   document.getElementById('r-name').value = ''
+  const rEmail = document.getElementById('r-email'); if (rEmail) rEmail.value = ''
   document.getElementById('r-text').value = ''
   initStarSelects()
 }
@@ -2027,14 +2034,20 @@ async function renderAdmin() {
   const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const since1 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  const [{ data: allListings }, { data: allReviews }, { data: events }] = await Promise.all([
+  const [{ data: allListings }, { data: allReviews }, { data: events }, { data: reviewEmails }] = await Promise.all([
     supabase.from('listings').select('*, reviews(*)').order('created_at', { ascending: false }),
     supabase.from('reviews').select('*, listings(name)').order('created_at', { ascending: false }).limit(50),
-    supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since30)
+    supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since30),
+    supabase.from('review_emails').select('review_id, email')
   ])
+  // Map private reviewer emails (admin-only) onto each review.
+  const emailByReview = {}
+  ;(reviewEmails || []).forEach(re => { emailByReview[re.review_id] = re.email })
   const ls = allListings || []
+  ls.forEach(l => (l.reviews || []).forEach(r => { r.reviewer_email = emailByReview[r.id] || '' }))
   window._adminListings = ls
   const rs = allReviews || []
+  rs.forEach(r => { r.reviewer_email = emailByReview[r.id] || '' })
   const ev = events || []
 
   // Tier & sign-up breakdown
@@ -2172,7 +2185,7 @@ async function renderAdmin() {
         <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--charcoal-3);">
           <div style="flex:1;">
             <div style="font-size:13px;font-weight:600;color:var(--white);">${escHtml(r.reviewer_name)} → ${escHtml(r.listings?.name || '')}</div>
-            <div style="font-size:12px;color:var(--charcoal-6);">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} · ${r.stars}★</div>
+            <div style="font-size:12px;color:var(--charcoal-6);">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} · ${r.stars}★${r.reviewer_email ? ' · ' + escHtml(r.reviewer_email) : ''}</div>
             <p style="font-size:13px;color:var(--charcoal-7);margin:4px 0;">${escHtml(r.review_text)}</p>
           </div>
           <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);flex-shrink:0;" onclick="adminDeleteReview(${r.id})">Remove</button>
