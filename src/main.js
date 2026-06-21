@@ -377,7 +377,11 @@ async function renderDashboard() {
           <label class="form-label">Trades</label>
           <div style="font-size:12px;color:var(--charcoal-6);margin-bottom:6px;">Currently: <span style="color:var(--amber);">${(listing.trades && listing.trades.length ? listing.trades : [listing.trade]).join(', ')}</span></div>
           <input class="form-input" id="edit-trades-text" value="${escHtml((listing.trades && listing.trades.length ? listing.trades : [listing.trade || '']).join(', '))}" placeholder="e.g. Plumber, Tiler, Waterproofing">
-          <div class="form-hint">Separate multiple trades with commas</div>
+          <div class="form-hint">Separate multiple trades with commas. Type any trade you like — unlisted ones are reviewed by our team before going live.</div>
+          <select class="form-input" style="margin-top:8px;" onchange="addTradeFromList(this)">
+            <option value="">＋ Quick-add a listed trade…</option>
+            ${Object.entries(TRADE_CATEGORIES).map(([cat, ts]) => `<optgroup label="${escHtml(cat)}">${ts.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('')}</optgroup>`).join('')}
+          </select>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -2227,6 +2231,16 @@ window.grantVerified = function () {
 }
 window.saveVerificationOnly = function () { saveVerification(undefined) }
 window.revokeVerified = function () { saveVerification(false) }
+
+window.addTradeFromList = function (sel) {
+  const val = sel.value
+  if (!val) return
+  const input = document.getElementById('edit-trades-text')
+  const current = input.value.split(',').map(t => t.trim()).filter(Boolean)
+  if (!current.includes(val)) current.push(val)
+  input.value = current.join(', ')
+  sel.value = ''
+}
 
 window.approvePendingTrade = async function (id, trade) {
   const l = listings.find(x => x.id === id)
