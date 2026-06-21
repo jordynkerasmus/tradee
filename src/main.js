@@ -2033,6 +2033,7 @@ async function renderAdmin() {
     supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since30)
   ])
   const ls = allListings || []
+  window._adminListings = ls
   const rs = allReviews || []
   const ev = events || []
 
@@ -2145,12 +2146,13 @@ async function renderAdmin() {
           </tr></thead>
           <tbody>${ls.map(l => `
             <tr style="border-bottom:1px solid var(--charcoal-3);" data-search="${escHtml(((l.name || '') + ' ' + (l.trade || '') + ' ' + (l.trades || []).join(' ') + ' ' + (l.email || '')).toLowerCase())}">
-              <td style="padding:8px 12px;color:var(--white);">${escHtml(l.name)}</td>
+              <td style="padding:8px 12px;"><a onclick="openProfile(${l.id})" style="color:var(--amber);cursor:pointer;text-decoration:none;" title="Open this tradesman's profile">${escHtml(l.name)}</a></td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${escHtml(l.trade)}</td>
               <td style="padding:8px 12px;">${tierBadge(l) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">${l.certificate_urls && l.certificate_urls.length ? l.certificate_urls.map((ref, i) => `<button class="btn btn-outline btn-sm" style="margin:0 2px;padding:2px 8px;" onclick="viewCert('${escHtml(ref)}')" title="Verify document">Doc ${i + 1}</button>`).join('') : '<span style="color:var(--charcoal-6);">—</span>'}</td>
-              <td style="padding:8px 12px;color:var(--charcoal-6);">${l.reviews?.length || 0}</td>
+              <td style="padding:8px 12px;">${(l.reviews?.length || 0) > 0 ? `<button class="btn btn-outline btn-sm" style="padding:2px 10px;" onclick="openListingReviews(${l.id})" title="View & manage reviews">${l.reviews.length} ⓘ</button>` : '<span style="color:var(--charcoal-6);">0</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
+                <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openProfile(${l.id})" title="View listing">View</button>
                 <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
                   <option value="free" ${l.tier === 'free' ? 'selected' : ''}>Standard</option>
                   <option value="verified" ${l.tier === 'verified' ? 'selected' : ''}>Verified</option>
@@ -2232,6 +2234,47 @@ window.grantVerified = function () {
 }
 window.saveVerificationOnly = function () { saveVerification(undefined) }
 window.revokeVerified = function () { saveVerification(false) }
+
+window.openListingReviews = function (id) {
+  const l = (window._adminListings || []).find(x => x.id === id)
+  if (!l) return
+  const reviews = (l.reviews || []).slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  let box = document.getElementById('admin-reviews-modal')
+  if (!box) {
+    box = document.createElement('div')
+    box.id = 'admin-reviews-modal'
+    box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;'
+    box.onclick = (e) => { if (e.target === box) box.style.display = 'none' }
+    document.body.appendChild(box)
+  }
+  const rowsHtml = reviews.length ? reviews.map(r => `
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--charcoal-3);">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:var(--white);">${escHtml(r.reviewer_name || 'Anonymous')} · ${r.stars}★</div>
+        <div style="font-size:11px;color:var(--charcoal-6);">${new Date(r.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}${r.reviewer_email ? ' · ' + escHtml(r.reviewer_email) : ''}</div>
+        <p style="font-size:13px;color:var(--charcoal-7);margin:6px 0 0;">${escHtml(r.review_text || '')}</p>
+      </div>
+      <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);flex-shrink:0;" onclick="adminDeleteReviewFromModal(${r.id},${id})">Delete</button>
+    </div>`).join('') : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet.</p>'
+  box.innerHTML = `<div style="background:var(--charcoal-2);border:1px solid var(--charcoal-3);border-radius:12px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="margin:0;">Reviews — ${escHtml(l.name)}</h3>
+      <button onclick="document.getElementById('admin-reviews-modal').style.display='none'" style="background:none;border:none;color:var(--charcoal-6);font-size:24px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    ${rowsHtml}
+  </div>`
+  box.style.display = 'flex'
+}
+
+window.adminDeleteReviewFromModal = async function (reviewId, listingId) {
+  if (!confirm('Delete this review? This cannot be undone.')) return
+  const { error } = await supabase.from('reviews').delete().eq('id', reviewId)
+  if (error) { toast('Could not delete: ' + error.message); return }
+  const l = (window._adminListings || []).find(x => x.id === listingId)
+  if (l) l.reviews = (l.reviews || []).filter(r => r.id !== reviewId)
+  toast('Review deleted.')
+  openListingReviews(listingId)
+}
 
 window.filterAdminListings = function (q) {
   const term = (q || '').trim().toLowerCase()
