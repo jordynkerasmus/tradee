@@ -4,3 +4,7 @@ dist/
 .env
 
 .DS_Store
+
+# Local marketing assets — keep out of the repo
+Tradee-Designs/
+Tradee-Social-Media-Kit.xlsx
