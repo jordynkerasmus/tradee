@@ -136,6 +136,13 @@ async function renderDashboard() {
   }
   editTier = listing.tier
 
+  // Notes/messages sent to this tradesman by the Tradee admin team.
+  let dashNotes = []
+  try {
+    const { data: nd } = await supabase.from('listing_notes').select('*').eq('listing_id', listing.id).eq('dismissed', false).order('created_at', { ascending: false })
+    dashNotes = nd || []
+  } catch (_) {}
+
   let _dashListingId = listing.id
   let _dashCreatedAt = listing.created_at
 
@@ -264,6 +271,14 @@ async function renderDashboard() {
     </div>`
 
   el.innerHTML = `
+    ${dashNotes.length ? `
+    <div style="background:rgba(96,165,250,0.1);border:1.5px solid rgba(96,165,250,0.45);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:1.5rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:0.04em;font-size:1.1rem;color:#60A5FA;margin-bottom:6px;">📩 Messages from Tradee</div>
+      ${dashNotes.map(n => `<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--charcoal-3);">
+        <div style="flex:1;font-size:14px;color:var(--white);line-height:1.5;">${escHtml(n.message)}<div style="font-size:11px;color:var(--charcoal-6);margin-top:3px;">${new Date(n.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</div></div>
+        <button class="btn btn-outline btn-sm" style="flex-shrink:0;" onclick="dismissNote(${n.id})">Got it</button>
+      </div>`).join('')}
+    </div>` : ''}
     ${overdueBanner}
     ${promoNote}
     <div class="profile-hero" style="margin-bottom:1.5rem;">
@@ -276,8 +291,8 @@ async function renderDashboard() {
         <div class="profile-name">${escHtml(listing.name)}</div>
         ${listing.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-bottom:4px;">Contact: ${escHtml(listing.contact_name)}</div>` : ''}
         <div class="profile-trade">${escHtml(listing.trade)}</div>
-        ${tierBadge(listing) ? `<div class="card-badges" style="margin-top:6px;">${tierBadge(listing)}</div>` : ''}
-        <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        ${tierBadge(listing) ? `<div class="card-badges" style="margin-top:8px;margin-bottom:14px;">${tierBadge(listing)}</div>` : ''}
+        <div style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;">
           <span style="font-size:13px;color:var(--charcoal-6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${profileUrl(listing)}</span>
           <button class="btn btn-primary btn-sm" onclick="copyProfileLink(${listing.id})">🔗 Copy Link</button>
         </div>
@@ -2032,13 +2047,13 @@ async function renderAdmin() {
     return
   }
   el.innerHTML = '<div class="empty-state"><p>Loading...</p></div>'
-  const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const since180 = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
   const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const since1 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const [{ data: allListings }, { data: allReviews }, { data: events }, { data: reviewEmails }] = await Promise.all([
     supabase.from('listings').select('*, reviews(*)').order('created_at', { ascending: false }),
     supabase.from('reviews').select('*, listings(name)').order('created_at', { ascending: false }).limit(50),
-    supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since30),
+    supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since180),
     supabase.from('review_emails').select('review_id, email')
   ])
   // Map private reviewer emails (admin-only) onto each review.
@@ -2047,6 +2062,7 @@ async function renderAdmin() {
   const ls = allListings || []
   ls.forEach(l => (l.reviews || []).forEach(r => { r.reviewer_email = emailByReview[r.id] || '' }))
   window._adminListings = ls
+  window._adminEvents = events || []
   const rs = allReviews || []
   rs.forEach(r => { r.reviewer_email = emailByReview[r.id] || '' })
   const ev = events || []
@@ -2118,22 +2134,16 @@ async function renderAdmin() {
       ${statCard(spotsLeft, 'Free spots left', 'var(--amber)')}
     </div>
 
-    <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:8px;">Activity — last 30 days</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:6px;">
-      ${statCard(views, 'Profile Views')}
-      ${statCard(contacts, 'Contact Clicks', 'var(--amber)')}
-      ${statCard(`${ctr}%`, 'View → Contact')}
-      ${statCard(searches, 'Search Appearances')}
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);">Activity</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${[[1, '24h'], [7, '7d'], [14, '14d'], [30, '30d'], [180, '6mo']].map(([d, lbl]) => `<button class="admin-period-btn" data-days="${d}" onclick="renderAdminActivity(${d})" style="padding:6px 13px;border:1px solid var(--charcoal-4);border-radius:100px;background:transparent;color:var(--charcoal-6);font-size:12px;cursor:pointer;">${lbl}</button>`).join('')}
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;">
-      ${statCard(phone, 'Phone Calls')}
-      ${statCard(wa, 'WhatsApp', '#25D366')}
-      ${statCard(email, 'Emails')}
-      ${statCard(ct('review_left'), 'Reviews Left')}
-    </div>
+    <div id="admin-activity" style="margin-bottom:1.25rem;"></div>
 
     <div class="form-card" style="margin-bottom:1.25rem;">
-      <h3 style="margin-bottom:1rem;">Top Viewed Listings (30 days)</h3>
+      <h3 style="margin-bottom:1rem;">Top Viewed Listings (last 6 months)</h3>
       ${topViewed.length ? topViewed.map((t, i) => `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--charcoal-3);">
           <span style="color:var(--white);font-size:14px;">${i + 1}. ${escHtml(t.name)}</span>
@@ -2167,6 +2177,7 @@ async function renderAdmin() {
               <td style="padding:8px 12px;">${(l.reviews?.length || 0) > 0 ? `<button class="btn btn-outline btn-sm" style="padding:2px 10px;" onclick="openListingReviews(${l.id})" title="View & manage reviews">${l.reviews.length} ⓘ</button>` : '<span style="color:var(--charcoal-6);">0</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openProfile(${l.id})" title="View listing">View</button>
+                <button class="btn btn-outline btn-sm" style="margin-right:6px;color:#60A5FA;border-color:#60A5FA;" onclick="sendListingNote(${l.id})" title="Send a note/message to this tradesman">✉ Note</button>
                 <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
                   <option value="free" ${l.tier === 'free' ? 'selected' : ''}>Standard</option>
                   <option value="verified" ${l.tier === 'verified' ? 'selected' : ''}>Verified</option>
@@ -2192,6 +2203,48 @@ async function renderAdmin() {
           <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);flex-shrink:0;" onclick="adminDeleteReview(${r.id})">Remove</button>
         </div>`).join('')}
     </div>`
+  renderAdminActivity(30)
+}
+
+window.renderAdminActivity = function (days) {
+  const cont = document.getElementById('admin-activity')
+  if (!cont) return
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+  const e2 = (window._adminEvents || []).filter(e => new Date(e.created_at).getTime() >= cutoff)
+  const ct = (t) => e2.filter(e => e.event_type === t).length
+  const views = ct('profile_view'), phone = ct('phone_click'), wa = ct('whatsapp_click'), email = ct('email_click'), searches = ct('search_impression'), reviews = ct('review_left')
+  const contacts = phone + wa + email
+  const ctr = views > 0 ? Math.round((contacts / views) * 100) : 0
+  const card = (v, l, c = 'var(--white)') => `<div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;"><div style="font-size:2rem;font-weight:700;color:${c};">${v}</div><div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${l}</div></div>`
+  cont.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:6px;">
+      ${card(views, 'Profile Views')}${card(contacts, 'Contact Clicks', 'var(--amber)')}${card(`${ctr}%`, 'View → Contact')}${card(searches, 'Search Appearances')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      ${card(phone, 'Phone Calls')}${card(wa, 'WhatsApp', '#25D366')}${card(email, 'Emails')}${card(reviews, 'Reviews Left')}
+    </div>`
+  document.querySelectorAll('.admin-period-btn').forEach(b => {
+    const on = Number(b.dataset.days) === days
+    b.style.background = on ? 'var(--amber)' : 'transparent'
+    b.style.color = on ? 'var(--charcoal)' : 'var(--charcoal-6)'
+    b.style.borderColor = on ? 'var(--amber)' : 'var(--charcoal-4)'
+  })
+}
+
+window.dismissNote = async function (id) {
+  await supabase.from('listing_notes').update({ dismissed: true }).eq('id', id)
+  renderDashboard()
+}
+
+window.sendListingNote = async function (id) {
+  const l = (window._adminListings || []).find(x => x.id === id)
+  if (!l) return
+  const message = prompt(`Send a note to ${l.name}.\nThey'll get an email and see it on their dashboard:\n\n(e.g. "Please re-upload your ID — the copy was blurry.")`)
+  if (!message || !message.trim()) return
+  const { error } = await supabase.from('listing_notes').insert({ listing_id: id, message: message.trim() })
+  if (error) { toast('Could not send note: ' + error.message); return }
+  if (l.email) supabase.functions.invoke('listing-note', { body: { email: l.email, name: l.name, message: message.trim() } }).catch(() => {})
+  toast('Note sent to ' + l.name + '.')
 }
 
 window.adminSetTier = async function (id, tier) {
