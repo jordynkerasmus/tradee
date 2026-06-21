@@ -2180,7 +2180,7 @@ async function renderAdmin() {
               <td style="padding:8px 12px;">${(l.reviews?.length || 0) > 0 ? `<button class="btn btn-outline btn-sm" style="padding:2px 10px;" onclick="openListingReviews(${l.id})" title="View & manage reviews">${l.reviews.length} ⓘ</button>` : '<span style="color:var(--charcoal-6);">0</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openProfile(${l.id})" title="View listing">View</button>
-                <button class="btn btn-outline btn-sm" style="margin-right:6px;color:#60A5FA;border-color:#60A5FA;" onclick="sendListingNote(${l.id})" title="Send a note/message to this tradesman">✉ Note</button>
+                <button class="btn btn-outline btn-sm" style="margin-right:6px;color:#60A5FA;border-color:#60A5FA;" onclick="sendListingNote(${l.id})" title="Send a note/message to this tradesman">Note</button>
                 <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
                   <option value="free" ${l.tier === 'free' ? 'selected' : ''}>Standard</option>
                   <option value="verified" ${l.tier === 'verified' ? 'selected' : ''}>Verified</option>
