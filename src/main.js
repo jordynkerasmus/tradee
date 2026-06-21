@@ -2180,6 +2180,7 @@ async function renderAdmin() {
               <td style="padding:8px 12px;">${(l.reviews?.length || 0) > 0 ? `<button class="btn btn-outline btn-sm" style="padding:2px 10px;" onclick="openListingReviews(${l.id})" title="View & manage reviews">${l.reviews.length} ⓘ</button>` : '<span style="color:var(--charcoal-6);">0</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openProfile(${l.id})" title="View listing">View</button>
+                <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openListingStats(${l.id})" title="See this tradesman's views & clicks">Stats</button>
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;color:#60A5FA;border-color:#60A5FA;" onclick="sendListingNote(${l.id})" title="Send a note/message to this tradesman">Note</button>
                 <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
                   <option value="free" ${l.tier === 'free' ? 'selected' : ''}>Standard</option>
@@ -2232,6 +2233,43 @@ window.renderAdminActivity = function (days) {
     b.style.color = on ? 'var(--charcoal)' : 'var(--charcoal-6)'
     b.style.borderColor = on ? 'var(--amber)' : 'var(--charcoal-4)'
   })
+}
+
+window.openListingStats = function (id, days) {
+  const l = (window._adminListings || []).find(x => x.id === id)
+  if (!l) return
+  const period = days || 30
+  let box = document.getElementById('admin-stats-modal')
+  if (!box) {
+    box = document.createElement('div')
+    box.id = 'admin-stats-modal'
+    box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;'
+    box.onclick = (e) => { if (e.target === box) box.style.display = 'none' }
+    document.body.appendChild(box)
+  }
+  const cutoff = Date.now() - period * 24 * 60 * 60 * 1000
+  const ev = (window._adminEvents || []).filter(e => String(e.listing_id) === String(id) && new Date(e.created_at).getTime() >= cutoff)
+  const ct = (t) => ev.filter(e => e.event_type === t).length
+  const views = ct('profile_view'), phone = ct('phone_click'), wa = ct('whatsapp_click'), email = ct('email_click'), searches = ct('search_impression'), reviews = ct('review_left')
+  const contacts = phone + wa + email
+  const ctr = views > 0 ? Math.round((contacts / views) * 100) : 0
+  const card = (v, lbl, c = 'var(--white)') => `<div style="background:var(--charcoal-3);border-radius:var(--radius);padding:14px;text-align:center;"><div style="font-size:1.8rem;font-weight:700;color:${c};">${v}</div><div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;">${lbl}</div></div>`
+  const periodBtns = [[7, '7d'], [30, '30d'], [180, '6mo']].map(([d, t]) => `<button onclick="openListingStats(${id},${d})" style="padding:6px 13px;border:1px solid ${d === period ? 'var(--amber)' : 'var(--charcoal-4)'};border-radius:100px;background:${d === period ? 'var(--amber)' : 'transparent'};color:${d === period ? 'var(--charcoal)' : 'var(--charcoal-6)'};font-size:12px;cursor:pointer;">${t}</button>`).join('')
+  box.innerHTML = `<div style="background:var(--charcoal-2);border:1px solid var(--charcoal-3);border-radius:12px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <h3 style="margin:0;">${escHtml(l.name)} — Stats</h3>
+      <button onclick="document.getElementById('admin-stats-modal').style.display='none'" style="background:none;border:none;color:var(--charcoal-6);font-size:24px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div style="display:flex;gap:6px;margin:10px 0 16px;">${periodBtns}</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+      ${card(views, 'Profile Views')}${card(contacts, 'Contact Clicks', 'var(--amber)')}
+      ${card(`${ctr}%`, 'View → Contact')}${card(searches, 'Search Appearances')}
+      ${card(phone, 'Phone Calls')}${card(wa, 'WhatsApp', '#25D366')}
+      ${card(email, 'Emails')}${card(reviews, 'Reviews Left')}
+    </div>
+    <p style="font-size:11px;color:var(--charcoal-6);margin-top:12px;">Same engagement metrics this tradesman sees on their own dashboard.</p>
+  </div>`
+  box.style.display = 'flex'
 }
 
 window.dismissNote = async function (id) {
