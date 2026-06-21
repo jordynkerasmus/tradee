@@ -1891,7 +1891,8 @@ window.submitListing = async function () {
   if (!email || !password) { toast('Please enter your email and password.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   if (phone && !/^\+?[\d\s\-()]{7,15}$/.test(phone)) { toast('Please enter a valid phone number.'); return }
-  if (!name || selectedTrades.length === 0 || !province || selectedCities.length === 0) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
+  const isNationwide = province === 'Nationwide / All Provinces'
+  if (!name || selectedTrades.length === 0 || !province || (!isNationwide && selectedCities.length === 0)) { toast('Please fill in name, at least one trade, province and at least one city.'); return }
   if (!rate && rateRaw.toUpperCase() !== 'N/A') { toast('Please enter your rate or N/A.'); return }
   if (!description) { toast('Please add a business description.'); return }
   if ((selectedTier === 'verified' || selectedTier === 'premium') && !document.getElementById('f-id-confirm')?.checked) { toast('Verified & Premium require a valid ID / registration document — please upload it and tick the confirmation box.'); return }
@@ -1931,7 +1932,7 @@ window.submitListing = async function () {
   const lat = parseFloat(document.getElementById('f-lat')?.value) || null
   const lng = parseFloat(document.getElementById('f-lng')?.value) || null
   const service_radius = parseInt(document.getElementById('f-service-radius')?.value) || 30
-  const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
+  const cities = selectedCities.length > 0 ? selectedCities : (isNationwide ? ['Nationwide'] : (city ? [city] : []))
   const after_hours = !!document.getElementById('f-emergency')?.checked
   const { error } = await supabase.from('listings').insert({
     name, contact_name, phone, email, trade, trades, pending_trades, province, city: cities[0] || city, cities, callout, travel_rate, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
