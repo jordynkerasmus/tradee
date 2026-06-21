@@ -834,8 +834,9 @@ function renderHome() {
   document.getElementById('trade-cats').querySelectorAll('.trade-pill').forEach(el =>
     el.addEventListener('click', () => window.filterByTrade(el.dataset.trade)))
   const allPremiumHome = listings.filter(l => l.tier === 'premium')
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-  const offset = allPremiumHome.length > 0 ? dayOfYear % allPremiumHome.length : 0
+  // Rotate featured Premium every 30 minutes so each paid account gets frequent top exposure.
+  const slot30 = Math.floor(Date.now() / (30 * 60 * 1000))
+  const offset = allPremiumHome.length > 0 ? slot30 % allPremiumHome.length : 0
   const rotatedPremium = [...allPremiumHome.slice(offset), ...allPremiumHome.slice(0, offset)]
   const featured = rotatedPremium.slice(0, 3).concat(listings.filter(l => l.tier === 'verified').slice(0, 3)).slice(0, 6)
   document.getElementById('home-cards').innerHTML = featured.length
@@ -1396,10 +1397,10 @@ function renderDirectory() {
   document.getElementById('dir-title').textContent = titleParts.length ? titleParts.join(' — ') : 'All Tradesmen'
   document.getElementById('dir-count').textContent = `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
 
-  // Split premium (featured) from the rest — rotate daily so everyone gets equal top exposure
+  // Split premium (featured) from the rest — rotate every 30 minutes so each paid account gets frequent top exposure
   const allPremium = filtered.filter(l => l.tier === 'premium')
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-  const offset = allPremium.length > 0 ? dayOfYear % allPremium.length : 0
+  const slot30 = Math.floor(Date.now() / (30 * 60 * 1000))
+  const offset = allPremium.length > 0 ? slot30 % allPremium.length : 0
   const featured = [...allPremium.slice(offset), ...allPremium.slice(0, offset)]
   const rest = filtered.filter(l => l.tier !== 'premium')
 
