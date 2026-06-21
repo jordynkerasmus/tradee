@@ -607,8 +607,13 @@ window.saveListing = async function (id) {
   const province = document.getElementById('edit-province')?.value || ''
   const city = document.getElementById('edit-city')?.value.trim() || ''
   const tradesRaw = document.getElementById('edit-trades-text')?.value || ''
-  const trades = tradesRaw.split(',').map(t => t.trim()).filter(Boolean)
-  const trade = trades[0] || ''
+  const enteredTrades = tradesRaw.split(',').map(t => t.trim()).filter(Boolean)
+  // Standard trades + any custom trades the admin already approved (already in this listing's trades) go live.
+  const existingListing = listings.find(l => l.id === id)
+  const approvedSet = new Set((existingListing?.trades || []))
+  const trades = enteredTrades.filter(t => TRADES_LIST.includes(t) || approvedSet.has(t))
+  const pending_trades = enteredTrades.filter(t => !TRADES_LIST.includes(t) && !approvedSet.has(t))
+  const trade = trades[0] || (pending_trades.length ? 'Pending review' : '')
 
   // Upload new profile photo if selected
   let photo_url = undefined
@@ -626,7 +631,7 @@ window.saveListing = async function (id) {
   const after_hours = !!document.getElementById('edit-emergency')?.checked
   // NOTE: tier is intentionally NOT set here. The plan can only be changed via the
   // PayFast checkout flow (or by an admin) — never by saving the edit form.
-  const updateData = { name, contact_name, phone, email, trade, trades, province, city, callout, rate, rate_type, description, credentials, years_experience, certificate_urls, lat, lng, service_radius, after_hours }
+  const updateData = { name, contact_name, phone, email, trade, trades, pending_trades, province, city, callout, rate, rate_type, description, credentials, years_experience, certificate_urls, lat, lng, service_radius, after_hours }
   if (photo_url !== undefined) updateData.photo_url = photo_url
 
   const { error } = await supabase.from('listings').update(updateData).eq('id', id).eq('user_id', currentUser.id)
@@ -1849,8 +1854,11 @@ window.submitListing = async function () {
   const contact_name = document.getElementById('f-name').value.trim()
   const name = document.getElementById('f-business').value.trim() || contact_name
   const phone = document.getElementById('f-phone')?.value.trim() || ''
-  const trade = getSelectedTrade()
-  const trades = [...selectedTrades]
+  // Split into standard trades (go live now) and custom trades (held for admin approval).
+  const standardTrades = selectedTrades.filter(t => TRADES_LIST.includes(t))
+  const pending_trades = selectedTrades.filter(t => !TRADES_LIST.includes(t))
+  const trades = standardTrades
+  const trade = standardTrades[0] || (pending_trades.length ? 'Pending review' : '')
   const province = document.getElementById('f-province').value
   const city = selectedCities.length > 0 ? selectedCities[0] : ''
   const calloutRaw = document.getElementById('f-callout').value.trim()
@@ -1909,7 +1917,7 @@ window.submitListing = async function () {
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const after_hours = !!document.getElementById('f-emergency')?.checked
   const { error } = await supabase.from('listings').insert({
-    name, contact_name, phone, email, trade, trades, province, city: cities[0] || city, cities, callout, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
+    name, contact_name, phone, email, trade, trades, pending_trades, province, city: cities[0] || city, cities, callout, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
     user_id: userId, certificate_urls, photo_url, lat, lng, service_radius, after_hours
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
@@ -2026,6 +2034,25 @@ async function renderAdmin() {
   const new7 = ls.filter(l => l.created_at >= since7).length
   const new1 = ls.filter(l => l.created_at >= since1).length
 
+  // Custom trades awaiting approval
+  const pendingListings = ls.filter(l => Array.isArray(l.pending_trades) && l.pending_trades.length)
+  const pendingCount = pendingListings.reduce((n, l) => n + l.pending_trades.length, 0)
+  const pendingSection = pendingCount ? `
+    <div class="form-card" style="margin-bottom:1.25rem;border:1.5px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.05);">
+      <h3 style="margin-bottom:0.5rem;">⚠️ ${pendingCount} custom trade${pendingCount !== 1 ? 's' : ''} awaiting your approval</h3>
+      <p style="font-size:13px;color:var(--charcoal-6);margin-bottom:1rem;">These were typed in by tradesmen and are hidden from the public until you approve them. Approve to make them live, or reject to remove.</p>
+      ${pendingListings.map(l => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--charcoal-3);">
+          <div style="color:var(--white);font-size:14px;font-weight:600;margin-bottom:6px;">${escHtml(l.name)}</div>
+          ${l.pending_trades.map(t => `
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+              <span style="flex:1;min-width:160px;color:var(--amber);font-size:14px;">“${escHtml(t)}”</span>
+              <button class="btn btn-outline btn-sm" style="color:#22C55E;border-color:#22C55E;" onclick="approvePendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}')">Approve</button>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="rejectPendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}')">Reject</button>
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>` : ''
+
   // 30-day activity
   const ct = (t) => ev.filter(e => e.event_type === t).length
   const views = ct('profile_view'), phone = ct('phone_click'), wa = ct('whatsapp_click'), email = ct('email_click'), searches = ct('search_impression')
@@ -2046,6 +2073,8 @@ async function renderAdmin() {
 
   el.innerHTML = `
     <h2 style="margin-bottom:1.5rem;">Admin Dashboard</h2>
+
+    ${pendingSection}
 
     <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:8px;">Sign-ups by package</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;">
@@ -2191,6 +2220,31 @@ window.grantVerified = function () {
 }
 window.saveVerificationOnly = function () { saveVerification(undefined) }
 window.revokeVerified = function () { saveVerification(false) }
+
+window.approvePendingTrade = async function (id, trade) {
+  const l = listings.find(x => x.id === id)
+  if (!l) return
+  const pending = (l.pending_trades || []).filter(t => t !== trade)
+  const trades = [...(l.trades || []).filter(t => t && t !== 'Pending review'), trade]
+  const primary = (l.trade && l.trade !== 'Pending review') ? l.trade : trade
+  const { error } = await supabase.from('listings').update({ trades, pending_trades: pending, trade: primary }).eq('id', id)
+  if (error) { toast('Could not approve: ' + error.message); return }
+  toast(`Approved “${trade}” — now live.`)
+  await loadListings()
+  renderAdmin()
+}
+
+window.rejectPendingTrade = async function (id, trade) {
+  if (!confirm(`Reject and remove “${trade}”? The tradesman will need to pick a listed trade instead.`)) return
+  const l = listings.find(x => x.id === id)
+  if (!l) return
+  const pending = (l.pending_trades || []).filter(t => t !== trade)
+  const { error } = await supabase.from('listings').update({ pending_trades: pending }).eq('id', id)
+  if (error) { toast('Could not reject: ' + error.message); return }
+  toast(`Rejected “${trade}”.`)
+  await loadListings()
+  renderAdmin()
+}
 
 window.adminDeleteListing = async function (id) {
   if (!confirm('Delete this listing? This cannot be undone.')) return

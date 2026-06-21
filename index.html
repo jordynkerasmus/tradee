@@ -1960,8 +1960,10 @@ function selectTier(tier) {
 function submitListing() {
   const contact_name=document.getElementById('f-name').value.trim();
   const name=document.getElementById('f-business').value.trim() || contact_name;
-  const trade=getSelectedTrade();
-  const trades=[...selectedTrades];
+  const standardTrades=selectedTrades.filter(t=>TRADES_LIST.includes(t));
+  const pending_trades=selectedTrades.filter(t=>!TRADES_LIST.includes(t));
+  const trades=standardTrades;
+  const trade=standardTrades[0]||(pending_trades.length?'Pending review':'');
   const province=document.getElementById('f-province').value;
   const city=selectedCities.length>0?selectedCities[0]:'';
   const calloutRaw=document.getElementById('f-callout').value.trim();
@@ -1983,8 +1985,8 @@ function submitListing() {
   if ((selectedTier === 'verified' || selectedTier === 'premium') && !document.getElementById('f-id-confirm')?.checked) { toast('Verified & Premium require a valid ID / registration document — please upload it and tick the confirmation box.'); return; }
   if (!document.getElementById('f-agree')?.checked) { toast('Please confirm your details and accept the disclaimer to publish.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
-  listings.push({id:newId,name,contact_name,trade,trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
-  addTradeToDropdowns(trade);
+  listings.push({id:newId,name,contact_name,trade,trades,pending_trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
+  if(trade && trade!=='Pending review') addTradeToDropdowns(trade);
   toast(`${name} is now live on Tradee!`);
   ['f-name','f-phone','f-email','f-password','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('f-trade-new').value='';

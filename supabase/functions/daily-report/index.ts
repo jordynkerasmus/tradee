@@ -34,6 +34,11 @@ Deno.serve(async (_req) => {
     const spotsLeft = Math.max(0, PROMO_LIMIT - (promo || 0))
     const dateStr = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
+    // Custom trades awaiting admin approval
+    const { data: pendingRows } = await supabase
+      .from('listings').select('pending_trades').not('pending_trades', 'is', null)
+    const pendingTrades = (pendingRows || []).reduce((n, r) => n + ((r.pending_trades || []).length), 0)
+
     // Engagement: pull events for the last 30 days, then split out the last 24h.
     const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     const { data: events } = await supabase
@@ -67,6 +72,7 @@ Deno.serve(async (_req) => {
         ${row('Verified members', verified || 0)}
         ${row('Premium members', premium || 0)}
         ${row('Founding-member spots claimed', `${promo || 0} / ${PROMO_LIMIT}`)}
+        ${row('⚠️ Custom trades awaiting your approval', pendingTrades, pendingTrades > 0 ? '#F59E0B' : '#FFFDF9')}
         <tr><td style="padding:14px 0 0;color:#F59E0B;font-size:14px;font-weight:700;">Free Verified spots left</td><td style="padding:14px 0 0;text-align:right;color:#F59E0B;font-size:24px;font-weight:800;">${spotsLeft}</td></tr>
       </table>
     </div>
