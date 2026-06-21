@@ -715,7 +715,7 @@ function tierBadge(l) {
   return (l && l.verified_approved) ? '<span class="badge badge-verified">Verified</span>' : ''
 }
 function afterHoursBadge(l) {
-  return (l && l.after_hours) ? '<span class="badge badge-afterhours">After-hours</span>' : ''
+  return (l && l.after_hours) ? '<span class="badge badge-afterhours">After Hours</span>' : ''
 }
 // Combined badge row (Verified + After-hours) for cards.
 function cardBadges(l) {
