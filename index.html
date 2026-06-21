@@ -2102,19 +2102,21 @@ function showInstallPrompt() {
 
 window.showInstallPrompt = showInstallPrompt;
 
-// Hide install button once already installed
-if (_isStandalone) {
+// Only offer "Install App" on iOS (safe Add-to-Home-Screen). On Android, installing
+// mints a Google WebAPK that Play Protect currently flags, so we hide it there and let
+// people use the site in the browser. Also hidden once already installed.
+{
   const btn = document.getElementById('nav-mobile-install');
-  if (btn) btn.style.display = 'none';
+  if (btn && (_isStandalone || !_isIOS)) btn.style.display = 'none';
 }
 
-// Android: catch install prompt
+// Android: capture the install event so the manual "Install App" menu item still works,
+// but do NOT auto-pop the install banner. Installing mints a Google WebAPK that Play
+// Protect currently flags ("built for an older Android version") — a Google-side issue
+// we can't control — so we let people simply use the site in their browser instead.
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   _androidDeferredPrompt = e;
-  if (!localStorage.getItem('tradee_install_dismissed') && !_isStandalone) {
-    setTimeout(() => { document.getElementById('android-install-banner').style.display = 'block'; }, 3000);
-  }
 });
 
 document.getElementById('android-install-btn').addEventListener('click', () => showInstallPrompt());
