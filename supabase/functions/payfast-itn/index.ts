@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
       const listingId = data.custom_int1
       const tier = data.custom_str1
       if (listingId && PRICES[tier]) {
-        const expires = new Date(Date.now() + (31 + 3) * 24 * 60 * 60 * 1000).toISOString()
-        await supabase.from('listings').update({ tier, tier_expires_at: expires, promo_verified: false }).eq('id', listingId)
+        const expires = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000).toISOString()
+        await supabase.from('listings').update({ tier, tier_expires_at: expires, promo_verified: false, grace_warned_at: null }).eq('id', listingId)
         console.log(`PayFast: listing ${listingId} upgraded to ${tier} until ${expires}`)
       }
     }

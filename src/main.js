@@ -235,6 +235,20 @@ async function renderDashboard() {
         : `<div style="font-size:13px;color:var(--charcoal-6);">You're featured free until <strong style="color:var(--white);">${promoUntil}</strong>. To switch on your green <strong>Verified badge</strong>, upload your ID and credential documents below — our team will review them and activate it.</div>`}
     </div>` : ''
 
+  // Payment-overdue banner: paid plan whose renewal date has lapsed (3-day grace before auto-downgrade).
+  const isPaidTier = listing.tier === 'verified' || listing.tier === 'premium'
+  const expiresMs = listing.tier_expires_at ? new Date(listing.tier_expires_at).getTime() : 0
+  const overdue = isPaidTier && expiresMs && expiresMs < Date.now()
+  const daysLeft = overdue ? Math.max(1, Math.ceil(3 - (Date.now() - expiresMs) / 86400000)) : 0
+  const overdueBanner = overdue ? `
+    <div style="background:linear-gradient(135deg,rgba(239,68,68,0.18),rgba(239,68,68,0.06));border:1.5px solid rgba(239,68,68,0.55);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:1.5rem;">
+      <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:0.04em;font-size:1.1rem;color:#EF4444;margin-bottom:4px;">⚠️ ${listing.promo_verified ? 'Your free period has ended' : 'Subscription payment overdue'}</div>
+      <div style="font-size:13px;color:var(--charcoal-6);margin-bottom:12px;">${listing.promo_verified
+        ? `Your founding-member free period has ended. Subscribe within <strong style="color:var(--white);">${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong> to keep your priority ranking and Verified badge — otherwise your listing moves to the free Standard plan.`
+        : `We couldn't confirm your ${listing.tier === 'premium' ? 'Premium' : 'Verified'} payment. Please renew within <strong style="color:var(--white);">${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong> or your listing will move to the free Standard plan.`}</div>
+      <button class="btn btn-primary" onclick="startCheckout(${listing.id},'${listing.tier}')" style="width:100%;">Renew ${listing.tier === 'premium' ? 'Premium' : 'Verified'} now →</button>
+    </div>` : ''
+
   const planLabels = { free: 'Standard (Free)', verified: 'Verified', premium: 'Premium' }
   const upBtn = (t, price) => `<button class="btn btn-primary" onclick="startCheckout(${listing.id},'${t}')" style="flex:1;min-width:200px;">Upgrade to ${planLabels[t]} — R${price}/mo</button>`
   let upgrades = ''
@@ -250,6 +264,7 @@ async function renderDashboard() {
     </div>`
 
   el.innerHTML = `
+    ${overdueBanner}
     ${promoNote}
     <div class="profile-hero" style="margin-bottom:1.5rem;">
       <div style="position:relative;display:inline-block;">
