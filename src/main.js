@@ -1822,12 +1822,14 @@ window.toggleTrade = function (trade) {
 }
 
 window.addCustomTrade = function () {
-  const val = document.getElementById('f-trade-new').value.trim()
+  const input = document.getElementById('f-trade-new')
+  const val = input.value.trim()
   if (val && !selectedTrades.includes(val)) {
     selectedTrades.push(val)
     updateTradeLabel()
     renderTradeList()
   }
+  input.value = ''
 }
 
 function updateTradeLabel() {

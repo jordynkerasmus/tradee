@@ -688,9 +688,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
             </div>
             <div id="f-trade-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--charcoal-2);border:1px solid var(--charcoal-4);border-radius:var(--radius);z-index:200;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
               <div id="f-trade-list"></div>
-              <div style="padding:8px 12px;border-top:1px solid var(--charcoal-3);">
-                <input class="form-input" id="f-trade-new" placeholder="＋ Add unlisted trade…" style="font-size:13px;padding:6px 10px;" oninput="addCustomTrade()">
+              <div style="padding:8px 12px;border-top:1px solid var(--charcoal-3);display:flex;gap:8px;">
+                <input class="form-input" id="f-trade-new" placeholder="＋ Add unlisted trade…" style="font-size:13px;padding:6px 10px;flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTrade()}">
+                <button type="button" onclick="addCustomTrade()" style="background:var(--amber);color:var(--charcoal);border:none;border-radius:var(--radius);padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">＋ Add</button>
               </div>
+              <div style="padding:0 12px 8px;font-size:11px;color:var(--charcoal-6);">New trades are reviewed by our team before going live on the site.</div>
             </div>
           </div>
         </div>
@@ -1907,12 +1909,14 @@ function toggleTrade(trade) {
   renderTradeList();
 }
 function addCustomTrade() {
-  const val = document.getElementById('f-trade-new').value.trim();
+  const input = document.getElementById('f-trade-new');
+  const val = input.value.trim();
   if (val && !selectedTrades.includes(val)) {
     selectedTrades.push(val);
     updateTradeLabel();
     renderTradeList();
   }
+  input.value = '';
 }
 function updateTradeLabel() {
   const label = document.getElementById('f-trade-label-text');
