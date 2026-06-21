@@ -287,7 +287,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-hamburger.open span:nth-child(2) { opacity: 0; }
 .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-.nav-mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 1rem 2rem; z-index: 99; max-height: calc(100vh - 64px); overflow-y: auto; }
+.nav-mobile-menu { display: none; position: fixed; top: calc(64px + env(safe-area-inset-top)); left: 0; right: 0; background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 1rem 2rem; z-index: 101; max-height: calc(100vh - 64px - env(safe-area-inset-top)); overflow-y: auto; }
 .nav-mobile-menu a, .nav-mobile-menu button { display: block; width: 100%; text-align: left; color: var(--charcoal-6); text-decoration: none; font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.75rem 0; border-bottom: 1px solid var(--charcoal-3); background: none; border-left: none; border-right: none; border-top: none; cursor: pointer; }
 </style>
 </head>
