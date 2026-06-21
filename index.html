@@ -751,6 +751,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="f-callout" placeholder="e.g. 350 or N/A"><div class="form-hint">Enter a number or N/A</div></div>
+        <div class="form-group"><label class="form-label">Travel Fee (R per km)</label><input class="form-input" id="f-travel" placeholder="e.g. 8 or N/A"><div class="form-hint">Charge per km travelled — number or N/A</div></div>
         <div class="form-group">
           <label class="form-label">Rate (R)</label>
           <div style="display:flex;gap:12px;margin-bottom:8px;">
@@ -1967,6 +1968,8 @@ function submitListing() {
   const province=document.getElementById('f-province').value;
   const city=selectedCities.length>0?selectedCities[0]:'';
   const calloutRaw=document.getElementById('f-callout').value.trim();
+  const travelRaw=document.getElementById('f-travel')?.value.trim()||'';
+  const travel_rate=travelRaw===''?null:(travelRaw.toUpperCase()==='N/A'?-1:(parseInt(travelRaw)||0));
   const rateRaw=document.getElementById('f-rate').value.trim();
   const callout=calloutRaw.toUpperCase()==='N/A'?-1:(parseInt(calloutRaw)||0);
   const rate=rateRaw.toUpperCase()==='N/A'?-1:(parseInt(rateRaw)||0);
@@ -1985,7 +1988,7 @@ function submitListing() {
   if ((selectedTier === 'verified' || selectedTier === 'premium') && !document.getElementById('f-id-confirm')?.checked) { toast('Verified & Premium require a valid ID / registration document — please upload it and tick the confirmation box.'); return; }
   if (!document.getElementById('f-agree')?.checked) { toast('Please confirm your details and accept the disclaimer to publish.'); return; }
   const newId=Math.max(...listings.map(l=>l.id),0)+1;
-  listings.push({id:newId,name,contact_name,trade,trades,pending_trades,province,city,cities:selectedCities,callout,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
+  listings.push({id:newId,name,contact_name,trade,trades,pending_trades,province,city,cities:selectedCities,callout,travel_rate,rate,rate_type,description:desc,credentials:creds,years_experience:years,reviews:[],tier:selectedTier,sample:false,lat,lng,service_radius});
   if(trade && trade!=='Pending review') addTradeToDropdowns(trade);
   toast(`${name} is now live on Tradee!`);
   ['f-name','f-phone','f-email','f-password','f-callout','f-rate','f-desc','f-creds','f-years'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });

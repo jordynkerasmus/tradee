@@ -404,6 +404,7 @@ async function renderDashboard() {
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Call-out Fee (R)</label><input class="form-input" id="edit-callout" value="${listing.callout === -1 ? 'N/A' : listing.callout}" placeholder="e.g. 350 or N/A"></div>
+          <div class="form-group"><label class="form-label">Travel Fee (R per km)</label><input class="form-input" id="edit-travel" value="${listing.travel_rate === -1 ? 'N/A' : (listing.travel_rate ?? '')}" placeholder="e.g. 8 or N/A"></div>
           <div class="form-group">
             <label class="form-label">Rate (R)</label>
             <div style="display:flex;gap:12px;margin-bottom:8px;">
@@ -576,6 +577,8 @@ window.toggleSameAsContact = function (cb) {
 window.saveListing = async function (id) {
   const name = document.getElementById('edit-business').value.trim()
   const contact_name = document.getElementById('edit-contact').value.trim()
+  const travelRaw = document.getElementById('edit-travel')?.value.trim() || ''
+  const travel_rate = travelRaw === '' ? null : (travelRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(travelRaw) || 0))
   const calloutRaw = document.getElementById('edit-callout').value.trim()
   const rateRaw = document.getElementById('edit-rate').value.trim()
   const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
@@ -631,7 +634,7 @@ window.saveListing = async function (id) {
   const after_hours = !!document.getElementById('edit-emergency')?.checked
   // NOTE: tier is intentionally NOT set here. The plan can only be changed via the
   // PayFast checkout flow (or by an admin) — never by saving the edit form.
-  const updateData = { name, contact_name, phone, email, trade, trades, pending_trades, province, city, callout, rate, rate_type, description, credentials, years_experience, certificate_urls, lat, lng, service_radius, after_hours }
+  const updateData = { name, contact_name, phone, email, trade, trades, pending_trades, province, city, callout, travel_rate, rate, rate_type, description, credentials, years_experience, certificate_urls, lat, lng, service_radius, after_hours }
   if (photo_url !== undefined) updateData.photo_url = photo_url
 
   const { error } = await supabase.from('listings').update(updateData).eq('id', id).eq('user_id', currentUser.id)
@@ -685,6 +688,7 @@ function escHtml(str) {
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
+function fmtTravel(n) { return (n === null || n === undefined || n === '') ? null : n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n + '/km' }
 // The green Verified badge shows only once an admin has reviewed the tradesman's
 // uploaded documents and approved them (verified_approved = true) — not just from
 // being on a paid/founding tier. Accepts the listing object.
@@ -1611,6 +1615,7 @@ window.openProfile = async function (id) {
     <div class="profile-stats">
       <div class="stat-box"><span class="value">${fmtRand(l.callout)}</span><div class="label">Call-out Fee</div></div>
       <div class="stat-box"><span class="value">${fmtRand(l.rate)}${l.rate_type === 'day' ? '/day' : '/hr'}</span><div class="label">${rateLabel}</div></div>
+      ${fmtTravel(l.travel_rate) ? `<div class="stat-box"><span class="value">${fmtTravel(l.travel_rate)}</span><div class="label">Travel Fee</div></div>` : ''}
       <div class="stat-box"><span class="value">${l.years_experience || '—'}</span><div class="label">Years Experience</div></div>
     </div>
     <div class="profile-section">
@@ -1861,6 +1866,8 @@ window.submitListing = async function () {
   const trade = standardTrades[0] || (pending_trades.length ? 'Pending review' : '')
   const province = document.getElementById('f-province').value
   const city = selectedCities.length > 0 ? selectedCities[0] : ''
+  const travelRaw = document.getElementById('f-travel')?.value.trim() || ''
+  const travel_rate = travelRaw === '' ? null : (travelRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(travelRaw) || 0))
   const calloutRaw = document.getElementById('f-callout').value.trim()
   const rateRaw = document.getElementById('f-rate').value.trim()
   const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
@@ -1917,12 +1924,12 @@ window.submitListing = async function () {
   const cities = selectedCities.length > 0 ? selectedCities : (city ? [city] : [])
   const after_hours = !!document.getElementById('f-emergency')?.checked
   const { error } = await supabase.from('listings').insert({
-    name, contact_name, phone, email, trade, trades, pending_trades, province, city: cities[0] || city, cities, callout, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
+    name, contact_name, phone, email, trade, trades, pending_trades, province, city: cities[0] || city, cities, callout, travel_rate, rate, rate_type, description, credentials, years_experience, tier: selectedTier,
     user_id: userId, certificate_urls, photo_url, lat, lng, service_radius, after_hours
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
   toast(`${name} is now live on Tradee!`)
-  ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-callout', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+  ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-callout', 'f-travel', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   selectedCities = []; updateCityLabel()
   selectedTrades = []; updateTradeLabel()
   document.getElementById('f-trade-new').value = ''
