@@ -2131,7 +2131,8 @@ async function renderAdmin() {
     </div>
 
     <div class="form-card" style="margin-bottom:1rem;">
-      <h3 style="margin-bottom:1rem;">All Listings</h3>
+      <h3 style="margin-bottom:0.75rem;">All Listings</h3>
+      <input class="form-input" id="admin-listing-search" placeholder="🔍 Search by name, trade or email…" oninput="filterAdminListings(this.value)" style="margin-bottom:1rem;">
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead><tr style="color:var(--charcoal-6);text-align:left;">
@@ -2143,7 +2144,7 @@ async function renderAdmin() {
             <th style="padding:8px 12px;border-bottom:1px solid var(--charcoal-3);">Actions</th>
           </tr></thead>
           <tbody>${ls.map(l => `
-            <tr style="border-bottom:1px solid var(--charcoal-3);">
+            <tr style="border-bottom:1px solid var(--charcoal-3);" data-search="${escHtml(((l.name || '') + ' ' + (l.trade || '') + ' ' + (l.trades || []).join(' ') + ' ' + (l.email || '')).toLowerCase())}">
               <td style="padding:8px 12px;color:var(--white);">${escHtml(l.name)}</td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${escHtml(l.trade)}</td>
               <td style="padding:8px 12px;">${tierBadge(l) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
@@ -2231,6 +2232,14 @@ window.grantVerified = function () {
 }
 window.saveVerificationOnly = function () { saveVerification(undefined) }
 window.revokeVerified = function () { saveVerification(false) }
+
+window.filterAdminListings = function (q) {
+  const term = (q || '').trim().toLowerCase()
+  document.querySelectorAll('#admin-listing-search')[0]?.closest('.form-card')
+    ?.querySelectorAll('tbody tr').forEach(tr => {
+      tr.style.display = (!term || (tr.dataset.search || '').includes(term)) ? '' : 'none'
+    })
+}
 
 window.addTradeFromList = function (sel) {
   const val = sel.value
