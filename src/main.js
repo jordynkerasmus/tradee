@@ -2089,10 +2089,10 @@ async function renderAdmin() {
       ${pendingListings.map(l => `
         <div style="padding:10px 0;border-bottom:1px solid var(--charcoal-3);">
           <div style="color:var(--white);font-size:14px;font-weight:600;margin-bottom:6px;">${escHtml(l.name)}</div>
-          ${l.pending_trades.map(t => `
+          ${l.pending_trades.map((t, i) => `
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
-              <span style="flex:1;min-width:160px;color:var(--amber);font-size:14px;">“${escHtml(t)}”</span>
-              <button class="btn btn-outline btn-sm" style="color:#22C55E;border-color:#22C55E;" onclick="approvePendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}')">Approve</button>
+              <input id="pend-${l.id}-${i}" class="form-input" value="${escHtml(t)}" style="flex:1;min-width:160px;font-size:14px;padding:6px 10px;" title="Edit the trade text before approving">
+              <button class="btn btn-outline btn-sm" style="color:#22C55E;border-color:#22C55E;" onclick="approvePendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}','pend-${l.id}-${i}')">Approve</button>
               <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="rejectPendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}')">Reject</button>
             </div>`).join('')}
         </div>`).join('')}
@@ -2402,15 +2402,18 @@ window.addTradeFromList = function (sel) {
   sel.value = ''
 }
 
-window.approvePendingTrade = async function (id, trade) {
+window.approvePendingTrade = async function (id, trade, inputId) {
   const l = listings.find(x => x.id === id)
   if (!l) return
+  // Use the admin's edited text (if any), otherwise the original.
+  let finalTrade = trade
+  if (inputId) { const el = document.getElementById(inputId); if (el && el.value.trim()) finalTrade = el.value.trim() }
   const pending = (l.pending_trades || []).filter(t => t !== trade)
-  const trades = [...(l.trades || []).filter(t => t && t !== 'Pending review'), trade]
-  const primary = (l.trade && l.trade !== 'Pending review') ? l.trade : trade
+  const trades = [...(l.trades || []).filter(t => t && t !== 'Pending review'), finalTrade]
+  const primary = (l.trade && l.trade !== 'Pending review') ? l.trade : finalTrade
   const { error } = await supabase.from('listings').update({ trades, pending_trades: pending, trade: primary }).eq('id', id)
   if (error) { toast('Could not approve: ' + error.message); return }
-  toast(`Approved “${trade}” — now live.`)
+  toast(`Approved “${finalTrade}” — now live.`)
   await loadListings()
   renderAdmin()
 }
