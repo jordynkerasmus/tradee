@@ -850,12 +850,28 @@ async function updatePromoBanner() {
 function renderHome() {
   const total = listings.length
   const totalReviews = listings.reduce((s, l) => s + (l.reviews ? l.reviews.length : 0), 0)
-  const totalTrades = [...new Set(listings.map(l => l.trade))].length
+  // Distinct trade categories actually represented by listings.
+  const tradeToCat = {}
+  for (const [cat, trades] of Object.entries(TRADE_CATEGORIES)) trades.forEach(t => { tradeToCat[t] = cat })
+  const catSet = new Set()
+  listings.forEach(l => {
+    const ts = (l.trades && l.trades.length) ? l.trades : (l.trade ? [l.trade] : [])
+    ts.forEach(t => { if (tradeToCat[t]) catSet.add(tradeToCat[t]) })
+  })
+  const totalCategories = catSet.size
+  // Distinct provinces covered; a nationwide listing covers all 9.
+  let nationwide = false
+  const provSet = new Set()
+  listings.forEach(l => {
+    if (l.province === 'Nationwide / All Provinces') nationwide = true
+    else if (l.province) provSet.add(l.province)
+  })
+  const provincesCovered = nationwide ? 9 : Math.min(9, provSet.size)
   document.getElementById('home-stats').innerHTML = `
     <div class="stat-item"><span class="stat-num">${total}</span><span class="stat-label">Tradesmen Listed</span></div>
-    <div class="stat-item"><span class="stat-num">${totalTrades || 0}</span><span class="stat-label">Trade Categories</span></div>
+    <div class="stat-item"><span class="stat-num">${totalCategories}</span><span class="stat-label">Trade Categories</span></div>
     <div class="stat-item"><span class="stat-num">${totalReviews}</span><span class="stat-label">Verified Reviews</span></div>
-    <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">Provinces Covered</span></div>`
+    <div class="stat-item"><span class="stat-num">${provincesCovered}</span><span class="stat-label">Provinces Covered</span></div>`
   const allTrades = [...new Set(listings.map(l => l.trade))].sort()
   document.getElementById('trade-cats').innerHTML = allTrades.map(t =>
     `<div class="trade-pill" data-trade="${escHtml(t)}">${escHtml(t)}</div>`).join('')

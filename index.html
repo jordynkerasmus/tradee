@@ -1236,12 +1236,16 @@ function toggleFavsFilter() {
 function avgRating(l) { return l.reviews.length ? l.reviews.reduce((s,r)=>s+r.stars,0)/l.reviews.length : 0; }
 
 function renderHome() {
-  const total=listings.length, totalReviews=listings.reduce((s,l)=>s+l.reviews.length,0), totalTrades=[...new Set(listings.map(l=>l.trade))].length;
+  const total=listings.length, totalReviews=listings.reduce((s,l)=>s+l.reviews.length,0);
+  const tradeToCat={}; for (const [cat,trades] of Object.entries(TRADE_CATEGORIES)) trades.forEach(t=>{tradeToCat[t]=cat;});
+  const catSet=new Set(); listings.forEach(l=>{const ts=(l.trades&&l.trades.length)?l.trades:(l.trade?[l.trade]:[]);ts.forEach(t=>{if(tradeToCat[t])catSet.add(tradeToCat[t]);});});
+  let nationwide=false; const provSet=new Set(); listings.forEach(l=>{if(l.province==='Nationwide / All Provinces')nationwide=true;else if(l.province)provSet.add(l.province);});
+  const provincesCovered=nationwide?9:Math.min(9,provSet.size);
   document.getElementById('home-stats').innerHTML=`
     <div class="stat-item"><span class="stat-num">${total}</span><span class="stat-label">Tradesmen Listed</span></div>
-    <div class="stat-item"><span class="stat-num">${totalTrades}</span><span class="stat-label">Trade Categories</span></div>
+    <div class="stat-item"><span class="stat-num">${catSet.size}</span><span class="stat-label">Trade Categories</span></div>
     <div class="stat-item"><span class="stat-num">${totalReviews}</span><span class="stat-label">Verified Reviews</span></div>
-    <div class="stat-item"><span class="stat-num">9</span><span class="stat-label">Provinces Covered</span></div>`;
+    <div class="stat-item"><span class="stat-num">${provincesCovered}</span><span class="stat-label">Provinces Covered</span></div>`;
   const allTrades=[...new Set(listings.map(l=>l.trade))].sort();
   document.getElementById('trade-cats').innerHTML=allTrades.map(t=>`<div class="trade-pill" onclick="filterByTrade('${t}')">${t}</div>`).join('');
   const featured=listings.filter(l=>l.tier==='premium').slice(0,3).concat(listings.filter(l=>l.tier==='verified').slice(0,3)).slice(0,6);
