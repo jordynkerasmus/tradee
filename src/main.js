@@ -594,7 +594,7 @@ window.toggleSameAsContact = function (cb) {
 }
 
 window.saveListing = async function (id) {
-  const name = document.getElementById('edit-business').value.trim()
+  const name = titleCase(document.getElementById('edit-business').value.trim())
   const contact_name = document.getElementById('edit-contact').value.trim()
   const travelRaw = document.getElementById('edit-travel')?.value.trim() || ''
   const travel_rate = travelRaw === '' ? null : (travelRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(travelRaw) || 0))
@@ -705,6 +705,11 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
 }
 function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.repeat(5 - f) }
+// Uniform Title Case: first letter of each word capitalised, the rest lowercase.
+function titleCase(str) {
+  if (!str) return str
+  return String(str).toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase())
+}
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 function fmtTravel(n) { return (n === null || n === undefined || n === '') ? null : n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n + '/km' }
@@ -787,7 +792,13 @@ async function loadListings() {
     .select('*, reviews(*)')
     .order('created_at', { ascending: false })
   if (error) { console.error(error); return }
-  listings = data || []
+  // Normalise display fields to uniform Title Case (names + towns), regardless of how they were entered.
+  listings = (data || []).map(l => ({
+    ...l,
+    name: titleCase(l.name),
+    city: titleCase(l.city),
+    cities: Array.isArray(l.cities) ? l.cities.map(titleCase) : l.cities,
+  }))
   renderHome()
   populateTradeFilter()
   renderRankings()
@@ -1163,7 +1174,7 @@ window.toggleCity = function (city) {
 window.addCustomCity = function () {
   const input = document.getElementById('f-city-new-input')
   if (!input) return
-  const city = input.value.trim()
+  const city = titleCase(input.value.trim())
   if (!city) return
   if (!selectedCities.includes(city)) {
     selectedCities.push(city)
@@ -1989,7 +2000,7 @@ window.toggleTrade = function (trade) {
 
 window.addCustomTrade = function () {
   const input = document.getElementById('f-trade-new')
-  const val = input.value.trim()
+  const val = titleCase(input.value.trim())
   if (val && !selectedTrades.includes(val)) {
     selectedTrades.push(val)
     updateTradeLabel()
@@ -2013,7 +2024,7 @@ window.submitListing = async function () {
   const email = document.getElementById('f-email').value.trim()
   const password = document.getElementById('f-password').value
   const contact_name = document.getElementById('f-name').value.trim()
-  const name = document.getElementById('f-business').value.trim() || contact_name
+  const name = titleCase(document.getElementById('f-business').value.trim() || contact_name)
   const phone = document.getElementById('f-phone')?.value.trim() || ''
   // Split into standard trades (go live now) and custom trades (held for admin approval).
   const standardTrades = selectedTrades.filter(t => TRADES_LIST.includes(t))
