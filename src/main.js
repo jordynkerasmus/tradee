@@ -888,8 +888,8 @@ function renderHome() {
   const homeCards = document.getElementById('home-cards')
   if (!listings.length) {
     homeCards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
-  } else if (isMobileView()) {
-    // Mobile home: premium in a swipe carousel, then ALL other listings as a square grid with "find more".
+  } else {
+    // Premium in a swipe carousel up top, then ALL other listings as a tile grid with "find more". (All screen sizes.)
     const firstO = others.slice(0, 8)
     const moreO = others.slice(8)
     homeCards.innerHTML =
@@ -897,11 +897,9 @@ function renderHome() {
       (others.length
         ? `<div class="square-grid">${firstO.map(squareCardHTML).join('')}</div>` +
           (moreO.length
-            ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:9px;">${moreO.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
+            ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreO.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
             : '')
         : '')
-  } else {
-    homeCards.innerHTML = rotatedPremium.map(featuredCardHTML).join('') + others.slice(0, 6).map(cardHTML).join('')
   }
 }
 
@@ -1077,10 +1075,8 @@ function renderSmartResults() {
   </div>`
   if (!_smartRanked.length) {
     html += `<div class="empty-state" style="grid-column:1/-1"><h3>No matches found</h3><p>Try rephrasing, or <a onclick="clearSmartSearch()" style="color:var(--amber);cursor:pointer;">browse all tradesmen</a>.</p></div>`
-  } else if (isMobileView()) {
-    html += `<div class="square-grid">${_smartRanked.map(x => squareCardHTML(x.l)).join('')}</div>`
   } else {
-    html += _smartRanked.map(x => cardHTML(x.l)).join('')
+    html += `<div class="square-grid">${_smartRanked.map(x => squareCardHTML(x.l)).join('')}</div>`
   }
   document.getElementById('dir-cards').innerHTML = html
   _smartRanked.forEach(x => trackEvent('search_impression', x.l.id, { trade: x.l.trade, smart: true }))
@@ -1469,20 +1465,14 @@ function renderDirectory() {
 
   const emptyHtml = `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
   const featLabel = `<div style="grid-column:1/-1;margin-bottom:0.5rem;"><div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span><div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div></div></div>`
+  // Featured premium in a swipe carousel, the rest as a tile grid with load-more. (All screen sizes.)
   let html = ''
-  if (isMobileView()) {
-    if (featured.length) html += featLabel + `<div class="featured-scroll">${featured.map(featuredMiniHTML).join('')}</div>`
-    if (rest.length) {
-      const first = rest.slice(0, 12).map(squareCardHTML).join('')
-      const moreItems = rest.slice(12)
-      html += `<div class="square-grid">${first}</div>` + (moreItems.length ? `<div id="dir-more-grid" class="square-grid" style="display:none;margin-top:9px;">${moreItems.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreItems.length})</span></div>` : '')
-    } else if (!featured.length) html += emptyHtml
-  } else {
-    if (featured.length > 0) {
-      html += featLabel + featured.map(l => featuredCardHTML(l)).join('') + (rest.length > 0 ? `<div style="grid-column:1/-1;height:1px;background:var(--charcoal-3);margin:0.5rem 0;"></div>` : '')
-    }
-    html += rest.length ? rest.map(cardHTML).join('') : (!featured.length ? emptyHtml : '')
-  }
+  if (featured.length) html += featLabel + `<div class="featured-scroll">${featured.map(featuredMiniHTML).join('')}</div>`
+  if (rest.length) {
+    const first = rest.slice(0, 12).map(squareCardHTML).join('')
+    const moreItems = rest.slice(12)
+    html += `<div class="square-grid">${first}</div>` + (moreItems.length ? `<div id="dir-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreItems.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreItems.length})</span></div>` : '')
+  } else if (!featured.length) html += emptyHtml
 
   document.getElementById('dir-cards').innerHTML = html
   dirSearchTerm = ''
@@ -1847,22 +1837,9 @@ window.renderRankings = function () {
   const rankList = document.getElementById('rank-list')
   if (!ranked.length) {
     rankList.innerHTML = '<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>'
-  } else if (isMobileView()) {
-    // Mobile: same square tiles as home/directory, in ranked order (with a rank number prefix).
-    rankList.innerHTML = `<div class="square-grid">${ranked.map((l, i) => squareCardHTML(l, i + 1)).join('')}</div>`
   } else {
-    rankList.innerHTML = ranked.map((l, i) => `
-    <div class="rank-item" onclick="openProfile(${l.id})">
-      <div class="rank-num">${i + 1}</div>
-      <div class="rank-info">
-        <div class="rank-name">${l.name}</div>
-        <div class="rank-trade">${l.trade} · ${l.city}</div>
-      </div>
-      <div class="rank-bar-wrap">
-        <div class="rank-bar"><div class="rank-bar-fill" style="width:${(l.avg / maxAvg * 100).toFixed(0)}%"></div></div>
-        <div class="rank-score">${starsHTML(l.avg)} ${l.avg.toFixed(1)} (${l.reviews.length})</div>
-      </div>
-    </div>`).join('')
+    // Same square tiles as home/directory, in ranked order (with a rank number prefix). All screen sizes.
+    rankList.innerHTML = `<div class="square-grid">${ranked.map((l, i) => squareCardHTML(l, i + 1)).join('')}</div>`
   }
 }
 
@@ -2171,11 +2148,12 @@ async function renderAdmin() {
   const since180 = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
   const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const since1 = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  const [{ data: allListings }, { data: allReviews }, { data: events }, { data: reviewEmails }] = await Promise.all([
+  const [{ data: allListings }, { data: allReviews }, { data: events }, { data: reviewEmails }, { data: sentNotes }] = await Promise.all([
     supabase.from('listings').select('*, reviews(*)').order('created_at', { ascending: false }),
     supabase.from('reviews').select('*, listings(name)').order('created_at', { ascending: false }).limit(50),
     supabase.from('analytics_events').select('event_type, listing_id, created_at').gte('created_at', since180),
-    supabase.from('review_emails').select('review_id, email')
+    supabase.from('review_emails').select('review_id, email'),
+    supabase.from('listing_notes').select('*, listings(name)').order('created_at', { ascending: false }).limit(100)
   ])
   // Map private reviewer emails (admin-only) onto each review.
   const emailByReview = {}
@@ -2324,6 +2302,17 @@ async function renderAdmin() {
           </div>
           <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);flex-shrink:0;" onclick="adminDeleteReview(${r.id})">Remove</button>
         </div>`).join('')}
+    </div>
+    <div class="form-card" style="margin-top:1rem;">
+      <h3 style="margin-bottom:1rem;">Notes sent to tradesmen</h3>
+      ${(sentNotes && sentNotes.length) ? sentNotes.map(n => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--charcoal-3);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:13px;font-weight:600;color:var(--white);">${escHtml(n.listings?.name || 'Unknown listing')}</span>
+            <span style="font-size:11px;color:var(--charcoal-6);">${new Date(n.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} · ${n.dismissed ? '<span style="color:#22C55E;">seen by them</span>' : 'unread'}</span>
+          </div>
+          <p style="font-size:13px;color:var(--charcoal-7);margin:4px 0 0;">${escHtml(n.message)}</p>
+        </div>`).join('') : '<p style="color:var(--charcoal-6);font-size:14px;">No notes sent yet. Use the "Note" button on any listing above to send one.</p>'}
     </div>`
   renderAdminActivity(30)
 }

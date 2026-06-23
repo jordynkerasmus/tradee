@@ -103,10 +103,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .featured-scroll { display: flex; gap: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; padding: 0 0 10px; margin-bottom: 0.75rem; }
 .featured-scroll::-webkit-scrollbar { height: 0; }
-.featured-scroll > * { flex: 0 0 188px; scroll-snap-align: start; margin: 0; }
+.featured-scroll > * { flex: 0 0 230px; scroll-snap-align: start; margin: 0; }
 .feat-mini { position: relative; background: var(--charcoal-2); border: 1px solid var(--amber); border-radius: 10px; padding: 12px; cursor: pointer; }
 .feat-mini:active, .square-card:active { opacity: 0.85; }
-.square-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; grid-auto-rows: 1fr; }
+.square-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; grid-auto-rows: 1fr; }
 .square-card { background: var(--charcoal-2); border: 0.5px solid var(--charcoal-3); border-radius: 10px; padding: 11px; cursor: pointer; min-height: 128px; display: flex; flex-direction: column; overflow: hidden; }
 .square-card .sc-name { color: var(--white); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .square-card .sc-line { font-size: 11px; overflow-wrap: anywhere; }
@@ -290,6 +290,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   .nav-hamburger { display: flex !important; }
   .nav-list-mobile { display: inline-flex !important; padding: 0.4rem 0.85rem; font-size: 13px; }
   .nav-mobile-menu { display: block; }
+  .featured-scroll > * { flex: 0 0 188px; }
+  .square-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   .filters { flex-direction: column !important; }
   .filters select, .filters .city-dropdown-wrapper { width: 100% !important; box-sizing: border-box !important; min-width: 0 !important; }
   .search-wrap { flex-direction: column; border-radius: var(--radius); }
