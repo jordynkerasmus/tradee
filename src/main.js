@@ -1493,11 +1493,13 @@ function featuredMiniHTML(l) {
   const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
   const verified = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
   const after = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
+  const reviewStr = reviewCount > 0 ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--charcoal-6);">No reviews yet</span>'
   return `<div class="feat-mini" onclick="openProfile(${l.id})">
+    <span style="position:absolute;top:8px;right:8px;background:var(--amber);color:var(--charcoal);font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;">Featured</span>
     <div style="width:36px;height:36px;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;margin-bottom:7px;overflow:hidden;">${av}</div>
-    <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(l.name)}</div>
+    <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px;">${escHtml(l.name)}</div>
     <div style="color:var(--amber);font-size:11px;">${escHtml(trade)}</div>
-    <div style="color:var(--amber);font-size:11px;margin-top:5px;">★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span></div>
+    <div style="color:var(--amber);font-size:11px;margin-top:5px;">${reviewStr}</div>
     <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">${verified}${after}</div>
   </div>`
 }
