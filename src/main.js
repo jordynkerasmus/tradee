@@ -817,9 +817,15 @@ window.showFaqTab = function (which) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-window.showPage = function (name) {
+const PAGE_PATHS = { home: '/', directory: '/directory', rankings: '/rankings', faq: '/how-it-works', privacy: '/privacy', terms: '/terms', list: '/list', login: '/login', signup: '/signup', dashboard: '/dashboard', admin: '/admin' }
+
+window.showPage = function (name, fromRoute) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
   document.getElementById('page-' + name).classList.add('active')
+  // Record this page in browser history so the Back/Forward buttons move between in-app pages.
+  if (!fromRoute) {
+    try { window.history.pushState({ tradeePage: name }, '', PAGE_PATHS[name] || '/') } catch (_) {}
+  }
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'))
   const el = document.getElementById('nav-' + name)
   if (el) el.classList.add('active')
@@ -1661,7 +1667,7 @@ function cardHTML(l) {
 }
 
 // ── Profile ───────────────────────────────────────────────────────────────────
-window.openProfile = async function (id) {
+window.openProfile = async function (id, fromRoute) {
   const { data: l, error } = await supabase
     .from('listings')
     .select('*, reviews(*)')
@@ -1669,7 +1675,9 @@ window.openProfile = async function (id) {
     .single()
   if (error || !l) return
   currentProfile = l
-  window.history.pushState({}, '', `/profile/${slugify(l.name, l.id)}`)
+  if (!fromRoute) {
+    try { window.history.pushState({ tradeePage: 'profile', pid: id }, '', `/profile/${slugify(l.name, l.id)}`) } catch (_) {}
+  }
   trackEvent('profile_view', l.id, { trade: l.trade, province: l.province })
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
   const reviews = l.reviews || []
@@ -2144,10 +2152,10 @@ function handleRoute() {
     const slug = match[1]
     const numId = parseInt(slug)
     if (!isNaN(numId) && String(numId) === slug) {
-      window.openProfile(numId)
+      window.openProfile(numId, true)
     } else {
       const idMatch = slug.match(/-(\d+)$/)
-      if (idMatch) window.openProfile(parseInt(idMatch[1]))
+      if (idMatch) window.openProfile(parseInt(idMatch[1]), true)
     }
     return
   }
@@ -2159,8 +2167,12 @@ function handleRoute() {
     filterTrade = t || ''
     filterCity = c || ''
     filterProvince = p || ''
-    window.showPage('directory')
+    window.showPage('directory', true)
+    return
   }
+  // Map a known page path back to its page (so Back/Forward and refresh land correctly).
+  const pageByPath = { '/': 'home', '/directory': 'directory', '/rankings': 'rankings', '/how-it-works': 'faq', '/privacy': 'privacy', '/terms': 'terms', '/list': 'list', '/login': 'login', '/signup': 'signup', '/dashboard': 'dashboard', '/admin': 'admin' }
+  window.showPage(pageByPath[path] || 'home', true)
 }
 
 window.addEventListener('popstate', handleRoute)
