@@ -374,7 +374,7 @@ async function renderDashboard() {
           <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="edit-contact" value="${escHtml(listing.contact_name || '')}"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="edit-phone" value="${escHtml(listing.phone || '')}"></div>
+          <div class="form-group"><label class="form-label">Phone Number</label><div style="display:flex;gap:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--charcoal-4);"><span style="background:var(--charcoal-3);padding:10px 14px;color:var(--charcoal-6);font-size:14px;font-weight:600;white-space:nowrap;border-right:1px solid var(--charcoal-4);">+27</span><input class="form-input" id="edit-phone" placeholder="82 000 0000" maxlength="12" style="border:none;border-radius:0;flex:1;" oninput="this.value=this.value.replace(/[^\\d\\s]/g,'')" value="${escHtml((listing.phone || '').replace(/^\\+?27/, '').replace(/^0/, ''))}"></div><div class="form-hint">Digits only after +27, no leading 0</div></div>
           <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="edit-email" type="email" value="${escHtml(listing.email || '')}"></div>
         </div>
         <div class="form-group">
@@ -622,7 +622,8 @@ window.saveListing = async function (id) {
   }
   window.editCertFiles = []
 
-  const phone = document.getElementById('edit-phone')?.value.trim() || ''
+  const phoneEditRaw = document.getElementById('edit-phone')?.value.trim().replace(/\D/g,'') || ''
+  const phone = phoneEditRaw ? '+27' + (phoneEditRaw.startsWith('0') ? phoneEditRaw.slice(1) : phoneEditRaw) : ''
   const email = document.getElementById('edit-email')?.value.trim() || ''
   const lat = parseFloat(document.getElementById('edit-lat')?.value) || null
   const lng = parseFloat(document.getElementById('edit-lng')?.value) || null
@@ -2058,7 +2059,8 @@ window.submitListing = async function () {
   const password = document.getElementById('f-password').value
   const contact_name = document.getElementById('f-name').value.trim()
   const name = titleCase(document.getElementById('f-business').value.trim() || contact_name)
-  const phone = document.getElementById('f-phone')?.value.trim() || ''
+  const phoneRaw = document.getElementById('f-phone')?.value.trim().replace(/\D/g, '') || ''
+  const phone = phoneRaw ? '+27' + (phoneRaw.startsWith('0') ? phoneRaw.slice(1) : phoneRaw) : ''
   // Split into standard trades (go live now) and custom trades (held for admin approval).
   const standardTrades = selectedTrades.filter(t => TRADES_LIST.includes(t))
   const pending_trades = selectedTrades.filter(t => !TRADES_LIST.includes(t))
@@ -2081,7 +2083,7 @@ window.submitListing = async function () {
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
   if (!email || !password) { toast('Please enter your email and password.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
-  if (phone && !/^\+?[\d\s\-()]{7,15}$/.test(phone)) { toast('Please enter a valid phone number.'); return }
+  if (phone && phone.replace(/\D/g,'').length < 11) { toast('Please enter a valid SA mobile number (9 digits after +27).'); return }
   const isNationwide = province === 'Nationwide / All Provinces'
   if (!name) { toast('Please enter your business or contact name.'); return }
   if (selectedTrades.length === 0) { toast('Please pick at least one trade — tap the “Select trades” box and tick one (or type a custom trade and press ＋ Add).'); return }
@@ -2366,6 +2368,7 @@ async function renderAdmin() {
               <td style="padding:8px 12px;">${(l.reviews?.length || 0) > 0 ? `<button class="btn btn-outline btn-sm" style="padding:2px 10px;" onclick="openListingReviews(${l.id})" title="View & manage reviews">${l.reviews.length} ⓘ</button>` : '<span style="color:var(--charcoal-6);">0</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openProfile(${l.id})" title="View listing">View</button>
+                <button class="btn btn-outline btn-sm" style="margin-right:6px;color:#a78bfa;border-color:#a78bfa;" onclick="adminEditListing(${l.id})" title="Edit this listing's details">Edit</button>
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;" onclick="openListingStats(${l.id})" title="See this tradesman's views & clicks">Stats</button>
                 <button class="btn btn-outline btn-sm" style="margin-right:6px;color:#60A5FA;border-color:#60A5FA;" onclick="sendListingNote(${l.id})" title="Send a note/message to this tradesman">Note</button>
                 <select style="background:var(--charcoal-3);border:1px solid var(--charcoal-4);color:var(--white);border-radius:4px;padding:4px;" onchange="adminSetTier(${l.id},this.value)">
@@ -2633,6 +2636,55 @@ window.adminDeleteListing = async function (id) {
   toast('Listing deleted.')
   await loadListings()
   renderAdmin()
+}
+
+window.adminEditListing = async function (id) {
+  const l = (window._adminListings || []).find(x => x.id === id)
+  if (!l) return
+  const phoneDisplay = (l.phone || '').replace(/^\+?27/, '').replace(/^0/, '')
+  const rateVal = l.rate === -1 ? 'N/A' : (l.rate || '')
+  const calloutVal = l.callout === -1 ? 'N/A' : (l.callout || '')
+
+  const modal = document.getElementById('admin-edit-modal')
+  if (!modal) return
+  document.getElementById('aem-id').value = id
+  document.getElementById('aem-name').value = l.name || ''
+  document.getElementById('aem-contact').value = l.contact_name || ''
+  document.getElementById('aem-phone').value = phoneDisplay
+  document.getElementById('aem-email').value = l.email || ''
+  document.getElementById('aem-trade').value = l.trade || ''
+  document.getElementById('aem-rate').value = rateVal
+  document.getElementById('aem-callout').value = calloutVal
+  document.getElementById('aem-rate-type').value = l.rate_type || 'hour'
+  document.getElementById('aem-desc').value = l.description || ''
+  modal.classList.add('open')
+}
+
+window.adminSaveListing = async function () {
+  const id = parseInt(document.getElementById('aem-id').value)
+  const name = document.getElementById('aem-name').value.trim()
+  const contact_name = document.getElementById('aem-contact').value.trim()
+  const phoneRaw = document.getElementById('aem-phone').value.trim().replace(/\D/g,'')
+  const phone = phoneRaw ? '+27' + (phoneRaw.startsWith('0') ? phoneRaw.slice(1) : phoneRaw) : ''
+  const email = document.getElementById('aem-email').value.trim()
+  const trade = document.getElementById('aem-trade').value.trim()
+  const rateRaw = document.getElementById('aem-rate').value.trim()
+  const calloutRaw = document.getElementById('aem-callout').value.trim()
+  const isNA = s => /n\/a/i.test(s) || (s && isNaN(parseInt(s)))
+  const rate = isNA(rateRaw) ? -1 : (parseInt(rateRaw) || 0)
+  const callout = isNA(calloutRaw) ? -1 : (parseInt(calloutRaw) || 0)
+  const rate_type = document.getElementById('aem-rate-type').value
+  const description = document.getElementById('aem-desc').value.trim()
+
+  const { error } = await supabase.from('listings').update({ name, contact_name, phone, email, trade, rate, callout, rate_type, description }).eq('id', id)
+  if (error) { toast('Error saving: ' + error.message); return }
+  document.getElementById('admin-edit-modal').classList.remove('open')
+  toast('Listing updated.')
+  await renderAdmin()
+}
+
+window.closeAdminEditModal = function () {
+  document.getElementById('admin-edit-modal').classList.remove('open')
 }
 
 window.adminDeleteReview = async function (id) {

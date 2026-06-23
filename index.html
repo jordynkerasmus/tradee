@@ -719,7 +719,14 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
           </div>
         </div>
       </div>
-      <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="f-phone" placeholder="+27 82 000 0000"></div>
+      <div class="form-group">
+  <label class="form-label">Phone Number</label>
+  <div style="display:flex;gap:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--charcoal-4);">
+    <span style="background:var(--charcoal-3);padding:10px 14px;color:var(--charcoal-6);font-size:14px;font-weight:600;white-space:nowrap;border-right:1px solid var(--charcoal-4);">+27</span>
+    <input class="form-input" id="f-phone" placeholder="82 000 0000" maxlength="12" style="border:none;border-radius:0;flex:1;" oninput="this.value=this.value.replace(/[^\d\s]/g,'')">
+  </div>
+  <div class="form-hint">Enter your SA mobile number without the leading 0 (e.g. 82 000 0000)</div>
+</div>
     </div>
     <div class="form-card">
       <h3>Business Info</h3>
@@ -2203,5 +2210,24 @@ if (_isIOS && !_isStandalone && !localStorage.getItem('tradee_install_dismissed'
 });
 </script>
 <script type="module" src="/src/main.js"></script>
+<div class="modal-overlay" id="admin-edit-modal">
+  <div class="modal-box" style="max-width:520px;">
+    <button class="modal-close" onclick="closeAdminEditModal()">&#215;</button>
+    <h3>Edit Listing</h3>
+    <input type="hidden" id="aem-id">
+    <div class="review-form">
+      <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" id="aem-name"></div>
+      <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="aem-contact"></div>
+      <div class="form-group"><label class="form-label">Phone (digits after +27)</label><div style="display:flex;gap:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--charcoal-4);"><span style="background:var(--charcoal-3);padding:10px 14px;color:var(--charcoal-6);font-size:14px;font-weight:600;white-space:nowrap;border-right:1px solid var(--charcoal-4);">+27</span><input class="form-input" id="aem-phone" placeholder="82 000 0000" maxlength="12" style="border:none;border-radius:0;flex:1;" oninput="this.value=this.value.replace(/[^\d\s]/g,'')"></div></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="aem-email" type="email"></div>
+      <div class="form-group"><label class="form-label">Primary Trade</label><input class="form-input" id="aem-trade"></div>
+      <div class="form-group"><label class="form-label">Rate (R or N/A)</label><input class="form-input" id="aem-rate" placeholder="e.g. 650 or N/A"></div>
+      <div class="form-group"><label class="form-label">Call-out Fee (R or N/A)</label><input class="form-input" id="aem-callout" placeholder="e.g. 350 or N/A"></div>
+      <div class="form-group"><label class="form-label">Rate Type</label><select class="form-input" id="aem-rate-type"><option value="hour">Per Hour</option><option value="day">Per Day</option></select></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="aem-desc" rows="3" style="resize:vertical;"></textarea></div>
+      <button class="btn btn-primary" style="width:100%;" onclick="adminSaveListing()">Save Changes</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
