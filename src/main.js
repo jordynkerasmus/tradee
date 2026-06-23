@@ -1011,11 +1011,12 @@ function runSmartSearch(query, all) {
 
   const ranked = all.map(l => {
     let score = 0; const reasons = []
+    let tradeHit = false
     const lTrades = (l.trades && l.trades.length ? l.trades : [l.trade]).filter(Boolean)
     if (targetTrades.size) {
       const m = lTrades.find(t => targetTrades.has(t))
-      if (m) { score += 60; reasons.push(m) }
-      else if (lTrades.some(t => words.some(w => t.toLowerCase().includes(w)))) score += 15
+      if (m) { score += 60; reasons.push(m); tradeHit = true }
+      else if (lTrades.some(t => words.some(w => t.toLowerCase().includes(w)))) { score += 15; tradeHit = true }
     }
     if (city && (l.city === city || (l.cities || []).includes(city))) { score += 35; reasons.push(city) }
     else if (province && l.province === province) { score += 20; if (!city) reasons.push(province) }
@@ -1029,12 +1030,18 @@ function runSmartSearch(query, all) {
     else if (emergency && /(emergency|24|after hour|same day|urgent)/.test(hay)) { score += 18; reasons.push('Emergency') }
     if (topRated && r >= 4.5) score += 12
     if (affordable && l.callout >= 0) score += Math.max(0, 12 - l.callout / 100)
-    return { l, score, reasons: [...new Set(reasons)] }
+    return { l, score, reasons: [...new Set(reasons)], tradeHit }
   })
 
-  const hasCriteria = targetTrades.size || city || province
-  let filtered = hasCriteria ? ranked.filter(x => x.score >= 20) : ranked
-  if (hasCriteria && !filtered.length) filtered = ranked.filter(x => x.score > 0)
+  let filtered
+  if (targetTrades.size) {
+    // A specific trade was searched → only show listings in that trade.
+    filtered = ranked.filter(x => x.tradeHit)
+  } else if (city || province) {
+    filtered = ranked.filter(x => x.score >= 20)
+  } else {
+    filtered = ranked
+  }
   filtered.sort((a, b) => b.score - a.score)
 
   const parts = []
