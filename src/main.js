@@ -897,7 +897,7 @@ function renderHome() {
       (others.length
         ? `<div class="square-grid">${firstO.map(squareCardHTML).join('')}</div>` +
           (moreO.length
-            ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreO.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
+            ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreO.map(squareCardHTML).join('')}</div><div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
             : '')
         : '')
   }
@@ -1471,7 +1471,7 @@ function renderDirectory() {
   if (rest.length) {
     const first = rest.slice(0, 12).map(squareCardHTML).join('')
     const moreItems = rest.slice(12)
-    html += `<div class="square-grid">${first}</div>` + (moreItems.length ? `<div id="dir-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreItems.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreItems.length})</span></div>` : '')
+    html += `<div class="square-grid">${first}</div>` + (moreItems.length ? `<div id="dir-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreItems.map(squareCardHTML).join('')}</div><div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreItems.length})</span></div>` : '')
   } else if (!featured.length) html += emptyHtml
 
   document.getElementById('dir-cards').innerHTML = html

@@ -101,12 +101,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .filters select { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); color: var(--white); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 32px 8px 12px; border-radius: var(--radius); cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpolygon points='0,2 10,2 5,8' fill='%23A8A29E'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .filters select option { background: var(--charcoal-2); }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
-.featured-scroll { display: flex; gap: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; padding: 0 0 10px; margin-bottom: 0.75rem; }
+.featured-scroll { grid-column: 1 / -1; display: flex; gap: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; padding: 0 0 10px; margin-bottom: 0.75rem; }
 .featured-scroll::-webkit-scrollbar { height: 0; }
 .featured-scroll > * { flex: 0 0 230px; scroll-snap-align: start; margin: 0; }
 .feat-mini { position: relative; background: var(--charcoal-2); border: 1px solid var(--amber); border-radius: 10px; padding: 12px; cursor: pointer; }
 .feat-mini:active, .square-card:active { opacity: 0.85; }
-.square-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; grid-auto-rows: 1fr; }
+.square-grid { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; grid-auto-rows: 1fr; }
 .square-card { background: var(--charcoal-2); border: 0.5px solid var(--charcoal-3); border-radius: 10px; padding: 11px; cursor: pointer; min-height: 128px; display: flex; flex-direction: column; overflow: hidden; }
 .square-card .sc-name { color: var(--white); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .square-card .sc-line { font-size: 11px; overflow-wrap: anywhere; }
