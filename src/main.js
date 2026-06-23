@@ -1814,11 +1814,12 @@ window.goBack = function () {
 window.closeReviewModal = function () { document.getElementById('review-modal').classList.remove('open') }
 
 window.submitReview = async function () {
-  const reviewer_name = document.getElementById('r-name').value.trim()
-  const reviewer_email = document.getElementById('r-email')?.value.trim() || ''
-  const review_text = document.getElementById('r-text').value.trim()
-  if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return }
-  if (!reviewer_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reviewer_email)) { toast('Please enter a valid email — it’s used to verify your review and is never shown publicly.'); return }
+  const reviewer_name = document.getElementById(‘r-name’).value.trim()
+  const reviewer_email = document.getElementById(‘r-email’)?.value.trim() || ‘’
+  const review_text = document.getElementById(‘r-text’).value.trim()
+  if (!reviewer_name) { toast(‘Please fill in your name.’); return }
+  if (!reviewer_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reviewer_email)) { toast(‘Please enter your email address — it is used to verify your review and never shown publicly.’); return }
+  if (!review_text) { toast(‘Please scroll down and fill in your written review.’); return }
 
   const quality = getStarVal('star-quality')
   const service = getStarVal('star-service')
