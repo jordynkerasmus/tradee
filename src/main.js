@@ -882,18 +882,18 @@ function renderHome() {
   const slot10 = Math.floor(Date.now() / (10 * 60 * 1000))
   const offset = allPremiumHome.length > 0 ? slot10 % allPremiumHome.length : 0
   const rotatedPremium = [...allPremiumHome.slice(offset), ...allPremiumHome.slice(0, offset)]
-  const featured = rotatedPremium.slice(0, 3).concat(listings.filter(l => l.tier === 'verified').slice(0, 3)).slice(0, 6)
+  // PREMIUM gets the featured shelf. Below that: Verified ranks above Free (priority ranking), then by rating.
+  const others = listings.filter(l => l.tier !== 'premium')
+    .sort((a, b) => (a.tier === 'verified' ? 0 : 1) - (b.tier === 'verified' ? 0 : 1) || avgRating(b) - avgRating(a))
   const homeCards = document.getElementById('home-cards')
-  if (!featured.length) {
+  if (!listings.length) {
     homeCards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
   } else if (isMobileView()) {
     // Mobile home: premium in a swipe carousel, then ALL other listings as a square grid with "find more".
-    const prem = rotatedPremium
-    const others = listings.filter(l => l.tier !== 'premium')
     const firstO = others.slice(0, 8)
     const moreO = others.slice(8)
     homeCards.innerHTML =
-      (prem.length ? `<div class="featured-scroll">${prem.map(featuredMiniHTML).join('')}</div>` : '') +
+      (rotatedPremium.length ? `<div class="featured-scroll">${rotatedPremium.map(featuredMiniHTML).join('')}</div>` : '') +
       (others.length
         ? `<div class="square-grid">${firstO.map(squareCardHTML).join('')}</div>` +
           (moreO.length
@@ -901,7 +901,7 @@ function renderHome() {
             : '')
         : '')
   } else {
-    homeCards.innerHTML = featured.map(l => l.tier === 'premium' ? featuredCardHTML(l) : cardHTML(l)).join('')
+    homeCards.innerHTML = rotatedPremium.map(featuredCardHTML).join('') + others.slice(0, 6).map(cardHTML).join('')
   }
 }
 
@@ -1015,7 +1015,7 @@ function runSmartSearch(query, all) {
     words.forEach(w => { if (hay.includes(w)) score += 3 })
     const r = avgRating(l)
     score += r * 4
-    if (l.tier === 'premium') score += 6; else if (l.tier === 'verified') score += 3
+    if (l.tier === 'premium') score += 6; else if (l.tier === 'verified') score += 3 // priority ranking: Premium > Verified > Free
     if (emergency && l.after_hours) { score += 25; reasons.push('After-hours') }
     else if (emergency && /(emergency|24|after hour|same day|urgent)/.test(hay)) { score += 18; reasons.push('Emergency') }
     if (topRated && r >= 4.5) score += 12
