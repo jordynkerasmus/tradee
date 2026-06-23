@@ -262,9 +262,9 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 #toast.show { opacity: 1; transform: translateY(0); }
 .empty-state { text-align: center; padding: 4rem 2rem; color: var(--charcoal-6); }
 .empty-state h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.04em; color: var(--charcoal-5); margin-bottom: 0.5rem; }
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; padding: 1rem; overflow: hidden; }
 .modal-overlay.open { display: flex; }
-.modal-box { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); border-radius: var(--radius-lg); padding: 2rem; max-width: 480px; width: 100%; position: relative; }
+.modal-box { background: var(--charcoal-2); border: 1px solid var(--charcoal-4); border-radius: var(--radius-lg); padding: 2rem; max-width: 480px; width: 100%; position: relative; max-height: calc(100vh - 2rem); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .modal-box h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.04em; margin-bottom: 1rem; }
 .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--charcoal-6); font-size: 1.5rem; cursor: pointer; line-height: 1; }
 .review-form { display: flex; flex-direction: column; gap: 12px; }
