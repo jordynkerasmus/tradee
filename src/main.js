@@ -600,8 +600,9 @@ window.saveListing = async function (id) {
   const travel_rate = travelRaw === '' ? null : (travelRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(travelRaw) || 0))
   const calloutRaw = document.getElementById('edit-callout').value.trim()
   const rateRaw = document.getElementById('edit-rate').value.trim()
-  const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
-  const rate = rateRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(rateRaw) || 0)
+  const isNA = s => /n\/a/i.test(s) || (s && isNaN(parseInt(s)))
+  const callout = isNA(calloutRaw) ? -1 : (parseInt(calloutRaw) || 0)
+  const rate = isNA(rateRaw) ? -1 : (parseInt(rateRaw) || 0)
   const rateTypeEl = document.querySelector('input[name="edit-rate-type"]:checked')
   const rate_type = rateTypeEl ? rateTypeEl.value : 'hour'
   const description = document.getElementById('edit-desc').value.trim()
@@ -796,6 +797,7 @@ async function loadListings() {
   listings = (data || []).map(l => ({
     ...l,
     name: titleCase(l.name),
+    contact_name: titleCase(l.contact_name),
     city: titleCase(l.city),
     cities: Array.isArray(l.cities) ? l.cities.map(titleCase) : l.cities,
   }))
@@ -1763,7 +1765,7 @@ window.openProfile = async function (id, fromRoute) {
     </div>
     <div class="profile-stats">
       <div class="stat-box"><span class="value">${fmtRand(l.callout)}</span><div class="label">Call-out Fee</div></div>
-      <div class="stat-box"><span class="value">${fmtRand(l.rate)}${l.rate_type === 'day' ? '/day' : '/hr'}</span><div class="label">${rateLabel}</div></div>
+      <div class="stat-box"><span class="value">${fmtRand(l.rate)}${l.rate !== -1 ? (l.rate_type === 'day' ? '/day' : '/hr') : ''}</span><div class="label">${rateLabel}</div></div>
       ${fmtTravel(l.travel_rate) ? `<div class="stat-box"><span class="value">${fmtTravel(l.travel_rate)}</span><div class="label">Travel Fee</div></div>` : ''}
       <div class="stat-box"><span class="value">${l.years_experience || '—'}</span><div class="label">Years Experience</div></div>
     </div>
@@ -2068,8 +2070,9 @@ window.submitListing = async function () {
   const travel_rate = travelRaw === '' ? null : (travelRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(travelRaw) || 0))
   const calloutRaw = document.getElementById('f-callout').value.trim()
   const rateRaw = document.getElementById('f-rate').value.trim()
-  const callout = calloutRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(calloutRaw) || 0)
-  const rate = rateRaw.toUpperCase() === 'N/A' ? -1 : (parseInt(rateRaw) || 0)
+  const isNA = s => /n\/a/i.test(s) || (s && isNaN(parseInt(s)))
+  const callout = isNA(calloutRaw) ? -1 : (parseInt(calloutRaw) || 0)
+  const rate = isNA(rateRaw) ? -1 : (parseInt(rateRaw) || 0)
   const rateTypeEl = document.querySelector('input[name="f-rate-type"]:checked')
   const rate_type = rateTypeEl ? rateTypeEl.value : 'hour'
   const description = document.getElementById('f-desc').value.trim()
@@ -2356,7 +2359,7 @@ async function renderAdmin() {
           </tr></thead>
           <tbody>${ls.map(l => `
             <tr style="border-bottom:1px solid var(--charcoal-3);" data-search="${escHtml(((l.name || '') + ' ' + (l.trade || '') + ' ' + (l.trades || []).join(' ') + ' ' + (l.email || '')).toLowerCase())}">
-              <td style="padding:8px 12px;"><a onclick="openProfile(${l.id})" style="color:var(--amber);cursor:pointer;text-decoration:none;" title="Open this tradesman's profile">${escHtml(l.name)}</a></td>
+              <td style="padding:8px 12px;"><span onclick="openProfile(${l.id})" style="color:var(--amber);cursor:pointer;text-decoration:underline;" title="Open this tradesman's profile">${escHtml(l.name)}</span></td>
               <td style="padding:8px 12px;color:var(--charcoal-6);">${escHtml(l.trade)}</td>
               <td style="padding:8px 12px;">${tierBadge(l) || '<span style="color:var(--charcoal-6);">Standard</span>'}</td>
               <td style="padding:8px 12px;white-space:nowrap;">${l.certificate_urls && l.certificate_urls.length ? l.certificate_urls.map((ref, i) => `<button class="btn btn-outline btn-sm" style="margin:0 2px;padding:2px 8px;" onclick="viewCert('${escHtml(ref)}')" title="Verify document">Doc ${i + 1}</button>`).join('') : '<span style="color:var(--charcoal-6);">—</span>'}</td>
