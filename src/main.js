@@ -887,11 +887,19 @@ function renderHome() {
   if (!featured.length) {
     homeCards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
   } else if (isMobileView()) {
-    const prem = featured.filter(l => l.tier === 'premium')
-    const others = featured.filter(l => l.tier !== 'premium')
+    // Mobile home: premium in a swipe carousel, then ALL other listings as a square grid with "find more".
+    const prem = rotatedPremium
+    const others = listings.filter(l => l.tier !== 'premium')
+    const firstO = others.slice(0, 8)
+    const moreO = others.slice(8)
     homeCards.innerHTML =
       (prem.length ? `<div class="featured-scroll">${prem.map(featuredMiniHTML).join('')}</div>` : '') +
-      (others.length ? `<div class="square-grid">${others.map(squareCardHTML).join('')}</div>` : '')
+      (others.length
+        ? `<div class="square-grid">${firstO.map(squareCardHTML).join('')}</div>` +
+          (moreO.length
+            ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:9px;">${moreO.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
+            : '')
+        : '')
   } else {
     homeCards.innerHTML = featured.map(l => l.tier === 'premium' ? featuredCardHTML(l) : cardHTML(l)).join('')
   }
@@ -1493,7 +1501,7 @@ function featuredMiniHTML(l) {
   const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
   const verified = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
   const after = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
-  const reviewStr = reviewCount > 0 ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--charcoal-6);">No reviews yet</span>'
+  const reviewStr = reviewCount > 0 ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
   return `<div class="feat-mini" onclick="openProfile(${l.id})">
     <span style="position:absolute;top:8px;right:8px;background:var(--amber);color:var(--charcoal);font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;">Featured</span>
     <div style="width:36px;height:36px;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;margin-bottom:7px;overflow:hidden;">${av}</div>
@@ -1514,16 +1522,16 @@ function squareCardHTML(l) {
   const marker = l.verified_approved
     ? '<span style="margin-left:auto;color:#22C55E;font-size:13px;" title="Verified">✔</span>'
     : (l.after_hours ? '<span style="margin-left:auto;font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : '')
-  const ratingStr = rd ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--charcoal-6);">No reviews yet</span>'
+  const ratingStr = rd ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
   return `<div class="square-card" onclick="openProfile(${l.id})">
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
-      <div style="width:34px;height:34px;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1rem;overflow:hidden;">${av}</div>
+      <div style="width:34px;height:34px;flex:0 0 auto;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1rem;overflow:hidden;">${av}</div>
       ${marker}
     </div>
-    <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(l.name)}</div>
-    <div style="color:var(--amber);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(trade)}</div>
-    <div style="color:var(--charcoal-6);font-size:11px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(suburb)}</div>
-    <div style="color:var(--amber);font-size:11px;margin-top:3px;">${ratingStr}</div>
+    <div class="sc-name">${escHtml(l.name)}</div>
+    <div class="sc-line" style="color:var(--amber);">${escHtml(trade)}</div>
+    <div class="sc-line" style="color:var(--charcoal-6);margin-top:3px;">${escHtml(suburb)}</div>
+    <div class="sc-line" style="color:var(--amber);margin-top:3px;">${ratingStr}</div>
   </div>`
 }
 

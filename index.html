@@ -106,8 +106,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .featured-scroll > * { flex: 0 0 188px; scroll-snap-align: start; margin: 0; }
 .feat-mini { position: relative; background: var(--charcoal-2); border: 1px solid var(--amber); border-radius: 10px; padding: 12px; cursor: pointer; }
 .feat-mini:active, .square-card:active { opacity: 0.85; }
-.square-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; grid-auto-rows: 1fr; }
-.square-card { background: var(--charcoal-2); border: 0.5px solid var(--charcoal-3); border-radius: 10px; padding: 11px; cursor: pointer; min-height: 128px; display: flex; flex-direction: column; }
+.square-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; grid-auto-rows: 1fr; }
+.square-card { background: var(--charcoal-2); border: 0.5px solid var(--charcoal-3); border-radius: 10px; padding: 11px; cursor: pointer; min-height: 128px; display: flex; flex-direction: column; overflow: hidden; }
+.square-card .sc-name { color: var(--white); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.square-card .sc-line { font-size: 11px; overflow-wrap: anywhere; }
 .compact-list { display: flex; flex-direction: column; }
 .compact-row { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 0.5px solid var(--charcoal-3); cursor: pointer; }
 .compact-row:active { background: var(--charcoal-2); }
