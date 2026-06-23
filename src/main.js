@@ -1878,14 +1878,50 @@ window.selectTier = function (tier) {
   if (idWrap) idWrap.style.display = isPaid ? 'flex' : 'none'
 }
 
-window.goToStep2 = function () {
+window.goToStep2 = async function () {
   const email = document.getElementById('f-email').value.trim()
   const password = document.getElementById('f-password').value
   if (!email) { toast('Please enter your email address.'); return }
   if (!password || password.length < 6) { toast('Password must be at least 6 characters.'); return }
-  document.getElementById('list-step-1').style.display = 'none'
-  document.getElementById('list-step-2').style.display = 'block'
-  window.scrollTo(0, 0)
+
+  const proceed = () => {
+    document.getElementById('list-step-1').style.display = 'none'
+    document.getElementById('list-step-2').style.display = 'block'
+    window.scrollTo(0, 0)
+  }
+  // If this account already has a listing, take them straight to it instead of making a new one.
+  const goToExistingListing = async (uid) => {
+    const { data } = await supabase.from('listings').select('id').eq('user_id', uid).maybeSingle()
+    if (data) { toast('Welcome back — here’s your listing.'); window.showPage('dashboard'); return true }
+    return false
+  }
+
+  // Already logged in this session?
+  if (currentUser) {
+    if (await goToExistingListing(currentUser.id)) return
+    proceed(); return
+  }
+
+  // Try logging them in with what they entered — maybe they already have an account.
+  const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
+  if (!signInErr && signInData?.user) {
+    currentUser = signInData.user
+    if (await goToExistingListing(signInData.user.id)) return
+    proceed(); return // account exists but no listing yet — let them create one
+  }
+
+  // Not a valid login — create a new account (or detect a wrong-password clash).
+  const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password })
+  if (signUpErr) {
+    if (/already|registered|exists/i.test(signUpErr.message)) {
+      toast('You already have an account with this email — please log in.')
+      const le = document.getElementById('login-email'); if (le) le.value = email
+      window.showPage('login'); return
+    }
+    toast('Account error: ' + signUpErr.message); return
+  }
+  if (signUpData?.user) { currentUser = signUpData.user; supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {}) }
+  proceed()
 }
 
 window.backToStep1 = function () {
