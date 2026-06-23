@@ -32,11 +32,25 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        // Note: HTML is intentionally NOT precached — it's fetched network-first
+        // (below) so users always get the latest app version with no cache clearing.
+        globPatterns: ['**/*.{js,css,png,svg,ico}'],
+        navigateFallback: null,
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
+          {
+            // The page itself: always try the network first so new deploys show
+            // immediately; fall back to a cached copy only when offline.
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'tradee-html',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 10 },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
