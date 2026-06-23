@@ -1814,51 +1814,58 @@ window.goBack = function () {
 window.closeReviewModal = function () { document.getElementById('review-modal').classList.remove('open') }
 
 window.submitReview = async function () {
-  const reviewer_name = document.getElementById(‘r-name’).value.trim()
-  const reviewer_email = document.getElementById(‘r-email’)?.value.trim() || ‘’
-  const review_text = document.getElementById(‘r-text’).value.trim()
-  if (!reviewer_name) { toast(‘Please fill in your name.’); return }
-  if (!reviewer_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reviewer_email)) { toast(‘Please enter your email address — it is used to verify your review and never shown publicly.’); return }
-  if (!review_text) { toast(‘Please scroll down and fill in your written review.’); return }
-
-  const quality = getStarVal('star-quality')
-  const service = getStarVal('star-service')
-  const cleanliness = getStarVal('star-clean')
-  const communication = getStarVal('star-comms')
-  const value = getStarVal('star-value')
-  if (!quality||!service||!cleanliness||!communication||!value) { toast('Please rate all 5 main categories.'); return }
-  const reliability = getStarVal('star-reliability') || null
-  const responsiveness = getStarVal('star-responsiveness') || null
-  const professionalism = getStarVal('star-professionalism') || null
-  const recommend = getStarVal('star-recommend') || null
-  const allRated = [quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend].filter(Boolean)
-  const stars = Math.round(allRated.reduce((a, b) => a + b, 0) / allRated.length)
-
-  const { data: insertedReview, error } = await supabase.from('reviews').insert({
-    listing_id: reviewingId, reviewer_name, review_text,
-    stars, quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend
-  }).select('id').single()
-  if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
-  // Store the reviewer's email privately (admin-only table — never publicly readable).
-  if (insertedReview?.id && reviewer_email) {
-    await supabase.from('review_emails').insert({ review_id: insertedReview.id, email: reviewer_email }).catch(() => {})
-  }
-
-  // rating_avg is recomputed server-side by the on-review DB trigger —
-  // clients are not trusted to write it (see supabase/security-policies.sql).
-
-  trackEvent('review_left', reviewingId)
-  // Notify tradesman by email
   try {
-    const { data: tl } = await supabase.from('listings').select('email,name').eq('id', reviewingId).single()
-    if (tl?.email) {
-      supabase.functions.invoke('review-notification', { body: { email: tl.email, tradeName: tl.name, reviewerName: reviewer_name, stars } }).catch(() => {})
+    const reviewer_name = document.getElementById(‘r-name’).value.trim()
+    const reviewer_email = document.getElementById(‘r-email’)?.value.trim() || ‘’
+    const review_text = document.getElementById(‘r-text’).value.trim()
+    if (!reviewer_name) { toast(‘Please fill in your name.’); return }
+    if (!reviewer_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reviewer_email)) { toast(‘Please enter your email address — used to verify your review, never shown publicly.’); return }
+    if (!review_text) { toast(‘Please fill in your written review.’); return }
+
+    const quality = getStarVal(‘star-quality’)
+    const service = getStarVal(‘star-service’)
+    const cleanliness = getStarVal(‘star-clean’)
+    const communication = getStarVal(‘star-comms’)
+    const value = getStarVal(‘star-value’)
+    const reliability = getStarVal(‘star-reliability’) || null
+    const responsiveness = getStarVal(‘star-responsiveness’) || null
+    const professionalism = getStarVal(‘star-professionalism’) || null
+    const recommend = getStarVal(‘star-recommend’) || null
+    if (!quality) { toast(‘Please rate Quality of Work.’); return }
+    if (!service) { toast(‘Please rate Level of Service.’); return }
+    if (!cleanliness) { toast(‘Please rate Cleanliness.’); return }
+    if (!communication) { toast(‘Please rate Communication.’); return }
+    if (!value) { toast(‘Please rate Value for Money.’); return }
+
+    const allRated = [quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend].filter(Boolean)
+    const stars = Math.round(allRated.reduce((a, b) => a + b, 0) / allRated.length)
+
+    toast(‘Submitting...’)
+    const { data: insertedReview, error } = await supabase.from(‘reviews’).insert({
+      listing_id: reviewingId, reviewer_name, review_text,
+      stars, quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend
+    }).select(‘id’).single()
+    if (error) { toast(‘Error: ‘ + error.message); console.error(error); return }
+
+    if (insertedReview?.id && reviewer_email) {
+      await supabase.from(‘review_emails’).insert({ review_id: insertedReview.id, email: reviewer_email }).catch(() => {})
     }
-  } catch (_) {}
-  closeReviewModal()
-  toast('Review submitted — thank you!')
-  await loadListings()
-  if (currentProfile && currentProfile.id === reviewingId) openProfile(reviewingId)
+
+    trackEvent(‘review_left’, reviewingId)
+    try {
+      const { data: tl } = await supabase.from(‘listings’).select(‘email,name’).eq(‘id’, reviewingId).single()
+      if (tl?.email) {
+        supabase.functions.invoke(‘review-notification’, { body: { email: tl.email, tradeName: tl.name, reviewerName: reviewer_name, stars } }).catch(() => {})
+      }
+    } catch (_) {}
+    closeReviewModal()
+    toast(‘Review submitted — thank you!’)
+    await loadListings()
+    if (currentProfile && currentProfile.id === reviewingId) openProfile(reviewingId)
+  } catch (err) {
+    toast(‘Unexpected error: ‘ + err.message)
+    console.error(err)
+  }
 }
 
 // ── Rankings ──────────────────────────────────────────────────────────────────
