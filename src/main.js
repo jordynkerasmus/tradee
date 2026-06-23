@@ -1848,7 +1848,7 @@ window.submitReview = async function () {
     if (error) { toast('Error: ' + error.message); console.error(error); return }
 
     if (insertedReview?.id && reviewer_email) {
-      await supabase.from('review_emails').insert({ review_id: insertedReview.id, email: reviewer_email }).catch(() => {})
+      try { await supabase.from('review_emails').insert({ review_id: insertedReview.id, email: reviewer_email }) } catch (_) {}
     }
 
     trackEvent('review_left', reviewingId)
