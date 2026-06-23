@@ -1935,7 +1935,7 @@ window.goToStep2 = async function () {
   // If this account already has a listing, take them straight to it instead of making a new one.
   const goToExistingListing = async (uid) => {
     const { data } = await supabase.from('listings').select('id').eq('user_id', uid).maybeSingle()
-    if (data) { toast('Welcome back — here's your listing.'); window.showPage('dashboard'); return true }
+    if (data) { toast("Welcome back — here's your listing."); window.showPage('dashboard'); return true }
     return false
   }
 
