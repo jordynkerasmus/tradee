@@ -878,14 +878,23 @@ function renderHome() {
   document.getElementById('trade-cats').querySelectorAll('.trade-pill').forEach(el =>
     el.addEventListener('click', () => window.filterByTrade(el.dataset.trade)))
   const allPremiumHome = listings.filter(l => l.tier === 'premium')
-  // Rotate featured Premium every 30 minutes so each paid account gets frequent top exposure.
-  const slot30 = Math.floor(Date.now() / (30 * 60 * 1000))
-  const offset = allPremiumHome.length > 0 ? slot30 % allPremiumHome.length : 0
+  // Rotate featured Premium every 10 minutes so each paid account gets frequent top exposure.
+  const slot10 = Math.floor(Date.now() / (10 * 60 * 1000))
+  const offset = allPremiumHome.length > 0 ? slot10 % allPremiumHome.length : 0
   const rotatedPremium = [...allPremiumHome.slice(offset), ...allPremiumHome.slice(0, offset)]
   const featured = rotatedPremium.slice(0, 3).concat(listings.filter(l => l.tier === 'verified').slice(0, 3)).slice(0, 6)
-  document.getElementById('home-cards').innerHTML = featured.length
-    ? featured.map(l => l.tier === 'premium' ? featuredCardHTML(l) : cardHTML(l)).join('')
-    : '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
+  const homeCards = document.getElementById('home-cards')
+  if (!featured.length) {
+    homeCards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
+  } else if (isMobileView()) {
+    const prem = featured.filter(l => l.tier === 'premium')
+    const others = featured.filter(l => l.tier !== 'premium')
+    homeCards.innerHTML =
+      (prem.length ? `<div class="featured-scroll">${prem.map(featuredCardHTML).join('')}</div>` : '') +
+      (others.length ? `<div class="compact-list">${others.map(compactRowHTML).join('')}</div>` : '')
+  } else {
+    homeCards.innerHTML = featured.map(l => l.tier === 'premium' ? featuredCardHTML(l) : cardHTML(l)).join('')
+  }
 }
 
 window.filterByTrade = function (trade) { _smartMode = false; filterTrade = trade; document.getElementById('filter-trade').value = trade; showPage('directory') }
@@ -1441,27 +1450,29 @@ function renderDirectory() {
   document.getElementById('dir-title').textContent = titleParts.length ? titleParts.join(' — ') : 'All Tradesmen'
   document.getElementById('dir-count').textContent = `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
 
-  // Split premium (featured) from the rest — rotate every 30 minutes so each paid account gets frequent top exposure
+  // Split premium (featured) from the rest — rotate every 10 minutes so each paid account gets frequent top exposure
   const allPremium = filtered.filter(l => l.tier === 'premium')
-  const slot30 = Math.floor(Date.now() / (30 * 60 * 1000))
-  const offset = allPremium.length > 0 ? slot30 % allPremium.length : 0
+  const slot10 = Math.floor(Date.now() / (10 * 60 * 1000))
+  const offset = allPremium.length > 0 ? slot10 % allPremium.length : 0
   const featured = [...allPremium.slice(offset), ...allPremium.slice(0, offset)]
   const rest = filtered.filter(l => l.tier !== 'premium')
 
+  const emptyHtml = `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
+  const featLabel = `<div style="grid-column:1/-1;margin-bottom:0.5rem;"><div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span><div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div></div></div>`
   let html = ''
-  if (featured.length > 0) {
-    html += `
-      <div style="grid-column:1/-1;margin-bottom:0.5rem;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span>
-          <div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div>
-        </div>
-      </div>
-      ${featured.map(l => featuredCardHTML(l)).join('')}
-      ${rest.length > 0 ? `<div style="grid-column:1/-1;height:1px;background:var(--charcoal-3);margin:0.5rem 0;"></div>` : ''}
-    `
+  if (isMobileView()) {
+    if (featured.length) html += featLabel + `<div class="featured-scroll">${featured.map(featuredCardHTML).join('')}</div>`
+    if (rest.length) {
+      const first = rest.slice(0, 12).map(compactRowHTML).join('')
+      const moreRows = rest.slice(12)
+      html += `<div class="compact-list">${first}${moreRows.length ? `<div id="dir-more-rows" style="display:none;">${moreRows.map(compactRowHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-rows').style.display='block';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreRows.length})</span></div>` : ''}</div>`
+    } else if (!featured.length) html += emptyHtml
+  } else {
+    if (featured.length > 0) {
+      html += featLabel + featured.map(l => featuredCardHTML(l)).join('') + (rest.length > 0 ? `<div style="grid-column:1/-1;height:1px;background:var(--charcoal-3);margin:0.5rem 0;"></div>` : '')
+    }
+    html += rest.length ? rest.map(cardHTML).join('') : (!featured.length ? emptyHtml : '')
   }
-  html += rest.length ? rest.map(cardHTML).join('') : (!featured.length ? `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>` : '')
 
   document.getElementById('dir-cards').innerHTML = html
   dirSearchTerm = ''
@@ -1471,6 +1482,36 @@ function renderDirectory() {
     trackEvent('search_impression', l.id, { trade: l.trade, province: l.province })
   })
 }
+
+function isMobileView() { return window.matchMedia('(max-width: 640px)').matches }
+
+function compactRowHTML(l) {
+  const rating = avgRating(l)
+  const rd = rating > 0 ? rating.toFixed(1) : null
+  const reviewCount = l.reviews ? l.reviews.length : 0
+  const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
+  const suburb = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || ''
+  const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}">` : initials(l.name)
+  const verified = l.verified_approved ? '<span style="color:#22C55E;font-size:12px;" title="Verified">✔</span>' : ''
+  const after = l.after_hours ? '<span class="compact-mini" style="color:var(--amber);border:0.5px solid var(--amber);">After Hours</span>' : ''
+  const ratingStr = rd ? `★ ${rd} (${reviewCount})` : 'No reviews yet'
+  return `<div class="compact-row" onclick="openProfile(${l.id})">
+    <div class="compact-av">${av}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:6px;"><span class="compact-name">${escHtml(l.name)}</span>${verified}${after}</div>
+      <div class="compact-sub">${escHtml(trade)}${suburb ? ' · ' + escHtml(suburb) : ''} · <span style="color:var(--amber);">${ratingStr}</span></div>
+    </div>
+    <span style="color:var(--charcoal-5);font-size:20px;line-height:1;flex:0 0 auto;">›</span>
+  </div>`
+}
+
+// Re-render the directory/home when crossing the mobile breakpoint so the layout swaps cleanly.
+try {
+  window.matchMedia('(max-width: 640px)').addEventListener('change', () => {
+    if (document.getElementById('page-directory')?.classList.contains('active')) renderDirectory()
+    if (document.getElementById('page-home')?.classList.contains('active')) renderHome()
+  })
+} catch (_) {}
 
 function featuredCardHTML(l) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
