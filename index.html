@@ -103,7 +103,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 .featured-scroll { display: flex; gap: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; padding: 0 0 10px; margin-bottom: 0.75rem; }
 .featured-scroll::-webkit-scrollbar { height: 0; }
-.featured-scroll > .tradesman-card { flex: 0 0 82%; scroll-snap-align: start; margin: 0; }
+.featured-scroll > * { flex: 0 0 150px; scroll-snap-align: start; margin: 0; }
+.feat-mini { background: var(--charcoal-2); border: 1px solid var(--amber); border-radius: 10px; padding: 10px; cursor: pointer; }
+.feat-mini:active, .square-card:active { opacity: 0.85; }
+.square-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.square-card { background: var(--charcoal-2); border: 0.5px solid var(--charcoal-3); border-radius: 10px; padding: 11px; cursor: pointer; }
 .compact-list { display: flex; flex-direction: column; }
 .compact-row { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 0.5px solid var(--charcoal-3); cursor: pointer; }
 .compact-row:active { background: var(--charcoal-2); }

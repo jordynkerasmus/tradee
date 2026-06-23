@@ -890,8 +890,8 @@ function renderHome() {
     const prem = featured.filter(l => l.tier === 'premium')
     const others = featured.filter(l => l.tier !== 'premium')
     homeCards.innerHTML =
-      (prem.length ? `<div class="featured-scroll">${prem.map(featuredCardHTML).join('')}</div>` : '') +
-      (others.length ? `<div class="compact-list">${others.map(compactRowHTML).join('')}</div>` : '')
+      (prem.length ? `<div class="featured-scroll">${prem.map(featuredMiniHTML).join('')}</div>` : '') +
+      (others.length ? `<div class="square-grid">${others.map(squareCardHTML).join('')}</div>` : '')
   } else {
     homeCards.innerHTML = featured.map(l => l.tier === 'premium' ? featuredCardHTML(l) : cardHTML(l)).join('')
   }
@@ -1461,11 +1461,11 @@ function renderDirectory() {
   const featLabel = `<div style="grid-column:1/-1;margin-bottom:0.5rem;"><div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span><div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div></div></div>`
   let html = ''
   if (isMobileView()) {
-    if (featured.length) html += featLabel + `<div class="featured-scroll">${featured.map(featuredCardHTML).join('')}</div>`
+    if (featured.length) html += featLabel + `<div class="featured-scroll">${featured.map(featuredMiniHTML).join('')}</div>`
     if (rest.length) {
-      const first = rest.slice(0, 12).map(compactRowHTML).join('')
-      const moreRows = rest.slice(12)
-      html += `<div class="compact-list">${first}${moreRows.length ? `<div id="dir-more-rows" style="display:none;">${moreRows.map(compactRowHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-rows').style.display='block';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreRows.length})</span></div>` : ''}</div>`
+      const first = rest.slice(0, 12).map(squareCardHTML).join('')
+      const moreItems = rest.slice(12)
+      html += `<div class="square-grid">${first}</div>` + (moreItems.length ? `<div id="dir-more-grid" class="square-grid" style="display:none;margin-top:9px;">${moreItems.map(squareCardHTML).join('')}</div><div style="text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreItems.length})</span></div>` : '')
     } else if (!featured.length) html += emptyHtml
   } else {
     if (featured.length > 0) {
@@ -1484,6 +1484,46 @@ function renderDirectory() {
 }
 
 function isMobileView() { return window.matchMedia('(max-width: 640px)').matches }
+
+// Small featured card for the mobile swipe carousel (no contact details).
+function featuredMiniHTML(l) {
+  const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : '—'
+  const reviewCount = l.reviews ? l.reviews.length : 0
+  const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
+  const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
+  const verified = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
+  const after = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
+  return `<div class="feat-mini" onclick="openProfile(${l.id})">
+    <div style="width:36px;height:36px;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;margin-bottom:7px;overflow:hidden;">${av}</div>
+    <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(l.name)}</div>
+    <div style="color:var(--amber);font-size:11px;">${escHtml(trade)}</div>
+    <div style="color:var(--amber);font-size:11px;margin-top:5px;">★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span></div>
+    <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">${verified}${after}</div>
+  </div>`
+}
+
+// Small square card for the mobile 2-column grid of standard listings.
+function squareCardHTML(l) {
+  const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : null
+  const reviewCount = l.reviews ? l.reviews.length : 0
+  const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
+  const suburb = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || ''
+  const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
+  const marker = l.verified_approved
+    ? '<span style="margin-left:auto;color:#22C55E;font-size:13px;" title="Verified">✔</span>'
+    : (l.after_hours ? '<span style="margin-left:auto;font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : '')
+  const ratingStr = rd ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--charcoal-6);">No reviews yet</span>'
+  return `<div class="square-card" onclick="openProfile(${l.id})">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
+      <div style="width:34px;height:34px;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1rem;overflow:hidden;">${av}</div>
+      ${marker}
+    </div>
+    <div style="color:var(--white);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(l.name)}</div>
+    <div style="color:var(--amber);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(trade)}</div>
+    <div style="color:var(--charcoal-6);font-size:11px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(suburb)}</div>
+    <div style="color:var(--amber);font-size:11px;margin-top:3px;">${ratingStr}</div>
+  </div>`
+}
 
 function compactRowHTML(l) {
   const rating = avgRating(l)
