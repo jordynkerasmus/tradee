@@ -1806,8 +1806,7 @@ window.copyProfileLink = function (id) {
 }
 
 window.goBack = function () {
-  window.history.pushState({}, '', '/')
-  window.showPage('directory')
+  window.history.back()
 }
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
@@ -2180,7 +2179,12 @@ function handleRoute() {
   }
   // Map a known page path back to its page (so Back/Forward and refresh land correctly).
   const pageByPath = { '/': 'home', '/directory': 'directory', '/rankings': 'rankings', '/how-it-works': 'faq', '/privacy': 'privacy', '/terms': 'terms', '/list': 'list', '/login': 'login', '/signup': 'signup', '/dashboard': 'dashboard', '/admin': 'admin' }
-  window.showPage(pageByPath[path] || 'home', true)
+  const pageName = pageByPath[path] || 'home'
+  // Replace the current history entry with a known state so popstate always fires with context.
+  if (!window.history.state?.tradeePage) {
+    window.history.replaceState({ tradeePage: pageName }, '', path)
+  }
+  window.showPage(pageName, true)
 }
 
 window.addEventListener('popstate', handleRoute)
