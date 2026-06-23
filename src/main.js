@@ -1714,6 +1714,10 @@ window.openProfile = async function (id) {
           <div style="font-size:12px;color:var(--charcoal-6);">Cleanliness <span style="color:var(--amber);">${'★'.repeat(r.cleanliness)}</span></div>
           <div style="font-size:12px;color:var(--charcoal-6);">Communication <span style="color:var(--amber);">${'★'.repeat(r.communication)}</span></div>
           <div style="font-size:12px;color:var(--charcoal-6);">Value for Money <span style="color:var(--amber);">${'★'.repeat(r.value)}</span></div>
+          ${r.reliability ? `<div style="font-size:12px;color:var(--charcoal-6);">Reliability <span style="color:var(--amber);">${'★'.repeat(r.reliability)}</span></div>` : ''}
+          ${r.responsiveness ? `<div style="font-size:12px;color:var(--charcoal-6);">Responsiveness <span style="color:var(--amber);">${'★'.repeat(r.responsiveness)}</span></div>` : ''}
+          ${r.professionalism ? `<div style="font-size:12px;color:var(--charcoal-6);">Professionalism <span style="color:var(--amber);">${'★'.repeat(r.professionalism)}</span></div>` : ''}
+          ${r.recommend ? `<div style="font-size:12px;color:var(--charcoal-6);">Would recommend <span style="color:var(--amber);">${'★'.repeat(r.recommend)}</span></div>` : ''}
         </div>` : ''}
         <p class="review-text">${escHtml(r.review_text)}</p>
         ${r.reply_text ? `
@@ -1813,12 +1817,17 @@ window.submitReview = async function () {
   const cleanliness = getStarVal('star-clean')
   const communication = getStarVal('star-comms')
   const value = getStarVal('star-value')
-  if (!quality || !service || !cleanliness || !communication || !value) { toast('Please rate all 5 categories.'); return }
-  const stars = Math.round((quality + service + cleanliness + communication + value) / 5)
+  const reliability = getStarVal('star-reliability')
+  const responsiveness = getStarVal('star-responsiveness')
+  const professionalism = getStarVal('star-professionalism')
+  const recommend = getStarVal('star-recommend')
+  const cats = [quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend]
+  if (cats.some(c => !c)) { toast('Please rate all categories.'); return }
+  const stars = Math.round(cats.reduce((a, b) => a + b, 0) / cats.length)
 
   const { data: insertedReview, error } = await supabase.from('reviews').insert({
     listing_id: reviewingId, reviewer_name, review_text,
-    stars, quality, service, cleanliness, communication, value
+    stars, quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend
   }).select('id').single()
   if (error) { toast('Error submitting review. Please try again.'); console.error(error); return }
   // Store the reviewer's email privately (admin-only table — never publicly readable).
