@@ -1669,7 +1669,8 @@ function getStarVal(id) {
 function submitReview() {
   const reviewer_name = document.getElementById('r-name').value.trim();
   const review_text = document.getElementById('r-text').value.trim();
-  if (!reviewer_name || !review_text) { toast('Please fill in your name and review.'); return; }
+  if (!reviewer_name) { toast('Please fill in your name.'); return; }
+  if (!review_text) { toast('Please scroll down and fill in your review text.'); return; }
   const quality = getStarVal('star-quality');
   const service = getStarVal('star-service');
   const cleanliness = getStarVal('star-clean');
