@@ -1077,6 +1077,8 @@ function renderSmartResults() {
   </div>`
   if (!_smartRanked.length) {
     html += `<div class="empty-state" style="grid-column:1/-1"><h3>No matches found</h3><p>Try rephrasing, or <a onclick="clearSmartSearch()" style="color:var(--amber);cursor:pointer;">browse all tradesmen</a>.</p></div>`
+  } else if (isMobileView()) {
+    html += `<div class="square-grid">${_smartRanked.map(x => squareCardHTML(x.l)).join('')}</div>`
   } else {
     html += _smartRanked.map(x => cardHTML(x.l)).join('')
   }
@@ -1513,7 +1515,7 @@ function featuredMiniHTML(l) {
 }
 
 // Small square card for the mobile 2-column grid of standard listings.
-function squareCardHTML(l) {
+function squareCardHTML(l, rankNum) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : null
   const reviewCount = l.reviews ? l.reviews.length : 0
   const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
@@ -1528,7 +1530,7 @@ function squareCardHTML(l) {
       <div style="width:34px;height:34px;flex:0 0 auto;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1rem;overflow:hidden;">${av}</div>
       ${marker}
     </div>
-    <div class="sc-name">${escHtml(l.name)}</div>
+    <div class="sc-name">${rankNum ? `<span style="color:var(--amber);">${rankNum}.</span> ` : ''}${escHtml(l.name)}</div>
     <div class="sc-line" style="color:var(--amber);">${escHtml(trade)}</div>
     <div class="sc-line" style="color:var(--charcoal-6);margin-top:3px;">${escHtml(suburb)}</div>
     <div class="sc-line" style="color:var(--amber);margin-top:3px;">${ratingStr}</div>
@@ -1560,6 +1562,7 @@ try {
   window.matchMedia('(max-width: 640px)').addEventListener('change', () => {
     if (document.getElementById('page-directory')?.classList.contains('active')) renderDirectory()
     if (document.getElementById('page-home')?.classList.contains('active')) renderHome()
+    if (document.getElementById('page-rankings')?.classList.contains('active')) renderRankings()
   })
 } catch (_) {}
 
@@ -1841,7 +1844,14 @@ window.renderRankings = function () {
     .map(l => ({ ...l, avg: avgRating(l) }))
     .sort((a, b) => b.avg - a.avg || (b.reviews.length - a.reviews.length))
   const maxAvg = ranked.length ? ranked[0].avg : 5
-  document.getElementById('rank-list').innerHTML = ranked.map((l, i) => `
+  const rankList = document.getElementById('rank-list')
+  if (!ranked.length) {
+    rankList.innerHTML = '<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>'
+  } else if (isMobileView()) {
+    // Mobile: same square tiles as home/directory, in ranked order (with a rank number prefix).
+    rankList.innerHTML = `<div class="square-grid">${ranked.map((l, i) => squareCardHTML(l, i + 1)).join('')}</div>`
+  } else {
+    rankList.innerHTML = ranked.map((l, i) => `
     <div class="rank-item" onclick="openProfile(${l.id})">
       <div class="rank-num">${i + 1}</div>
       <div class="rank-info">
@@ -1852,7 +1862,8 @@ window.renderRankings = function () {
         <div class="rank-bar"><div class="rank-bar-fill" style="width:${(l.avg / maxAvg * 100).toFixed(0)}%"></div></div>
         <div class="rank-score">${starsHTML(l.avg)} ${l.avg.toFixed(1)} (${l.reviews.length})</div>
       </div>
-    </div>`).join('') || '<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>'
+    </div>`).join('')
+  }
 }
 
 // ── List your business ────────────────────────────────────────────────────────
