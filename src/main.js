@@ -2551,3 +2551,23 @@ window.adminDeleteReview = async function (id) {
   toast('Review removed.')
   renderAdmin()
 }
+
+// ── Auto-update: apply new deploys without the user needing to refresh ──────────
+// The service worker (registerType: autoUpdate) installs new versions in the
+// background. Here we reload to the new version when it takes over — but never
+// while someone is mid-form or has a modal open — and re-check every 30 minutes
+// so even long-open tabs pick up changes on their own.
+if ('serviceWorker' in navigator) {
+  let _reloading = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (_reloading) return
+    const tag = document.activeElement && document.activeElement.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+    if (document.querySelector('.modal-overlay.open')) return
+    _reloading = true
+    window.location.reload()
+  })
+  navigator.serviceWorker.getRegistration().then((reg) => {
+    if (reg) setInterval(() => reg.update(), 30 * 60 * 1000)
+  }).catch(() => {})
+}
