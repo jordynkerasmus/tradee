@@ -1825,13 +1825,13 @@ window.submitReview = async function () {
   const cleanliness = getStarVal('star-clean')
   const communication = getStarVal('star-comms')
   const value = getStarVal('star-value')
-  const reliability = getStarVal('star-reliability')
-  const responsiveness = getStarVal('star-responsiveness')
-  const professionalism = getStarVal('star-professionalism')
-  const recommend = getStarVal('star-recommend')
-  const cats = [quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend]
-  if (cats.some(c => !c)) { toast('Please rate all categories.'); return }
-  const stars = Math.round(cats.reduce((a, b) => a + b, 0) / cats.length)
+  if (!quality||!service||!cleanliness||!communication||!value) { toast('Please rate all 5 main categories.'); return }
+  const reliability = getStarVal('star-reliability') || null
+  const responsiveness = getStarVal('star-responsiveness') || null
+  const professionalism = getStarVal('star-professionalism') || null
+  const recommend = getStarVal('star-recommend') || null
+  const allRated = [quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend].filter(Boolean)
+  const stars = Math.round(allRated.reduce((a, b) => a + b, 0) / allRated.length)
 
   const { data: insertedReview, error } = await supabase.from('reviews').insert({
     listing_id: reviewingId, reviewer_name, review_text,
