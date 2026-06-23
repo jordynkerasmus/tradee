@@ -1738,7 +1738,7 @@ window.openProfile = async function (id, fromRoute) {
       </div>`).join('')
     : '<p style="color:var(--charcoal-6);font-size:14px;">No reviews yet — be the first!</p>'
   document.getElementById('profile-content').innerHTML = `
-    <div class="profile-back" onclick="goBack()">← Back to Directory</div>
+    <div class="profile-back" onclick="window.showPage('directory')">← Back to Directory</div>
     <div class="profile-hero">
       <div class="profile-avatar">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;">
@@ -1754,7 +1754,7 @@ window.openProfile = async function (id, fromRoute) {
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          ${l.phone ? `<a href="https://wa.me/${l.phone.replace(/\D/g,'')}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">WhatsApp</a>` : ''}
+          ${l.phone ? `<a href="https://wa.me/${(d => d.startsWith('0') ? '27' + d.slice(1) : d.startsWith('+') ? d.slice(1) : d)(l.phone.replace(/\D/g,''))}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">WhatsApp</a>` : ''}
           ${l.phone ? `<a href="tel:${l.phone}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">Call</a>` : ''}
           ${l.email ? `<a href="mailto:${l.email}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">Email</a>` : ''}
           <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
