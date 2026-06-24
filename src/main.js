@@ -2702,14 +2702,16 @@ window.adminEditListing = async function (id) {
   if (photos.length === 0) {
     portfolioList.innerHTML = '<span style="font-size:12px;color:var(--charcoal-6);">No portfolio images.</span>'
   } else {
-    portfolioList.innerHTML = photos.map((url, i) => `
-      <div style="position:relative;width:80px;">
+    portfolioList.innerHTML = photos.map((p, i) => {
+      const url = (typeof p === 'object' && p !== null) ? (p.url || '') : p
+      return `<div style="position:relative;width:80px;">
         <img src="${escHtml(url)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--charcoal-4);">
         <button onclick="adminMoveToCredentials(${l.id},'${escHtml(url)}',${i})" title="Move to Credentials (make private)"
           style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9px;padding:2px 5px;background:#1C1917cc;border:1px solid #22C55E;color:#22C55E;border-radius:3px;cursor:pointer;">
           → Credentials
         </button>
-      </div>`).join('')
+      </div>`
+    }).join('')
   }
   modal.classList.add('open')
 }
