@@ -1581,7 +1581,7 @@ function squareCardHTML(l, rankNum) {
       ${marker}
     </div>
     <div class="sc-name">${rankNum ? `<span style="color:var(--amber);">${rankNum}.</span> ` : ''}${escHtml(l.name)}</div>
-    <div class="sc-line" style="color:var(--amber);">${escHtml(trade)}</div>
+    <div class="sc-line" style="color:var(--charcoal-7);">${escHtml(trade)}</div>
     <div class="sc-line" style="color:var(--charcoal-6);margin-top:3px;">${escHtml(suburb)}</div>
     <div class="sc-line" style="color:var(--amber);margin-top:3px;">${ratingStr}</div>
   </div>`
@@ -1665,7 +1665,7 @@ function cardHTML(l) {
   const cityStr = l.cities && l.cities.length > 1 ? l.cities.slice(0,2).join(', ') + (l.cities.length > 2 ? ` +${l.cities.length-2} more` : '') : (l.city || '')
   const allTrades = l.trades && l.trades.length ? l.trades : (l.trade ? [l.trade] : [])
   const rateLabel = l.rate_type === 'day' ? 'Rate / Day' : 'Rate / Hr'
-  return `<div class="tradesman-card">
+  return `<div class="tradesman-card${l.verified_approved ? ' tradesman-card--verified' : ''}">
     <div class="card-header">
       <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
