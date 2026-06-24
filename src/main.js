@@ -746,6 +746,18 @@ function fixBio(str) {
     .replace(/^([a-z])/, (ch) => ch.toUpperCase())
 }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
+
+const _revealObserver = window.IntersectionObserver ? new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); _revealObserver.unobserve(e.target) } })
+}, { threshold: 0.08 }) : null
+function revealCards(container) {
+  if (!_revealObserver) return
+  ;(container || document).querySelectorAll('.tradesman-card, .square-card, .compact-row').forEach((el, i) => {
+    el.classList.add('reveal')
+    el.style.transitionDelay = Math.min(i * 40, 300) + 'ms'
+    _revealObserver.observe(el)
+  })
+}
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
 function fmtTravel(n) { return (n === null || n === undefined || n === '') ? null : n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n + '/km' }
 // The green Verified badge shows only once an admin has reviewed the tradesman's
@@ -953,6 +965,7 @@ function renderHome() {
             ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreO.map(squareCardHTML).join('')}</div><div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
             : '')
         : '')
+    revealCards(homeCards)
   }
 }
 
@@ -1535,6 +1548,7 @@ function renderDirectory() {
   } else if (!featured.length) html += emptyHtml
 
   document.getElementById('dir-cards').innerHTML = html
+  revealCards(document.getElementById('dir-cards'))
   dirSearchTerm = ''
 
   // Track search impressions for each visible listing

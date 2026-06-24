@@ -57,7 +57,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .page.active { display: block; }
 .hero { background: var(--charcoal-2); padding: 6rem 2rem 5rem; text-align: center; position: relative; overflow: hidden; }
 .hero::before { content: 'TRADEE'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: clamp(10rem, 30vw, 22rem); letter-spacing: 0.06em; color: rgba(245,158,11,0.045); pointer-events: none; user-select: none; line-height: 1; }
-.hero-eyebrow { display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 0.15em; color: var(--amber); text-transform: uppercase; margin-bottom: 1.5rem; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); padding: 5px 14px; border-radius: 3px; }
+.hero-eyebrow { display: none; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.45s ease, transform 0.45s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+}
 .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 8rem); letter-spacing: 0.06em; line-height: 0.9; margin-bottom: 1.5rem; position: relative; }
 .hero h1 .accent { color: var(--amber); }
 .hero-sub { font-size: 1.1rem; color: var(--charcoal-6); max-width: 520px; margin: 0 auto 2.5rem; }
@@ -113,8 +118,9 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .square-card .sc-name { color: var(--white); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .square-card .sc-line { font-size: 11px; overflow-wrap: anywhere; }
 .compact-list { display: flex; flex-direction: column; }
-.compact-row { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 0.5px solid var(--charcoal-3); cursor: pointer; }
-.compact-row:active { background: var(--charcoal-2); }
+.compact-row { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 0.5px solid var(--charcoal-3); cursor: pointer; transition: background 0.15s, padding-left 0.15s; border-radius: var(--radius); }
+.compact-row:hover { background: var(--charcoal-2); padding-left: 10px; }
+.compact-row:active { background: var(--charcoal-3); }
 .compact-av { width: 40px; height: 40px; flex: 0 0 auto; border-radius: var(--radius); background: var(--charcoal-3); display: flex; align-items: center; justify-content: center; color: var(--amber); font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; overflow: hidden; }
 .compact-av img { width: 100%; height: 100%; object-fit: cover; }
 .compact-name { color: var(--white); font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
