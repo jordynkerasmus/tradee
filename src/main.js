@@ -673,6 +673,29 @@ window.previewEditPhoto = function (input) {
   if (preview) preview.textContent = `✓ Ready to upload: ${file.name}`
 }
 
+window.adminMoveToCredentials = async function (listingId, photoUrl, photoIndex) {
+  if (!confirm('Move this image from the public portfolio to private Credentials?')) return
+  toast('Moving…')
+  try {
+    const resp = await fetch(photoUrl)
+    const blob = await resp.blob()
+    const ext = photoUrl.split('.').pop().split('?')[0] || 'jpg'
+    const l = (window._adminListings || []).find(x => x.id === listingId)
+    const ownerId = l?.user_id || 'unknown'
+    const path = `${ownerId}/${Date.now()}-moved.${ext}`
+    const { error: upErr } = await supabase.storage.from(BUCKET_CERTS).upload(path, blob)
+    if (upErr) { toast('Upload failed: ' + upErr.message); return }
+    const { data: fresh } = await supabase.from('listings').select('portfolio_photos, certificate_urls').eq('id', listingId).single()
+    const portfolio = (fresh?.portfolio_photos || []).filter((_, i) => i !== photoIndex)
+    const certs = [...(fresh?.certificate_urls || []), path]
+    const { error: dbErr } = await supabase.from('listings').update({ portfolio_photos: portfolio, certificate_urls: certs }).eq('id', listingId)
+    if (dbErr) { toast('DB update failed: ' + dbErr.message); return }
+    toast('Moved to Credentials!')
+    const idx = (window._adminListings || []).findIndex(x => x.id === listingId)
+    if (idx !== -1) { window._adminListings[idx].portfolio_photos = portfolio; window._adminListings[idx].certificate_urls = certs }
+    adminEditListing(listingId)
+  } catch (e) { toast('Error: ' + e.message) }
+}
 window.previewAdminCerts = function (files) {
   window._aemNewCertFiles = [...(window._aemNewCertFiles || []), ...Array.from(files)]
   document.getElementById('aem-cert-preview').textContent = `${window._aemNewCertFiles.length} file(s) ready to upload`
@@ -2674,6 +2697,20 @@ window.adminEditListing = async function (id) {
   docsList.innerHTML = (l.certificate_urls || []).map((ref, i) =>
     `<button class="btn btn-outline btn-sm" style="padding:2px 8px;" onclick="viewCert('${escHtml(ref)}')" title="View document">Doc ${i + 1} ↗</button>`
   ).join('') || '<span style="font-size:12px;color:var(--charcoal-6);">No documents on file.</span>'
+  const portfolioList = document.getElementById('aem-portfolio-list')
+  const photos = l.portfolio_photos || []
+  if (photos.length === 0) {
+    portfolioList.innerHTML = '<span style="font-size:12px;color:var(--charcoal-6);">No portfolio images.</span>'
+  } else {
+    portfolioList.innerHTML = photos.map((url, i) => `
+      <div style="position:relative;width:80px;">
+        <img src="${escHtml(url)}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--charcoal-4);">
+        <button onclick="adminMoveToCredentials(${l.id},'${escHtml(url)}',${i})" title="Move to Credentials (make private)"
+          style="position:absolute;bottom:3px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9px;padding:2px 5px;background:#1C1917cc;border:1px solid #22C55E;color:#22C55E;border-radius:3px;cursor:pointer;">
+          → Credentials
+        </button>
+      </div>`).join('')
+  }
   modal.classList.add('open')
 }
 
