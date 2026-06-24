@@ -605,7 +605,7 @@ window.saveListing = async function (id) {
   const rate = isNA(rateRaw) ? -1 : (parseInt(rateRaw) || 0)
   const rateTypeEl = document.querySelector('input[name="edit-rate-type"]:checked')
   const rate_type = rateTypeEl ? rateTypeEl.value : 'hour'
-  const description = document.getElementById('edit-desc').value.trim()
+  const description = fixBio(document.getElementById('edit-desc').value.trim())
   const credsRaw = document.getElementById('edit-creds').value.trim()
   const years_experience = parseInt(document.getElementById('edit-years').value) || 0
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
@@ -711,6 +711,13 @@ function starsHTML(n) { const f = Math.round(n); return '★'.repeat(f) + '☆'.
 function titleCase(str) {
   if (!str) return str
   return String(str).toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase())
+}
+function fixBio(str) {
+  if (!str) return str
+  return String(str)
+    .replace(/\bi\b/g, 'I')
+    .replace(/(^|[.!?]\s+)([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase())
+    .replace(/^([a-z])/, (ch) => ch.toUpperCase())
 }
 function initials(name) { return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() }
 function fmtRand(n) { return n === -1 ? 'N/A' : n === 0 ? 'Free' : 'R' + n }
@@ -1772,7 +1779,7 @@ window.openProfile = async function (id, fromRoute) {
     </div>
     <div class="profile-section">
       <div class="section-title">About</div>
-      <p style="font-size:15px;line-height:1.7;color:var(--charcoal-7);">${escHtml(l.description) || 'No description provided.'}</p>
+      <p style="font-size:15px;line-height:1.7;color:var(--charcoal-7);">${escHtml(fixBio(l.description)) || 'No description provided.'}</p>
       <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <span style="font-size:14px;color:var(--charcoal-6);">${l.city}, ${l.province}</span>
@@ -2077,7 +2084,7 @@ window.submitListing = async function () {
   const rate = isNA(rateRaw) ? -1 : (parseInt(rateRaw) || 0)
   const rateTypeEl = document.querySelector('input[name="f-rate-type"]:checked')
   const rate_type = rateTypeEl ? rateTypeEl.value : 'hour'
-  const description = document.getElementById('f-desc').value.trim()
+  const description = fixBio(document.getElementById('f-desc').value.trim())
   const credsRaw = document.getElementById('f-creds')?.value.trim() || ''
   const years_experience = parseInt(document.getElementById('f-years')?.value) || 0
   const credentials = credsRaw ? credsRaw.split(',').map(c => c.trim()).filter(Boolean) : []
@@ -2674,7 +2681,7 @@ window.adminSaveListing = async function () {
   const rate = isNA(rateRaw) ? -1 : (parseInt(rateRaw) || 0)
   const callout = isNA(calloutRaw) ? -1 : (parseInt(calloutRaw) || 0)
   const rate_type = document.getElementById('aem-rate-type').value
-  const description = document.getElementById('aem-desc').value.trim()
+  const description = fixBio(document.getElementById('aem-desc').value.trim())
 
   const { error } = await supabase.from('listings').update({ name, contact_name, phone, email, trade, rate, callout, rate_type, description }).eq('id', id)
   if (error) { toast('Error saving: ' + error.message); return }
