@@ -680,9 +680,8 @@ window.adminMoveToCredentials = async function (listingId, photoUrl, photoIndex)
     const resp = await fetch(photoUrl)
     const blob = await resp.blob()
     const ext = photoUrl.split('.').pop().split('?')[0] || 'jpg'
-    const l = (window._adminListings || []).find(x => x.id === listingId)
-    const ownerId = l?.user_id || 'unknown'
-    const path = `${ownerId}/${Date.now()}-moved.${ext}`
+    const { data: { user: adminUser } } = await supabase.auth.getUser()
+    const path = `${adminUser.id}/${Date.now()}-moved.${ext}`
     const { error: upErr } = await supabase.storage.from(BUCKET_CERTS).upload(path, blob)
     if (upErr) { toast('Upload failed: ' + upErr.message); return }
     const { data: fresh } = await supabase.from('listings').select('portfolio_photos, certificate_urls').eq('id', listingId).single()
