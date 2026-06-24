@@ -1549,9 +1549,9 @@ function squareCardHTML(l, rankNum) {
   const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
   const suburb = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || ''
   const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
-  const marker = l.verified_approved
-    ? '<span style="margin-left:auto;color:#22C55E;font-size:13px;" title="Verified">✔</span>'
-    : (l.after_hours ? '<span style="margin-left:auto;font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : '')
+  const verifiedBadge = l.verified_approved ? '<span style="margin-left:auto;font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
+  const afterBadge = l.after_hours ? '<span style="' + (l.verified_approved ? '' : 'margin-left:auto;') + 'font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
+  const marker = (verifiedBadge || afterBadge) ? `<div style="display:flex;gap:4px;margin-left:auto;">${verifiedBadge}${afterBadge}</div>` : ''
   const ratingStr = rd ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
   return `<div class="square-card" onclick="openProfile(${l.id})">
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
