@@ -673,6 +673,10 @@ window.previewEditPhoto = function (input) {
   if (preview) preview.textContent = `✓ Ready to upload: ${file.name}`
 }
 
+window.previewAdminCerts = function (files) {
+  window._aemNewCertFiles = [...(window._aemNewCertFiles || []), ...Array.from(files)]
+  document.getElementById('aem-cert-preview').textContent = `${window._aemNewCertFiles.length} file(s) ready to upload`
+}
 window.previewEditCerts = function (files) {
   window.editCertFiles = [...(window.editCertFiles || []), ...Array.from(files)]
   const el = document.getElementById('edit-cert-preview')
@@ -2664,6 +2668,12 @@ window.adminEditListing = async function (id) {
   document.getElementById('aem-callout').value = calloutVal
   document.getElementById('aem-rate-type').value = l.rate_type || 'hour'
   document.getElementById('aem-desc').value = l.description || ''
+  window._aemNewCertFiles = []
+  document.getElementById('aem-cert-preview').textContent = ''
+  const docsList = document.getElementById('aem-docs-list')
+  docsList.innerHTML = (l.certificate_urls || []).map((ref, i) =>
+    `<button class="btn btn-outline btn-sm" style="padding:2px 8px;" onclick="viewCert('${escHtml(ref)}')" title="View document">Doc ${i + 1} ↗</button>`
+  ).join('') || '<span style="font-size:12px;color:var(--charcoal-6);">No documents on file.</span>'
   modal.classList.add('open')
 }
 
@@ -2683,7 +2693,18 @@ window.adminSaveListing = async function () {
   const rate_type = document.getElementById('aem-rate-type').value
   const description = fixBio(document.getElementById('aem-desc').value.trim())
 
-  const { error } = await supabase.from('listings').update({ name, contact_name, phone, email, trade, rate, callout, rate_type, description }).eq('id', id)
+  const { data: existingL } = await supabase.from('listings').select('certificate_urls').eq('id', id).single()
+  const certificate_urls = existingL?.certificate_urls || []
+  for (const file of (window._aemNewCertFiles || [])) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const ownerId = (window._adminListings || []).find(x => x.id === id)?.user_id || user?.id
+    const path = `${ownerId}/${Date.now()}-${file.name}`
+    const { error: uploadError } = await supabase.storage.from(BUCKET_CERTS).upload(path, file)
+    if (!uploadError) certificate_urls.push(path)
+  }
+  window._aemNewCertFiles = []
+
+  const { error } = await supabase.from('listings').update({ name, contact_name, phone, email, trade, rate, callout, rate_type, description, certificate_urls }).eq('id', id)
   if (error) { toast('Error saving: ' + error.message); return }
   document.getElementById('admin-edit-modal').classList.remove('open')
   toast('Listing updated.')
