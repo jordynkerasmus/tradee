@@ -6,8 +6,12 @@ const supabase = createClient(
 )
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  if (CRON_SECRET && req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
+  }
   try {
     // Get all listings with an email and user_id
     const { data: listings, error } = await supabase

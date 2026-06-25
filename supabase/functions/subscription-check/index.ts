@@ -4,11 +4,13 @@
 //   • 3+ days lapsed → downgrade to free + email confirmation.
 // grace_warned_at stops us emailing the same person every day during grace.
 // Deploy with "Verify JWT" OFF (it's called by cron, not a logged-in user).
-// Secrets: RESEND_API_KEY (+ Supabase auto-provides SUPABASE_URL / SERVICE_ROLE_KEY).
+// Secrets: RESEND_API_KEY, CRON_SECRET (+ Supabase auto-provides SUPABASE_URL / SERVICE_ROLE_KEY).
+// Cron must pass header: X-Cron-Secret: <value of CRON_SECRET env var>
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 const SITE = 'https://www.tradee.org'
 const GRACE_DAYS = 3
 const DAY = 24 * 60 * 60 * 1000
@@ -43,7 +45,10 @@ async function sendEmail(to: string, subject: string, html: string) {
   })
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  if (CRON_SECRET && req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
+  }
   try {
     const now = Date.now()
     const { data: listings, error } = await supabase

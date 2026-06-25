@@ -43,7 +43,22 @@ Deno.serve(async (req) => {
     if (data.payment_status === 'COMPLETE') {
       const listingId = data.custom_int1
       const tier = data.custom_str1
-      if (listingId && PRICES[tier]) {
+
+      // Cross-check amount — reject if it doesn't match the expected price for this tier
+      if (!PRICES[tier] || data.amount_gross !== PRICES[tier]) {
+        console.error(`PayFast amount mismatch: got ${data.amount_gross}, expected ${PRICES[tier]} for tier ${tier}`)
+        return new Response('invalid', { status: 400 })
+      }
+
+      // Verify the listing ID embedded in m_payment_id matches custom_int1
+      // m_payment_id format: ${listing_id}-${tier}-${timestamp}
+      const paymentIdParts = (data.m_payment_id || '').split('-')
+      if (paymentIdParts[0] !== String(listingId)) {
+        console.error(`PayFast listing ID mismatch: m_payment_id prefix ${paymentIdParts[0]} vs custom_int1 ${listingId}`)
+        return new Response('invalid', { status: 400 })
+      }
+
+      if (listingId) {
         const expires = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000).toISOString()
         await supabase.from('listings').update({ tier, tier_expires_at: expires, promo_verified: false, grace_warned_at: null }).eq('id', listingId)
         console.log(`PayFast: listing ${listingId} upgraded to ${tier} until ${expires}`)

@@ -1,14 +1,37 @@
+// Security: requires an authenticated Supabase JWT. Uses the email from the
+// JWT itself (not from the request body) so the caller cannot direct the
+// welcome email to an arbitrary address.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' } })
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
 
   try {
-    const { email, name } = await req.json()
-    if (!email) return new Response(JSON.stringify({ error: 'No email provided' }), { status: 400 })
+    // Require an authenticated user JWT
+    const token = (req.headers.get('Authorization') || '').replace('Bearer ', '').trim()
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    const supa = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!)
+    const { data: { user }, error: jwtErr } = await supa.auth.getUser(token)
+    if (jwtErr || !user?.email) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
 
+    // Use email from verified JWT — ignore any email in the request body
+    const { name } = await req.json().catch(() => ({}))
+    const email = user.email
     const displayName = name || 'there'
 
     const html = `
@@ -33,7 +56,7 @@ Deno.serve(async (req) => {
       <p style="color:#A8A29E;font-size:15px;line-height:1.7;margin:0 0 1.5rem;">
         You're now part of a fast-growing trade directory. Homeowners, interior designers and property managers are looking for skilled tradesmen just like you.
       </p>
-      <a href="https://tradee-dusky.vercel.app" style="display:inline-block;background:#F59E0B;color:#1C1917;font-weight:700;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:15px;">Complete My Listing →</a>
+      <a href="https://www.tradee.org" style="display:inline-block;background:#F59E0B;color:#1C1917;font-weight:700;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:15px;">Complete My Listing →</a>
     </div>
 
     <!-- Steps -->
@@ -69,13 +92,13 @@ Deno.serve(async (req) => {
     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;text-align:center;">
       <div style="color:#F59E0B;font-weight:700;font-size:14px;margin-bottom:6px;">⭐ Want more leads?</div>
       <div style="color:#A8A29E;font-size:13px;line-height:1.6;margin-bottom:1rem;">Upgrade to <strong style="color:#FFFDF9;">Verified (R149/mo)</strong> or <strong style="color:#F59E0B;">Premium (R249/mo)</strong> to appear at the top of the directory and unlock the verified badge.</div>
-      <a href="https://tradee-dusky.vercel.app" style="display:inline-block;background:transparent;color:#F59E0B;font-weight:600;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;border:1px solid rgba(245,158,11,0.4);">See Plans →</a>
+      <a href="https://www.tradee.org" style="display:inline-block;background:transparent;color:#F59E0B;font-weight:600;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;border:1px solid rgba(245,158,11,0.4);">See Plans →</a>
     </div>
 
     <!-- Footer -->
     <div style="text-align:center;color:#57534E;font-size:12px;border-top:1px solid #292524;padding-top:1.5rem;">
       <div>You're receiving this because you signed up on Tradee.</div>
-      <div style="margin-top:4px;">© ${new Date().getFullYear()} Tradee · The Trade Directory</div>
+      <div style="margin-top:4px;">© Tradee · The Trade Directory</div>
     </div>
 
   </div>
@@ -98,7 +121,7 @@ Deno.serve(async (req) => {
 
     const data = await res.json()
     return new Response(JSON.stringify({ success: true, data }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     })
 
   } catch (err) {

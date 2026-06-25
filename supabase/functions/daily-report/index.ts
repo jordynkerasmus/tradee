@@ -5,12 +5,16 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 )
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
+const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 
 // Who receives the daily report, and the founding-member cap.
 const REPORT_TO = 'jordynkerasmus@gmail.com'
 const PROMO_LIMIT = 100
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  if (CRON_SECRET && req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
+  }
   try {
     const { count: total } = await supabase
       .from('listings').select('id', { count: 'exact', head: true })

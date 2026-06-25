@@ -1,14 +1,56 @@
+// Security: requires a valid Supabase JWT (anon or user) so only requests from
+// the Tradee frontend can trigger this. Accepts listing_id and looks up the
+// owner email server-side — prevents this function being used as an email relay
+// to arbitrary addresses.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type' } })
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
 
   try {
-    const { email, tradeName, reviewerName, stars } = await req.json()
-    if (!email) return new Response(JSON.stringify({ error: 'No email' }), { status: 400 })
+    // Require a valid Supabase JWT (anon key or user token)
+    const token = (req.headers.get('Authorization') || '').replace('Bearer ', '').trim()
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    const supaAnon = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!)
+    const { error: jwtErr } = await supaAnon.auth.getUser(token)
+    // anon key won't resolve to a user but that's OK — we just need a valid project JWT
+    // If the token is completely invalid (not from this project), getUser will error
+    // We only block on a hard JWT parse failure (not simply "no user")
+    if (jwtErr && jwtErr.status === 401) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
 
+    const { listing_id, reviewerName, stars } = await req.json()
+    if (!listing_id) {
+      return new Response(JSON.stringify({ error: 'listing_id required' }), {
+        status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Look up listing owner email server-side — never trust the caller to supply the recipient
+    const supaAdmin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data: listing } = await supaAdmin
+      .from('listings').select('email, name').eq('id', listing_id).single()
+    if (!listing?.email) {
+      return new Response(JSON.stringify({ ok: true, skipped: 'no email on file' }), {
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const { email, name: tradeName } = listing
     const starsStr = '★'.repeat(stars) + '☆'.repeat(5 - stars)
     const displayName = tradeName || 'there'
 
@@ -33,7 +75,7 @@ Deno.serve(async (req) => {
       <p style="color:#A8A29E;font-size:15px;margin:0 0 1.5rem;">
         <strong style="color:#FFFDF9;">${reviewerName}</strong> just left you a ${stars}-star review on Tradee.
       </p>
-      <a href="https://tradee-dusky.vercel.app/dashboard" style="display:inline-block;background:#F59E0B;color:#1C1917;font-weight:700;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:15px;">View & Reply →</a>
+      <a href="https://www.tradee.org/dashboard" style="display:inline-block;background:#F59E0B;color:#1C1917;font-weight:700;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:15px;">View &amp; Reply →</a>
     </div>
 
     <div style="background:#292524;border-radius:12px;padding:1.5rem;margin-bottom:1rem;border:1px solid #3D3935;">
@@ -65,13 +107,13 @@ Deno.serve(async (req) => {
 
     const data = await res.json()
     return new Response(JSON.stringify({ success: true, data }), {
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     })
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
 })

@@ -283,7 +283,7 @@ async function renderDashboard() {
     ${promoNote}
     <div class="profile-hero" style="margin-bottom:1.5rem;">
       <div style="position:relative;display:inline-block;">
-        <div class="profile-avatar" id="dash-avatar">${listing.photo_url ? `<img src="${listing.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
+        <div class="profile-avatar" id="dash-avatar">${listing.photo_url ? `<img src="${escHtml(listing.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(listing.name)}</div>
         <label for="dash-photo-input" style="position:absolute;bottom:-6px;right:-6px;background:var(--amber);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Change photo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1C1917" stroke-width="2.5" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></label>
         <input type="file" id="dash-photo-input" accept=".jpg,.jpeg,.png" style="display:none;" onchange="window.updatePhoto(this, ${listing.id})">
       </div>
@@ -380,7 +380,7 @@ async function renderDashboard() {
         <div class="form-group">
           <label class="form-label">Profile Photo</label>
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-            ${listing.photo_url ? `<img src="${listing.photo_url}" style="width:56px;height:56px;border-radius:var(--radius);object-fit:cover;">` : `<div style="width:56px;height:56px;border-radius:var(--radius);background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--amber);">${escHtml(listing.name.slice(0,2).toUpperCase())}</div>`}
+            ${listing.photo_url ? `<img src="${escHtml(listing.photo_url)}" style="width:56px;height:56px;border-radius:var(--radius);object-fit:cover;">` : `<div style="width:56px;height:56px;border-radius:var(--radius);background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--amber);">${escHtml(listing.name.slice(0,2).toUpperCase())}</div>`}
             <div style="border:2px dashed var(--charcoal-4);border-radius:var(--radius);padding:0.75rem 1rem;cursor:pointer;flex:1;text-align:center;" onclick="document.getElementById('edit-photo-input').click()">
               <div style="font-size:13px;color:var(--charcoal-6);">Upload new photo</div>
             </div>
@@ -1638,7 +1638,7 @@ function featuredCardHTML(l) {
   return `<div class="tradesman-card featured-card" onclick="openProfile(${l.id})" style="border-color:var(--amber);background:linear-gradient(135deg,var(--charcoal-2) 0%,rgba(245,158,11,0.06) 100%);box-shadow:0 0 24px rgba(245,158,11,0.12);">
     <div style="position:absolute;top:12px;right:12px;background:var(--amber);color:var(--charcoal);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;">Featured</div>
     <div class="card-header" style="margin-right:70px;">
-      <div class="card-avatar premium-av">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
+      <div class="card-avatar premium-av">${l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
@@ -1681,7 +1681,7 @@ function cardHTML(l) {
   const rateLabel = l.rate_type === 'day' ? 'Rate / Day' : 'Rate / Hr'
   return `<div class="tradesman-card${l.verified_approved ? ' tradesman-card--verified' : ''}">
     <div class="card-header">
-      <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
+      <div class="card-avatar ${l.tier === 'premium' ? 'premium-av' : ''}">${l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;min-width:0;">
         <div class="card-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:12px;color:var(--charcoal-6);margin-top:1px;">${escHtml(l.contact_name)}</div>` : ''}
@@ -1788,7 +1788,7 @@ window.openProfile = async function (id, fromRoute) {
   document.getElementById('profile-content').innerHTML = `
     <div class="profile-back" onclick="window.showPage('directory')">← Back to Directory</div>
     <div class="profile-hero">
-      <div class="profile-avatar">${l.photo_url ? `<img src="${l.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
+      <div class="profile-avatar">${l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">` : initials(l.name)}</div>
       <div style="flex:1;">
         <div class="profile-name">${escHtml(l.name)}</div>
         ${l.contact_name ? `<div style="font-size:14px;color:var(--charcoal-6);margin-top:2px;margin-bottom:4px;">Contact: ${escHtml(l.contact_name)}</div>` : ''}
@@ -1901,12 +1901,7 @@ window.submitReview = async function () {
     }
 
     trackEvent('review_left', reviewingId)
-    try {
-      const { data: tl } = await supabase.from('listings').select('email,name').eq('id', reviewingId).single()
-      if (tl?.email) {
-        supabase.functions.invoke('review-notification', { body: { email: tl.email, tradeName: tl.name, reviewerName: reviewer_name, stars } }).catch(() => {})
-      }
-    } catch (_) {}
+    supabase.functions.invoke('review-notification', { body: { listing_id: reviewingId, reviewerName: reviewer_name, stars } }).catch(() => {})
     closeReviewModal()
     toast('Review submitted — thank you!')
     await loadListings()
