@@ -1594,7 +1594,7 @@ function squareCardHTML(l, rankNum) {
       <div style="width:34px;height:34px;flex:0 0 auto;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1rem;overflow:hidden;">${av}</div>
       ${marker}
     </div>
-    <div class="sc-name">${rankNum ? `<span style="color:var(--amber);">${rankNum}.</span> ` : ''}${escHtml(l.name)}</div>
+    <div class="sc-name">${escHtml(l.name)}</div>
     <div class="sc-line" style="color:var(--charcoal-7);">${escHtml(trade)}</div>
     <div class="sc-line" style="color:var(--charcoal-6);margin-top:3px;">${escHtml(suburb)}</div>
     <div class="sc-line" style="color:var(--amber);margin-top:3px;">${ratingStr}</div>
