@@ -58,9 +58,11 @@ function updateNavForAuth() {
   const adminLink = document.getElementById('nav-admin')
   const mobileAdmin = document.getElementById('nav-mobile-admin')
   const mobileSaved = document.getElementById('nav-mobile-saved')
+  const mobileAuth = document.getElementById('nav-mobile-auth')
   if (currentUser) {
     authBtn.textContent = 'Log Out'
     authBtn.onclick = handleSignOut
+    if (mobileAuth) mobileAuth.textContent = 'Log Out'
     if (dashBtn) dashBtn.style.display = 'inline-flex'
     if (mobileSaved) mobileSaved.style.display = 'block'
     const isAdmin = ADMIN_EMAILS.includes(currentUser.email)
@@ -69,6 +71,7 @@ function updateNavForAuth() {
   } else {
     authBtn.textContent = 'My Listing'
     authBtn.onclick = () => window.showPage('login')
+    if (mobileAuth) mobileAuth.textContent = 'Log In'
     if (dashBtn) dashBtn.style.display = 'none'
     if (mobileSaved) mobileSaved.style.display = 'none'
     if (adminLink) adminLink.style.display = 'none'

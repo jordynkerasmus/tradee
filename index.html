@@ -421,13 +421,17 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   </button>
 </nav>
 <div class="nav-mobile-menu" id="nav-mobile-menu">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--charcoal-6);">Account</span>
+    <button onclick="closeMobileMenu()" aria-label="Close menu" style="display:inline-flex;width:auto;border:none;border-bottom:none;padding:0;margin:0;background:none;color:var(--amber);font-size:28px;line-height:1;cursor:pointer;">&times;</button>
+  </div>
   <a onclick="showPage('faq');closeMobileMenu()">How It Works</a>
   <a id="nav-mobile-saved" onclick="showSaved();closeMobileMenu()" style="display:none;">Saved</a>
   <a id="nav-mobile-dashboard" onclick="showPage('dashboard');closeMobileMenu()" style="display:none;">My Listing</a>
   <a id="nav-mobile-admin" onclick="showPage('admin');closeMobileMenu()" style="display:none;">Admin</a>
   <a onclick="showPage('privacy');closeMobileMenu()">Privacy</a>
   <a onclick="showPage('terms');closeMobileMenu()">Terms</a>
-  <button id="nav-mobile-auth" onclick="(currentUser?showPage('dashboard'):showPage('login'));closeMobileMenu()">My Listing</button>
+  <button id="nav-mobile-auth" onclick="(currentUser?handleSignOut():showPage('login'));closeMobileMenu()">Log In</button>
   <button id="nav-mobile-install" onclick="showInstallPrompt();closeMobileMenu()" style="color:var(--amber);">📲 Install App</button>
 </div>
 
