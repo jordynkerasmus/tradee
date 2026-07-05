@@ -348,9 +348,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .sc-loc span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-view { font-size: 12px; color: var(--amber); font-weight: 700; white-space: nowrap; flex: 0 0 auto; margin-left: 8px; }
 @media (max-width: 640px) {
-  .search-pill { padding: 6px 6px 6px 16px; }
-  .search-pill-div { margin: 0 10px; }
-  .search-pill-btn { padding: 10px 16px; }
+  .search-pill { padding: 6px 6px 6px 18px; }
+  .search-pill .search-pill-l { display: none; }
+  .search-pill .search-pill-div { display: none; }
+  .search-pill > .search-pill-f:nth-child(3) { display: none; }
+  .search-pill .search-pill-v { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-pill-btn { padding: 11px 18px; }
   .tier-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .profile-hero { flex-direction: column; }
