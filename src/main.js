@@ -1832,17 +1832,17 @@ function renderDirectory() {
   const emptyHtml = _favsOnly
     ? `<div class="empty-state"><h3>No saved tradesmen yet</h3><p>Tap the heart on any listing to save it here.</p></div>`
     : `<div class="empty-state"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
-  // Featured premium first (amber-bordered), then the rest — all in ONE grid so every
-  // card is exactly the same size. Overflow past 12 rest listings hides behind "Load more".
-  const cards = [
-    ...featured.map(l => squareCardHTML(l, null, true)),
-    ...rest.map((l, i) => squareCardHTML(l, null, false, i >= 12)),
-  ]
+  // Featured premium get their own row(s) at the top; the rest follow below.
+  // A fixed card height (CSS) keeps both sections exactly the same size.
+  const featLabel = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:0.75rem;"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured</span><div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div></div>`
   let html = ''
-  if (!cards.length) html = emptyHtml
+  if (!featured.length && !rest.length) html = emptyHtml
   else {
-    html = `<div class="square-grid">${cards.join('')}</div>`
-    if (rest.length > 12) html += `<div style="text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#dir-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${rest.length - 12})</span></div>`
+    if (featured.length) html += featLabel + `<div class="square-grid" style="margin-bottom:1.25rem;">${featured.map(l => squareCardHTML(l, null, true)).join('')}</div>`
+    if (rest.length) {
+      html += `<div class="square-grid">${rest.map((l, i) => squareCardHTML(l, null, false, i >= 12)).join('')}</div>`
+      if (rest.length > 12) html += `<div style="text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#dir-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${rest.length - 12})</span></div>`
+    }
   }
 
   document.getElementById('dir-cards').innerHTML = html
