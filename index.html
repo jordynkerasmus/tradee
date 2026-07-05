@@ -38,6 +38,7 @@
   --radius-lg: 12px;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { font-family: 'DM Sans', sans-serif; background: var(--charcoal); color: var(--white); min-height: 100vh; font-size: 15px; line-height: 1.6; }
 nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 100; }
 .safe-area-bar { height: env(safe-area-inset-top); background: var(--charcoal-2); position: fixed; top: 0; left: 0; right: 0; z-index: 101; }
@@ -66,6 +67,12 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 8rem); letter-spacing: 0.06em; line-height: 0.9; margin-bottom: 1.5rem; position: relative; }
 .hero h1 .accent { color: var(--amber); }
 .hero-sub { font-size: 1.1rem; color: var(--charcoal-6); max-width: 520px; margin: 0 auto 2.5rem; }
+/* Compact hero (merged browse landing) */
+.hero-compact { padding: 2.5rem 2rem 2rem; }
+.hero-compact h1 { font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1; margin-bottom: 0.65rem; }
+.hero-compact .hero-sub { font-size: 1rem; margin-bottom: 1.4rem; }
+.hero-compact::before { font-size: clamp(6rem, 20vw, 13rem); }
+.trade-cats-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--charcoal-6); margin-bottom: 0.85rem; text-align: center; }
 .smart-search { max-width: 700px; margin: 0 auto 1.25rem; position: relative; }
 .smart-search-box { display: flex; gap: 0; background: var(--charcoal-3); border: 1.5px solid rgba(245,158,11,0.4); border-radius: var(--radius); overflow: hidden; box-shadow: 0 0 24px rgba(245,158,11,0.08); transition: border-color 0.2s, box-shadow 0.2s; }
 .smart-search-box:focus-within { border-color: var(--amber); box-shadow: 0 0 28px rgba(245,158,11,0.18); }
@@ -115,7 +122,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .square-grid { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; grid-auto-rows: 1fr; }
 .square-card { background: var(--charcoal-2); border: 0.5px solid var(--charcoal-3); border-radius: 14px; padding: 14px; cursor: pointer; min-height: 150px; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; }
 .square-card:hover { transform: translateY(-2px); border-color: var(--amber); box-shadow: 0 4px 16px rgba(245,158,11,0.1); }
-.square-card--featured { border-color: var(--amber); box-shadow: 0 0 18px rgba(245,158,11,0.1); }
+.square-card--featured { border: 1.5px solid var(--amber); box-shadow: 0 0 18px rgba(245,158,11,0.1); }
 .square-card .sc-name { color: var(--white); font-size: 15px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.4em; }
 .square-card .sc-line { font-size: 11px; overflow-wrap: anywhere; }
 .compact-list { display: flex; flex-direction: column; }
@@ -365,6 +372,13 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   .form-card { padding: 1.25rem; }
   .profile-container { padding: 1rem; }
   .hero h1 { font-size: 3.5rem; }
+  .hero-compact { padding: 1.5rem 1.25rem 1.25rem; }
+  .hero-compact h1 { font-size: 1.9rem; margin-bottom: 0.5rem; }
+  .hero-compact .hero-sub { font-size: 0.9rem; margin-bottom: 1.1rem; }
+  .directory-wrap { padding-top: 1rem; }
+  #map-container { height: 320px; }
+  /* Stop iOS auto-zooming (and shifting the page) when a field is focused. */
+  input, select, textarea, .form-input, .form-select, .form-textarea, .smart-q-input, .sm-field select { font-size: 16px !important; }
   .stats-bar { gap: 1.5rem; }
   .nav-links { display: none; }
   .nav-hamburger { display: none !important; }
@@ -395,6 +409,25 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 .bnav-item svg { width: 23px; height: 23px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .bnav-item span { font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
 .bnav-item.active { color: var(--amber); }
+.bnav-badge { position: absolute; top: -1px; left: 50%; margin-left: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--charcoal-2); }
+.msg-item { background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; }
+.msg-item.msg-unread { border-left: 3px solid var(--amber); }
+.msg-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.msg-title { font-weight: 600; color: var(--white); font-size: 15px; }
+.msg-date { font-size: 12px; color: var(--charcoal-6); white-space: nowrap; flex-shrink: 0; }
+.msg-body { font-size: 14px; color: var(--charcoal-7); line-height: 1.5; }
+.msg-link { color: var(--amber); font-size: 13px; font-weight: 600; display: inline-block; margin-top: 8px; }
+.nav-account-wrap { position: relative; }
+.nav-account-menu { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: var(--charcoal-2); border: 1px solid var(--charcoal-3); border-radius: var(--radius); padding: 6px; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 200; }
+.nav-account-menu.open { display: block; }
+.nav-account-menu a, .nav-account-menu button { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--charcoal-6); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; text-transform: none; letter-spacing: 0; }
+.nav-account-menu a:hover, .nav-account-menu button:hover { background: var(--charcoal-3); color: var(--amber); }
+.nav-account-menu .da-marketing { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; color: var(--charcoal-6); font-size: 14px; cursor: pointer; }
+.nav-account-menu .da-divider { height: 1px; background: var(--charcoal-3); margin: 4px 0; }
+#nav-account-btn { display: inline-flex; align-items: center; gap: 6px; }
+.acct-toggle { display: flex; gap: 8px; }
+.acct-opt { flex: 1; background: var(--charcoal-3); border: 1px solid var(--charcoal-4); color: var(--charcoal-6); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 12px 8px; border-radius: var(--radius); cursor: pointer; transition: all 0.15s; }
+.acct-opt.active { background: rgba(245,158,11,0.12); border-color: var(--amber); color: var(--amber); }
 .bnav-raise { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
 .bnav-raise-btn { position: absolute; top: -26px; width: 50px; height: 50px; border-radius: 16px; background: var(--amber); display: flex; align-items: center; justify-content: center; color: var(--charcoal); border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
 .bnav-raise-btn svg { width: 26px; height: 26px; stroke: var(--charcoal); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -408,15 +441,29 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 <body>
 <div class="safe-area-bar"></div>
 <nav>
-  <div class="nav-logo" onclick="showPage('home')"><span>TRA</span>DEE</div>
+  <div class="nav-logo" onclick="goHome()"><span>TRA</span>DEE</div>
   <div class="nav-links">
-    <a onclick="browseDirectory()" id="nav-directory">Directory</a>
+    <a onclick="goHome()" id="nav-home-link">Browse</a>
     <a onclick="showPage('rankings')" id="nav-rankings">Rankings</a>
     <a onclick="showPage('faq')" id="nav-faq">How It Works</a>
-    <a onclick="showPage('dashboard')" id="nav-dashboard-btn" style="display:none;">My Listing</a>
-    <a onclick="showPage('admin')" id="nav-admin" style="display:none;">Admin</a>
-    <button class="btn btn-outline btn-sm" id="nav-auth-btn" onclick="showPage('login')">My Listing</button>
-    <button class="btn btn-primary btn-sm" onclick="showPage('list')">List Your Business</button>
+    <a onclick="showSaved()" id="nav-saved-link" style="display:none;">Saved</a>
+    <a onclick="showPage('account')" id="nav-settings-link" style="display:none;">Account settings</a>
+    <button class="btn btn-outline btn-sm" id="nav-login-btn" onclick="showPage('login')">Log In</button>
+    <div class="nav-account-wrap" id="nav-account-wrap" style="display:none;">
+      <button class="btn btn-outline btn-sm" id="nav-account-btn" onclick="toggleDesktopAccount(event)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        Account
+        <svg width="11" height="11" viewBox="0 0 10 10"><polygon points="0,2 10,2 5,8" fill="currentColor"/></svg>
+      </button>
+      <div class="nav-account-menu" id="nav-account-menu">
+        <a id="da-dashboard" onclick="showPage('dashboard');closeDesktopAccount()" style="display:none;">Dashboard</a>
+        <a id="da-messages" onclick="showPage('messages');closeDesktopAccount()" style="display:none;">Messages</a>
+        <a id="da-admin" onclick="showPage('admin');closeDesktopAccount()" style="display:none;">Admin</a>
+        <div class="da-divider"></div>
+        <button onclick="handleSignOut();closeDesktopAccount()">Log out</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="nav-list-btn" onclick="showPage('list')">List Your Business</button>
   </div>
   <button class="btn btn-primary btn-sm nav-list-mobile" onclick="showPage('list')">List Your Business</button>
   <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()">
@@ -428,40 +475,22 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--charcoal-6);">Account</span>
     <button onclick="closeMobileMenu()" aria-label="Close menu" style="display:inline-flex;width:auto;border:none;border-bottom:none;padding:0;margin:0;background:none;color:var(--amber);font-size:28px;line-height:1;cursor:pointer;">&times;</button>
   </div>
-  <a onclick="showPage('faq');closeMobileMenu()">How It Works</a>
+  <div id="nav-mobile-identity" style="display:none;padding:0.5rem 0 0.75rem;border-bottom:1px solid var(--charcoal-3);text-transform:none;letter-spacing:0;">
+    <div style="font-size:11px;color:var(--charcoal-6);text-transform:uppercase;letter-spacing:0.08em;">Signed in as</div>
+    <div id="nav-mobile-identity-name" style="font-size:15px;color:var(--white);font-weight:600;margin-top:2px;"></div>
+  </div>
+  <a id="nav-mobile-settings" onclick="showPage('account');closeMobileMenu()" style="display:none;">Update profile</a>
   <a id="nav-mobile-saved" onclick="showSaved();closeMobileMenu()" style="display:none;">Saved</a>
   <a id="nav-mobile-dashboard" onclick="showPage('dashboard');closeMobileMenu()" style="display:none;">My Listing</a>
   <a id="nav-mobile-admin" onclick="showPage('admin');closeMobileMenu()" style="display:none;">Admin</a>
+  <a onclick="showPage('faq');closeMobileMenu()">How It Works</a>
   <a onclick="showPage('privacy');closeMobileMenu()">Privacy</a>
   <a onclick="showPage('terms');closeMobileMenu()">Terms</a>
   <button id="nav-mobile-auth" onclick="(currentUser?handleSignOut():showPage('login'));closeMobileMenu()">Log In</button>
   <button id="nav-mobile-install" onclick="showInstallPrompt();closeMobileMenu()" style="color:var(--amber);">📲 Install App</button>
 </div>
 
-<nav class="bottom-nav" id="bottom-nav">
-  <button class="bnav-item" id="bnav-home" onclick="showPage('home')">
-    <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
-    <span>Home</span>
-  </button>
-  <button class="bnav-item" id="bnav-directory" onclick="browseDirectory()">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <span>Directory</span>
-  </button>
-  <div class="bnav-raise">
-    <button class="bnav-raise-btn" onclick="showPage('list')" aria-label="List your business">
-      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-    </button>
-    <span>List</span>
-  </div>
-  <button class="bnav-item" id="bnav-rankings" onclick="showPage('rankings')">
-    <svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
-    <span>Rankings</span>
-  </button>
-  <button class="bnav-item" id="bnav-account" onclick="toggleMobileMenu()">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
-    <span>Account</span>
-  </button>
-</nav>
+<nav class="bottom-nav" id="bottom-nav"><!-- rendered by renderBottomNav() --></nav>
 <div class="nav-spacer"></div>
 
 <div id="toast"></div>
@@ -499,12 +528,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
   <button id="android-install-btn" class="btn btn-primary" style="width:100%;padding:13px;">Install App →</button>
 </div>
 
-<!-- HOME -->
+<!-- HOME = BROWSE (merged home + directory) -->
 <div id="page-home" class="page active">
-  <div class="hero">
-    <div class="hero-eyebrow">The Trade Directory</div>
-    <h1>FIND THE<br><span class="accent">RIGHT</span><br>TRADESMAN</h1>
-    <p class="hero-sub">Verified electricians, plumbers, builders and more — browse, compare, and book with confidence.</p>
+  <div class="hero hero-compact">
+    <h1>FIND THE <span class="accent">RIGHT</span> TRADESMAN</h1>
+    <p class="hero-sub">Verified electricians, plumbers, builders and more.</p>
     <div class="search-pill" onclick="openSearchModal()">
       <div class="search-pill-f">
         <span class="search-pill-l">What do you need?</span>
@@ -521,23 +549,9 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
     </div>
   </div>
-  <div class="stats-bar" id="home-stats"></div>
-  <div style="padding:2rem 0 0;text-align:center;">
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--charcoal-6);margin-bottom:1rem;">Browse by trade</div>
+  <div class="directory-wrap">
+    <div class="trade-cats-label">Browse by trade</div>
     <div class="trade-cats" id="trade-cats"></div>
-  </div>
-  <div class="directory-wrap">
-    <div class="directory-header">
-      <h2>Featured Listings</h2>
-      <a onclick="showPage('directory')" style="font-size:13px;color:var(--amber);cursor:pointer;">View all →</a>
-    </div>
-    <div class="card-grid" id="home-cards"></div>
-  </div>
-</div>
-
-<!-- DIRECTORY -->
-<div id="page-directory" class="page">
-  <div class="directory-wrap">
     <div class="directory-header">
       <div>
         <h2 id="dir-title">All Tradesmen</h2>
@@ -548,21 +562,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <button id="btn-map-view" onclick="setDirView('map')">Map</button>
       </div>
     </div>
-    <div class="search-pill" onclick="openSearchModal()" style="margin:0 auto 1.25rem;">
-      <div class="search-pill-f">
-        <span class="search-pill-l">What do you need?</span>
-        <span class="search-pill-v pill-trade-label">Describe it, or pick a trade…</span>
-      </div>
-      <div class="search-pill-div"></div>
-      <div class="search-pill-f">
-        <span class="search-pill-l">Where?</span>
-        <span class="search-pill-v pill-loc-label">Any area</span>
-      </div>
-      <div class="search-pill-btn">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        Search
-      </div>
-    </div>
+    <label id="near-me-toggle-wrap" style="display:none;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;font-size:13px;color:var(--charcoal-6);">
+      <input type="checkbox" id="near-me-check" onchange="toggleNearMe()" style="accent-color:var(--amber);width:16px;height:16px;flex-shrink:0;">
+      Show tradesmen near me
+    </label>
     <div id="near-me-status" style="display:none;font-size:13px;color:var(--amber);margin-bottom:1rem;"></div>
     <div id="map-container"></div>
     <div class="card-grid" id="dir-cards"></div>
@@ -602,6 +605,43 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       </div>
     </div>
     <div class="rank-list" id="rank-list"></div>
+  </div>
+</div>
+
+<!-- MESSAGES (tradesman notices inbox) -->
+<div id="page-messages" class="page">
+  <div class="rankings-wrap">
+    <div class="rankings-header">
+      <div>
+        <h2>Messages</h2>
+        <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;">Updates and notices from Tradee.</div>
+      </div>
+    </div>
+    <div id="messages-list"></div>
+  </div>
+</div>
+
+<!-- ACCOUNT SETTINGS -->
+<div id="page-account" class="page">
+  <div class="form-page" style="max-width:520px;">
+    <h2>Account Settings</h2>
+    <p class="subtitle">Update your details and preferences.</p>
+    <div id="account-guard"></div>
+    <div id="account-forms">
+      <div class="form-card">
+        <h3>Your details</h3>
+        <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="acc-name" placeholder="e.g. John Smith"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="acc-email" type="email" placeholder="you@example.com"><div class="form-hint">If you change this, you may need to confirm the new address by email before it takes effect.</div></div>
+        <label class="disclaimer-check" style="margin:8px 0 1rem;"><input type="checkbox" id="acc-marketing"><span>Send me Tradee updates, tips and offers by email. Unsubscribe anytime.</span></label>
+        <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="saveAccountDetails()">Save changes</button>
+      </div>
+      <div class="form-card">
+        <h3>Change password</h3>
+        <div class="form-group"><label class="form-label">New password</label><input class="form-input" id="acc-pw" type="password" placeholder="At least 6 characters"></div>
+        <div class="form-group"><label class="form-label">Confirm new password</label><input class="form-input" id="acc-pw2" type="password" placeholder="Repeat new password"></div>
+        <button class="btn btn-outline" style="width:100%;padding:13px;" onclick="updatePassword()">Update password</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1007,7 +1047,7 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 <div id="page-login" class="page">
   <div class="form-page" style="max-width:480px;">
     <h2>Welcome Back</h2>
-    <p class="subtitle">Log in to manage your listing.</p>
+    <p class="subtitle">Log in to your Tradee account.</p>
     <div class="form-card">
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="login-email" type="email" placeholder="you@example.com"></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="login-password" type="password" placeholder="Your password"></div>
@@ -1022,8 +1062,16 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
 <div id="page-signup" class="page">
   <div class="form-page" style="max-width:480px;">
     <h2>Create Account</h2>
-    <p class="subtitle">Sign up to list and manage your business on Tradee.</p>
+    <p class="subtitle">Join Tradee to save tradesmen, leave reviews, or list your business.</p>
     <div class="form-card">
+      <div class="form-group">
+        <label class="form-label">I'm signing up as</label>
+        <div class="acct-toggle" id="signup-type">
+          <button type="button" class="acct-opt active" data-type="customer" onclick="setSignupType('customer')">Looking for a tradesman</button>
+          <button type="button" class="acct-opt" data-type="tradesman" onclick="setSignupType('tradesman')">A tradesman</button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signup-name" placeholder="e.g. John Smith"></div>
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="you@example.com"></div>
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signup-password" type="password" placeholder="Create a password"></div>
       <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="signup-password2" type="password" placeholder="Repeat your password"></div>
@@ -1036,6 +1084,10 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
           <span>I have read and accept the disclaimer above, and I agree to Tradee's <a onclick="event.preventDefault();event.stopPropagation();showPage('terms')" style="color:var(--amber);">Terms of Service</a> and <a onclick="event.preventDefault();event.stopPropagation();showPage('privacy')" style="color:var(--amber);">Privacy Policy</a>.</span>
         </label>
       </div>
+      <label class="disclaimer-check" style="margin-bottom:1rem;">
+        <input type="checkbox" id="signup-marketing">
+        <span>Send me occasional Tradee updates, tips and offers by email. Optional — you can unsubscribe anytime.</span>
+      </label>
       <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="if(window.handleSignup)window.handleSignup();else handleSignup()">Create Account →</button>
       <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Already have an account? <a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a></p>
     </div>
@@ -1137,15 +1189,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
     <button class="modal-close" onclick="closeReviewModal()">×</button>
     <h3>Leave a Review</h3>
     <div class="review-form">
-      <div>
-        <div class="form-label" style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:6px;">Your Name</div>
-        <input id="r-name" placeholder="e.g. John Smith">
-      </div>
-      <div>
-        <div class="form-label" style="display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--charcoal-6);margin-bottom:6px;">Your Email</div>
-        <input id="r-email" type="email" placeholder="you@email.com">
-        <div style="font-size:11px;color:var(--charcoal-6);margin-top:4px;">For verification only — never shown publicly or shared.</div>
-      </div>
+      <div style="font-size:13px;color:var(--charcoal-6);">Reviewing as <strong id="r-as-name" style="color:var(--white);"></strong> — reviews are linked to your account so tradesmen know they're genuine.</div>
+      <input id="r-name" type="hidden">
 
       <!-- 5 category ratings -->
       <div style="display:flex;flex-direction:column;gap:14px;margin:4px 0;">
@@ -1465,7 +1510,8 @@ function renderHome() {
   const catSet=new Set(); listings.forEach(l=>{const ts=(l.trades&&l.trades.length)?l.trades:(l.trade?[l.trade]:[]);ts.forEach(t=>{if(tradeToCat[t])catSet.add(tradeToCat[t]);});});
   let nationwide=false; const provSet=new Set(); listings.forEach(l=>{if(l.province==='Nationwide / All Provinces')nationwide=true;else if(l.province)provSet.add(l.province);});
   const provincesCovered=nationwide?9:Math.min(9,provSet.size);
-  document.getElementById('home-stats').innerHTML=`
+  const _statsEl=document.getElementById('home-stats');
+  if(_statsEl)_statsEl.innerHTML=`
     <div class="stat-item"><span class="stat-num">${total}</span><span class="stat-label">Tradesmen Listed</span></div>
     <div class="stat-item"><span class="stat-num">${catSet.size}</span><span class="stat-label">Trade Categories</span></div>
     <div class="stat-item"><span class="stat-num">${totalReviews}</span><span class="stat-label">Verified Reviews</span></div>

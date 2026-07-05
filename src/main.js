@@ -38,45 +38,87 @@ let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating
 let selectedCities = []
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
+// The signed-in user's account profile (account_type, full_name, marketing_opt_in).
+let userProfile = null
+async function loadUserProfile() {
+  if (!currentUser) { userProfile = null; return }
+  try {
+    const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single()
+    userProfile = data || null
+  } catch (_) { userProfile = null }
+}
+// 'guest' | 'customer' | 'tradesman'. A user with a listing is always a tradesman.
+function accountType() {
+  if (!currentUser) return 'guest'
+  return userProfile?.account_type === 'tradesman' ? 'tradesman' : 'customer'
+}
+
 async function initAuth() {
   const { data: { session } } = await supabase.auth.getSession()
   currentUser = session?.user ?? null
+  await loadUserProfile()
   updateNavForAuth()
+  renderBottomNav()
+  loadUnreadCount()
   if (currentUser) syncFavsOnLogin()
-  supabase.auth.onAuthStateChange((_event, session) => {
+  supabase.auth.onAuthStateChange(async (_event, session) => {
     const wasLoggedOut = !currentUser
     currentUser = session?.user ?? null
+    await loadUserProfile()
     updateNavForAuth()
+    renderBottomNav()
+    loadUnreadCount()
     if (currentUser && wasLoggedOut) syncFavsOnLogin()
   })
 }
 
 function updateNavForAuth() {
-  const authBtn = document.getElementById('nav-auth-btn')
-  const dashBtn = document.getElementById('nav-dashboard-btn')
-  if (!authBtn) return
-  const adminLink = document.getElementById('nav-admin')
-  const mobileAdmin = document.getElementById('nav-mobile-admin')
-  const mobileSaved = document.getElementById('nav-mobile-saved')
+  const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email)
+  const isTradesman = accountType() === 'tradesman'
+  const show = (id, on, disp = 'block') => { const el = document.getElementById(id); if (el) el.style.display = on ? disp : 'none' }
+  // Desktop: Log In (logged out) vs Saved link + Account dropdown (logged in).
+  show('nav-login-btn', !currentUser, 'inline-flex')
+  show('nav-saved-link', !!currentUser, 'inline')
+  show('nav-settings-link', !!currentUser, 'inline')
+  show('nav-account-wrap', !!currentUser, 'inline-block')
+  show('nav-list-btn', !isTradesman, 'inline-flex')       // tradesmen already have a listing
+  show('da-dashboard', isTradesman)
+  show('da-messages', isTradesman)
+  show('da-admin', isAdmin)
+  // Mobile account sheet.
   const mobileAuth = document.getElementById('nav-mobile-auth')
-  if (currentUser) {
-    authBtn.textContent = 'Log Out'
-    authBtn.onclick = handleSignOut
-    if (mobileAuth) mobileAuth.textContent = 'Log Out'
-    if (dashBtn) dashBtn.style.display = 'inline-flex'
-    if (mobileSaved) mobileSaved.style.display = 'block'
-    const isAdmin = ADMIN_EMAILS.includes(currentUser.email)
-    if (adminLink) adminLink.style.display = isAdmin ? 'inline' : 'none'
-    if (mobileAdmin) mobileAdmin.style.display = isAdmin ? 'block' : 'none'
-  } else {
-    authBtn.textContent = 'My Listing'
-    authBtn.onclick = () => window.showPage('login')
-    if (mobileAuth) mobileAuth.textContent = 'Log In'
-    if (dashBtn) dashBtn.style.display = 'none'
-    if (mobileSaved) mobileSaved.style.display = 'none'
-    if (adminLink) adminLink.style.display = 'none'
-    if (mobileAdmin) mobileAdmin.style.display = 'none'
-  }
+  if (mobileAuth) mobileAuth.textContent = currentUser ? 'Log Out' : 'Log In'
+  show('nav-mobile-dashboard', currentUser && isTradesman)
+  show('nav-mobile-admin', isAdmin)
+  show('nav-mobile-saved', !!currentUser)
+  show('nav-mobile-settings', !!currentUser)
+  show('nav-mobile-identity', !!currentUser)
+  const idName = document.getElementById('nav-mobile-identity-name')
+  if (idName) idName.textContent = userProfile?.full_name || currentUser?.email || ''
+}
+
+window.toggleDesktopAccount = function (e) {
+  if (e) e.stopPropagation()
+  document.getElementById('nav-account-menu')?.classList.toggle('open')
+}
+window.closeDesktopAccount = function () { document.getElementById('nav-account-menu')?.classList.remove('open') }
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('nav-account-wrap')
+  if (wrap && !wrap.contains(e.target)) closeDesktopAccount()
+})
+
+window.toggleMarketing = async function (el) {
+  if (!currentUser) return
+  const on = el ? !!el.checked : !!document.querySelector('.marketing-toggle')?.checked
+  try {
+    await supabase.from('profiles').update({
+      marketing_opt_in: on,
+      marketing_opt_in_at: on ? new Date().toISOString() : null
+    }).eq('id', currentUser.id)
+    if (userProfile) userProfile.marketing_opt_in = on
+    document.querySelectorAll('.marketing-toggle').forEach(c => { c.checked = on })
+    toast(on ? 'Marketing emails on.' : 'Marketing emails off.')
+  } catch (_) { toast('Could not update — please try again.') }
 }
 
 window.handleLogin = async function () {
@@ -85,20 +127,37 @@ window.handleLogin = async function () {
   if (!email || !password) { toast('Please enter your email and password.'); return }
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) { toast('Login failed: ' + error.message); return }
+  // Refresh auth state + profile, then route by role.
+  const { data: { session } } = await supabase.auth.getSession()
+  currentUser = session?.user ?? null
+  await loadUserProfile()
+  updateNavForAuth(); renderBottomNav(); loadUnreadCount()
   toast('Welcome back!')
-  window.showPage('dashboard')
+  window.showPage(accountType() === 'tradesman' ? 'dashboard' : 'home')
+}
+
+let signupAccountType = 'customer'
+window.setSignupType = function (t) {
+  signupAccountType = t
+  document.querySelectorAll('#signup-type .acct-opt').forEach(b => b.classList.toggle('active', b.dataset.type === t))
 }
 
 window.handleSignup = async function () {
+  const full_name = document.getElementById('signup-name')?.value.trim() || ''
   const email = document.getElementById('signup-email').value.trim()
   const password = document.getElementById('signup-password').value
   const password2 = document.getElementById('signup-password2').value
   const agreed = document.getElementById('signup-agree')?.checked
+  const marketing = !!document.getElementById('signup-marketing')?.checked
+  if (!full_name) { toast('Please enter your name.'); return }
   if (!email || !password) { toast('Please fill in all fields.'); return }
   if (password !== password2) { toast('Passwords do not match.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   if (!agreed) { toast('Please accept the disclaimer and terms to continue.'); return }
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({
+    email, password,
+    options: { data: { full_name, account_type: signupAccountType, marketing_opt_in: marketing } }
+  })
   if (error) { toast('Sign up failed: ' + error.message); return }
   // Send welcome email via Edge Function
   supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {})
@@ -107,8 +166,16 @@ window.handleSignup = async function () {
     toast('Account created! Check your email to confirm your address, then log in.')
     window.showPage('login')
   } else {
-    toast('Account created! You can now list your business.')
-    window.showPage('list')
+    currentUser = data.user
+    await loadUserProfile()
+    updateNavForAuth(); renderBottomNav()
+    if (signupAccountType === 'tradesman') {
+      toast('Account created! Let\'s list your business.')
+      window.showPage('list')
+    } else {
+      toast('Account created — welcome to Tradee!')
+      window.showPage('home')
+    }
   }
 }
 
@@ -871,9 +938,160 @@ window.showFaqTab = function (which) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const PAGE_PATHS = { home: '/', directory: '/directory', rankings: '/rankings', faq: '/how-it-works', privacy: '/privacy', terms: '/terms', list: '/list', login: '/login', signup: '/signup', dashboard: '/dashboard', admin: '/admin' }
+const PAGE_PATHS = { home: '/', directory: '/directory', rankings: '/rankings', faq: '/how-it-works', privacy: '/privacy', terms: '/terms', list: '/list', login: '/login', signup: '/signup', dashboard: '/dashboard', admin: '/admin', messages: '/messages', account: '/account' }
+
+// ── Mobile bottom nav (role-based) ──────────────────────────────────────────
+const BNAV_ICONS = {
+  home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
+  directory: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  rankings: '<svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
+  saved: '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  dashboard: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="11" width="8" height="10" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg>',
+  messages: '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+  account: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+}
+function bnavItem(id, label, icon, onclick, badge) {
+  return `<button class="bnav-item" id="bnav-${id}" onclick="${onclick}">${BNAV_ICONS[icon]}<span>${label}</span>${badge ? '<span class="bnav-badge" id="bnav-msg-badge" style="display:none;"></span>' : ''}</button>`
+}
+const BNAV_RAISE = `<div class="bnav-raise"><button class="bnav-raise-btn" onclick="showPage('list')" aria-label="List your business">${BNAV_ICONS.plus}</button><span>List</span></div>`
+
+function renderBottomNav() {
+  const nav = document.getElementById('bottom-nav')
+  if (!nav) return
+  const type = accountType()
+  const account = bnavItem('account', 'Account', 'account', 'toggleMobileMenu()')
+  let items
+  if (type === 'tradesman') {
+    items = [
+      bnavItem('home', 'Home', 'home', 'goHome()'),
+      bnavItem('rankings', 'Rankings', 'rankings', "showPage('rankings')"),
+      bnavItem('dashboard', 'Dashboard', 'dashboard', "showPage('dashboard')"),
+      bnavItem('messages', 'Messages', 'messages', "showPage('messages')", true),
+      account,
+    ]
+  } else if (type === 'customer') {
+    items = [
+      bnavItem('home', 'Home', 'home', 'goHome()'),
+      bnavItem('rankings', 'Rankings', 'rankings', "showPage('rankings')"),
+      BNAV_RAISE,
+      bnavItem('saved', 'Saved', 'saved', 'showSaved()'),
+      account,
+    ]
+  } else {
+    items = [
+      bnavItem('home', 'Home', 'home', 'goHome()'),
+      bnavItem('rankings', 'Rankings', 'rankings', "showPage('rankings')"),
+      BNAV_RAISE,
+      account,
+    ]
+  }
+  nav.innerHTML = items.join('')
+  const active = document.querySelector('.page.active')
+  if (active) setActiveBottomNav(active.id.replace('page-', ''))
+}
+function setActiveBottomNav(name) {
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'))
+  const b = document.getElementById('bnav-' + name)
+  if (b) b.classList.add('active')
+}
+async function loadUnreadCount() {
+  const badge = document.getElementById('bnav-msg-badge')
+  if (!badge) return
+  if (!currentUser || accountType() !== 'tradesman') { badge.style.display = 'none'; return }
+  try {
+    const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id).eq('read', false)
+    badge.style.display = count > 0 ? 'block' : 'none'
+  } catch (_) {}
+}
+
+async function renderMessages() {
+  const el = document.getElementById('messages-list')
+  if (!el) return
+  if (!currentUser) {
+    el.innerHTML = `<div class="empty-state"><h3>Log in to see your messages</h3><p><a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a> to view notices from Tradee.</p></div>`
+    return
+  }
+  el.innerHTML = `<div style="color:var(--charcoal-6);font-size:13px;padding:1rem 0;">Loading…</div>`
+  const { data, error } = await supabase.from('messages').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false })
+  if (error) { el.innerHTML = `<div class="empty-state"><h3>Couldn't load messages</h3><p>Please try again.</p></div>`; return }
+  if (!data || !data.length) {
+    el.innerHTML = `<div class="empty-state"><h3>No messages yet</h3><p>Notices from Tradee — reviews, billing and account updates — will appear here.</p></div>`
+    return
+  }
+  el.innerHTML = data.map(m => `<div class="msg-item${m.read ? '' : ' msg-unread'}">
+    <div class="msg-top"><span class="msg-title">${escHtml(m.title)}</span><span class="msg-date">${new Date(m.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+    ${m.body ? `<p class="msg-body">${escHtml(m.body)}</p>` : ''}
+    ${m.link ? `<a href="${escHtml(m.link)}" class="msg-link">Open →</a>` : ''}
+  </div>`).join('')
+  // Mark everything read once viewed, then refresh the unread dot.
+  const unreadIds = data.filter(m => !m.read).map(m => m.id)
+  if (unreadIds.length) {
+    try { await supabase.from('messages').update({ read: true }).in('id', unreadIds).eq('user_id', currentUser.id) } catch (_) {}
+    loadUnreadCount()
+  }
+}
+
+// ── Account settings ────────────────────────────────────────────────────────
+function renderAccount() {
+  const guard = document.getElementById('account-guard')
+  const forms = document.getElementById('account-forms')
+  if (!currentUser) {
+    if (forms) forms.style.display = 'none'
+    if (guard) guard.innerHTML = `<div class="empty-state"><h3>Log in to manage your account</h3><p><a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a> to update your details.</p></div>`
+    return
+  }
+  if (guard) guard.innerHTML = ''
+  if (forms) forms.style.display = 'block'
+  const name = document.getElementById('acc-name'); if (name) name.value = userProfile?.full_name || ''
+  const email = document.getElementById('acc-email'); if (email) email.value = currentUser.email || ''
+  const mkt = document.getElementById('acc-marketing'); if (mkt) mkt.checked = !!userProfile?.marketing_opt_in
+  const pw = document.getElementById('acc-pw'); if (pw) pw.value = ''
+  const pw2 = document.getElementById('acc-pw2'); if (pw2) pw2.value = ''
+}
+
+window.saveAccountDetails = async function () {
+  if (!currentUser) { window.showPage('login'); return }
+  const full_name = document.getElementById('acc-name').value.trim()
+  const email = document.getElementById('acc-email').value.trim()
+  const marketing = !!document.getElementById('acc-marketing')?.checked
+  if (!full_name) { toast('Please enter your name.'); return }
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Please enter a valid email.'); return }
+  toast('Saving…')
+  // Profile fields
+  try {
+    await supabase.from('profiles').update({
+      full_name,
+      marketing_opt_in: marketing,
+      marketing_opt_in_at: marketing ? (userProfile?.marketing_opt_in ? userProfile.marketing_opt_in_at : new Date().toISOString()) : null
+    }).eq('id', currentUser.id)
+    if (userProfile) { userProfile.full_name = full_name; userProfile.marketing_opt_in = marketing }
+  } catch (e) { toast('Could not save your details — please try again.'); return }
+  // Email change (Supabase auth) — only if it actually changed
+  if (email !== currentUser.email) {
+    const { error } = await supabase.auth.updateUser({ email })
+    if (error) { toast('Details saved, but email change failed: ' + error.message); return }
+    toast('Saved. Check your inbox to confirm your new email address.')
+    return
+  }
+  toast('Account details saved.')
+}
+
+window.updatePassword = async function () {
+  if (!currentUser) { window.showPage('login'); return }
+  const pw = document.getElementById('acc-pw').value
+  const pw2 = document.getElementById('acc-pw2').value
+  if (!pw || pw.length < 6) { toast('Password must be at least 6 characters.'); return }
+  if (pw !== pw2) { toast('Passwords do not match.'); return }
+  const { error } = await supabase.auth.updateUser({ password: pw })
+  if (error) { toast('Could not update password: ' + error.message); return }
+  document.getElementById('acc-pw').value = ''
+  document.getElementById('acc-pw2').value = ''
+  toast('Password updated.')
+}
 
 window.showPage = function (name, fromRoute) {
+  if (name === 'directory') name = 'home'   // home + directory are one merged browse page
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
   document.getElementById('page-' + name).classList.add('active')
   // Record this page in browser history so the Back/Forward buttons move between in-app pages.
@@ -883,17 +1101,15 @@ window.showPage = function (name, fromRoute) {
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'))
   const el = document.getElementById('nav-' + name)
   if (el) el.classList.add('active')
-  // Leaving the directory clears the saved-only view.
-  if (name !== 'directory') _favsOnly = false
-  // Mobile bottom-nav active state.
-  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'))
-  const bnav = document.getElementById('bnav-' + name)
-  if (bnav) bnav.classList.add('active')
+  // Leaving the browse page clears the saved-only view.
+  if (name !== 'home') _favsOnly = false
+  setActiveBottomNav(name)
   window.scrollTo(0, 0)
   if (name === 'home') renderHome()
-  if (name === 'directory') renderDirectory()
   if (name === 'rankings') renderRankings()
   if (name === 'dashboard') renderDashboard()
+  if (name === 'messages') renderMessages()
+  if (name === 'account') renderAccount()
   if (name === 'admin') renderAdmin()
   if (name === 'list') {
     const s1 = document.getElementById('list-step-1')
@@ -923,72 +1139,37 @@ async function updatePromoBanner() {
   } catch (_) { banner.style.display = 'none' }
 }
 
-// ── Home ──────────────────────────────────────────────────────────────────────
+// ── Home = Browse (merged home + directory) ─────────────────────────────────
+// The landing renders the trade chips, then the full filterable directory below.
 function renderHome() {
-  const total = listings.length
-  const totalReviews = listings.reduce((s, l) => s + (l.reviews ? l.reviews.length : 0), 0)
-  // Distinct trade categories actually represented by listings.
-  const tradeToCat = {}
-  for (const [cat, trades] of Object.entries(TRADE_CATEGORIES)) trades.forEach(t => { tradeToCat[t] = cat })
-  const catSet = new Set()
-  listings.forEach(l => {
-    const ts = (l.trades && l.trades.length) ? l.trades : (l.trade ? [l.trade] : [])
-    ts.forEach(t => { if (tradeToCat[t]) catSet.add(tradeToCat[t]) })
-  })
-  const totalCategories = catSet.size
-  // Distinct provinces covered; a nationwide listing covers all 9.
-  let nationwide = false
-  const provSet = new Set()
-  listings.forEach(l => {
-    if (l.province === 'Nationwide / All Provinces') nationwide = true
-    else if (l.province) provSet.add(l.province)
-  })
-  const provincesCovered = nationwide ? 9 : Math.min(9, provSet.size)
-  document.getElementById('home-stats').innerHTML = `
-    <div class="stat-item"><span class="stat-num">${total}</span><span class="stat-label">Tradesmen Listed</span></div>
-    <div class="stat-item"><span class="stat-num">${totalCategories}</span><span class="stat-label">Trade Categories</span></div>
-    <div class="stat-item"><span class="stat-num">${totalReviews}</span><span class="stat-label">Verified Reviews</span></div>
-    <div class="stat-item"><span class="stat-num">${provincesCovered}</span><span class="stat-label">Provinces Covered</span></div>`
   const allTrades = [...new Set(listings.map(l => l.trade))].sort()
   const catsEl = document.getElementById('trade-cats')
-  catsEl.classList.add('icon-cats')
-  catsEl.innerHTML = allTrades.map(t =>
-    `<div class="cat-chip" data-trade="${escHtml(t)}">
-      <div class="cat-ico">${tradeIconSVG(t)}</div>
-      <div class="cat-lbl">${escHtml(t.split(' /')[0])}</div>
-    </div>`).join('')
-  catsEl.querySelectorAll('.cat-chip').forEach(el =>
-    el.addEventListener('click', () => window.filterByTrade(el.dataset.trade)))
-  const allPremiumHome = listings.filter(l => l.tier === 'premium')
-  // Rotate featured Premium every 10 minutes so each paid account gets frequent top exposure.
-  const slot10 = Math.floor(Date.now() / (10 * 60 * 1000))
-  const offset = allPremiumHome.length > 0 ? slot10 % allPremiumHome.length : 0
-  const rotatedPremium = [...allPremiumHome.slice(offset), ...allPremiumHome.slice(0, offset)]
-  // PREMIUM gets the featured shelf. Below that: Verified ranks above Free (priority ranking), then by rating.
-  const others = listings.filter(l => l.tier !== 'premium')
-    .sort((a, b) => (a.tier === 'verified' ? 0 : 1) - (b.tier === 'verified' ? 0 : 1) || avgRating(b) - avgRating(a))
-  const homeCards = document.getElementById('home-cards')
-  if (!listings.length) {
-    homeCards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
-  } else {
-    // Premium featured up top, then ALL other listings in a single tile grid with "find more". (All screen sizes.)
-    homeCards.innerHTML =
-      (rotatedPremium.length ? `<div class="square-grid" style="margin-bottom:12px;">${rotatedPremium.map(l => squareCardHTML(l, null, true)).join('')}</div>` : '') +
-      (others.length
-        ? `<div class="square-grid">${others.map((l, i) => squareCardHTML(l, null, false, i >= 8)).join('')}</div>` +
-          (others.length > 8
-            ? `<div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#home-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
-            : '')
-        : '')
-    revealCards(homeCards)
+  if (catsEl) {
+    catsEl.classList.add('icon-cats')
+    catsEl.innerHTML = allTrades.map(t =>
+      `<div class="cat-chip" data-trade="${escHtml(t)}">
+        <div class="cat-ico">${tradeIconSVG(t)}</div>
+        <div class="cat-lbl">${escHtml(t.split(' /')[0])}</div>
+      </div>`).join('')
+    catsEl.querySelectorAll('.cat-chip').forEach(el =>
+      el.addEventListener('click', () => window.filterByTrade(el.dataset.trade)))
   }
+  renderDirectory()
 }
 
-window.filterByTrade = function (trade) { _smartMode = false; _favsOnly = false; filterTrade = trade; const ft = document.getElementById('filter-trade'); if (ft) ft.value = trade; showPage('directory') }
-// Browse the full directory (clears any saved-only view). Used by the Directory nav tabs.
-window.browseDirectory = function () { _favsOnly = false; _smartMode = false; showPage('directory') }
+// Reset to a clean, unfiltered browse (used by the Home tab / logo).
+window.goHome = function () {
+  _smartMode = false; _favsOnly = false; filterTrade = ''; filterProvince = ''; filterCity = ''; dirSearchTerm = ''
+  // reset the search pill labels
+  document.querySelectorAll('.pill-trade-label').forEach(tl => { tl.textContent = 'Describe it, or pick a trade…'; tl.classList.remove('set') })
+  document.querySelectorAll('.pill-loc-label').forEach(ll => { ll.textContent = 'Any area'; ll.classList.remove('set') })
+  showPage('home')
+}
+window.filterByTrade = function (trade) { _smartMode = false; _favsOnly = false; filterTrade = trade; const ft = document.getElementById('filter-trade'); if (ft) ft.value = trade; showPage('home') }
+// Browse the full directory (clears any saved-only view).
+window.browseDirectory = function () { _favsOnly = false; _smartMode = false; showPage('home') }
 // Show only the current user's saved listings.
-window.showSaved = function () { _favsOnly = true; _smartMode = false; showPage('directory') }
+window.showSaved = function () { _favsOnly = true; _smartMode = false; showPage('home') }
 
 // ── Trade icons (line SVGs, category-based with a few specific overrides) ───────
 const CAT_ICONS = {
@@ -1437,6 +1618,10 @@ window.setDirView = function (view) {
   document.getElementById('btn-map-view').classList.toggle('active', view === 'map')
   document.getElementById('dir-cards').style.display = view === 'list' ? '' : 'none'
   document.getElementById('map-container').style.display = view === 'map' ? 'block' : 'none'
+  const nearWrap = document.getElementById('near-me-toggle-wrap')
+  if (nearWrap) nearWrap.style.display = view === 'map' ? 'flex' : 'none'
+  const nearCheck = document.getElementById('near-me-check')
+  if (nearCheck) nearCheck.checked = _nearMeActive
   if (view === 'map') renderMap()
 }
 
@@ -1546,25 +1731,26 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 }
 
 window.toggleNearMe = function () {
-  const btn = document.getElementById('near-me-btn')
+  const check = document.getElementById('near-me-check')
   const status = document.getElementById('near-me-status')
   if (_nearMeActive) {
     _nearMeActive = false; _userLat = null; _userLng = null
-    if (btn) { btn.style.color = 'var(--charcoal-6)'; btn.style.borderColor = 'var(--charcoal-4)'; btn.textContent = 'Near Me' }
+    if (check) check.checked = false
     if (status) { status.style.display = 'none'; status.textContent = '' }
     renderDirectory(); return
   }
-  if (!navigator.geolocation) { toast('Your browser does not support location.'); return }
-  if (btn) btn.textContent = 'Locating...'
+  if (!navigator.geolocation) { toast('Your browser does not support location.'); if (check) check.checked = false; return }
+  if (status) { status.style.display = 'block'; status.textContent = 'Locating you…' }
   navigator.geolocation.getCurrentPosition(pos => {
     _userLat = pos.coords.latitude; _userLng = pos.coords.longitude
     _nearMeActive = true
-    if (btn) { btn.style.color = 'var(--amber)'; btn.style.borderColor = 'var(--amber)'; btn.textContent = 'Near Me ✓' }
-    if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area. Switch to Map view to see them visually.' }
+    if (check) check.checked = true
+    if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area.' }
     window.setDirView('map')
     renderDirectory()
   }, () => {
-    if (btn) btn.textContent = 'Near Me'
+    if (check) check.checked = false
+    if (status) { status.style.display = 'none' }
     toast('Could not get your location — please allow location access and try again.')
   })
 }
@@ -1672,8 +1858,8 @@ function featuredMiniHTML(l) {
   const reviewCount = l.reviews ? l.reviews.length : 0
   const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
   const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
-  const verified = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
-  const after = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
+  const verified = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:1px solid #22C55E;border-radius:3px;padding:1px 5px;">Verified</span>' : ''
+  const after = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:1px 5px;">After Hrs</span>' : ''
   const reviewStr = reviewCount > 0 ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
   return `<div class="feat-mini" onclick="openProfile(${l.id})">
     <span style="position:absolute;top:8px;right:8px;background:var(--amber);color:var(--charcoal);font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;">Featured</span>
@@ -1693,8 +1879,8 @@ function squareCardHTML(l, rankNum, featured, hidden) {
   const suburb = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || ''
   const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}">` : initials(l.name)
   const featuredBadge = featured ? '<span style="font-size:9px;font-weight:700;background:var(--amber);color:var(--charcoal);border-radius:3px;padding:1px 6px;letter-spacing:0.04em;">FEATURED</span>' : ''
-  const verifiedBadge = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
-  const afterBadge = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
+  const verifiedBadge = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:1px solid #22C55E;border-radius:3px;padding:1px 5px;">Verified</span>' : ''
+  const afterBadge = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:1px 5px;">After Hrs</span>' : ''
   const favBtn = currentUser ? `<button class="fav-btn sc-fav" data-id="${l.id}" onclick="event.stopPropagation();window.toggleFav(${l.id},event)" title="Save" aria-label="Save to your profile" style="color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};">${isFav(l.id) ? FAV_HEART_FILLED : FAV_HEART_EMPTY}</button>` : ''
   const topRight = (featuredBadge || verifiedBadge || afterBadge || favBtn)
     ? `<div class="sc-top-right">${featuredBadge}${verifiedBadge}${afterBadge}${favBtn}</div>` : ''
@@ -1857,7 +2043,7 @@ window.openProfile = async function (id, fromRoute) {
   const certsHTML = (hasDocs && (l.tier === 'verified' || l.tier === 'premium'))
     ? `<div style="display:flex;align-items:center;gap:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:10px 14px;">
          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#22C55E"/><path d="M6 10.5l3 3 5-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-         <span style="font-size:13px;color:var(--charcoal-6);">Registration & credential documents verified by Tradee.</span>
+         <span style="font-size:13px;color:var(--charcoal-6);">Identity verified by Tradee.</span>
        </div>`
     : ''
   const portfolio = l.portfolio_photos || []
@@ -1979,11 +2165,9 @@ window.closeReviewModal = function () { document.getElementById('review-modal').
 
 window.submitReview = async function () {
   try {
-    const reviewer_name = document.getElementById('r-name').value.trim()
-    const reviewer_email = document.getElementById('r-email')?.value.trim() || ''
+    if (!currentUser) { toast('Please log in to leave a review.'); window.showPage('login'); return }
+    const reviewer_name = (userProfile?.full_name || currentUser.email || '').trim()
     const review_text = document.getElementById('r-text').value.trim()
-    if (!reviewer_name) { toast('Please fill in your name.'); return }
-    if (!reviewer_email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(reviewer_email)) { toast('Please enter your email address — used to verify your review, never shown publicly.'); return }
     if (!review_text) { toast('Please fill in your written review.'); return }
 
     const quality = getStarVal('star-quality')
@@ -2005,20 +2189,22 @@ window.submitReview = async function () {
     const stars = Math.round(allRated.reduce((a, b) => a + b, 0) / allRated.length)
 
     toast('Submitting...')
-    const { data: insertedReview, error } = await supabase.from('reviews').insert({
-      listing_id: reviewingId, reviewer_name, review_text,
-      stars, quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend
-    }).select('id').single()
-    if (error) { toast('Error: ' + error.message); console.error(error); return }
-
-    if (insertedReview?.id && reviewer_email) {
-      try { await supabase.from('review_emails').insert({ review_id: insertedReview.id, email: reviewer_email }) } catch (_) {}
+    const payload = { review_text, stars, quality, service, cleanliness, communication, value, reliability, responsiveness, professionalism, recommend }
+    let error
+    if (_editingReviewId) {
+      ({ error } = await supabase.from('reviews').update(payload).eq('id', _editingReviewId).eq('user_id', currentUser.id))
+    } else {
+      ({ error } = await supabase.from('reviews').insert({ listing_id: reviewingId, user_id: currentUser.id, reviewer_name, ...payload }))
+    }
+    if (error) {
+      if (/duplicate|unique/i.test(error.message)) { toast("You've already reviewed this tradesman — your review has been updated."); }
+      else { toast('Error: ' + error.message); console.error(error); return }
     }
 
     trackEvent('review_left', reviewingId)
     supabase.functions.invoke('review-notification', { body: { listing_id: reviewingId, reviewerName: reviewer_name, stars } }).catch(() => {})
     closeReviewModal()
-    toast('Review submitted — thank you!')
+    toast(_editingReviewId ? 'Review updated — thank you!' : 'Review submitted — thank you!')
     await loadListings()
     if (currentProfile && currentProfile.id === reviewingId) openProfile(reviewingId)
   } catch (err) {
@@ -2292,6 +2478,12 @@ window.submitListing = async function () {
     user_id: userId, certificate_urls, photo_url, lat, lng, service_radius, after_hours
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
+  // Creating a listing makes this account a tradesman — flip the profile + nav.
+  try {
+    await supabase.from('profiles').update({ account_type: 'tradesman' }).eq('id', userId)
+    if (userProfile) userProfile.account_type = 'tradesman'; else await loadUserProfile()
+    renderBottomNav()
+  } catch (_) {}
   toast(`${name} is now live on Tradee!`)
   ;['f-name', 'f-phone', 'f-email', 'f-password', 'f-callout', 'f-travel', 'f-rate', 'f-desc', 'f-creds', 'f-years'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   selectedCities = []; updateCityLabel()
@@ -2340,7 +2532,7 @@ function handleRoute() {
     return
   }
   // Map a known page path back to its page (so Back/Forward and refresh land correctly).
-  const pageByPath = { '/': 'home', '/directory': 'directory', '/rankings': 'rankings', '/how-it-works': 'faq', '/privacy': 'privacy', '/terms': 'terms', '/list': 'list', '/login': 'login', '/signup': 'signup', '/dashboard': 'dashboard', '/admin': 'admin' }
+  const pageByPath = { '/': 'home', '/directory': 'home', '/rankings': 'rankings', '/how-it-works': 'faq', '/privacy': 'privacy', '/terms': 'terms', '/list': 'list', '/login': 'login', '/signup': 'signup', '/dashboard': 'dashboard', '/admin': 'admin', '/messages': 'messages', '/account': 'account' }
   const pageName = pageByPath[path] || 'home'
   // Replace the current history entry with a known state so popstate always fires with context.
   if (!window.history.state?.tradeePage) {
@@ -2374,14 +2566,28 @@ function getStarVal(id) {
   return parseInt(document.getElementById(id)?.dataset.selected) || 0
 }
 
-window.openReviewModal = function (id) {
+window.openReviewModal = async function (id) {
+  if (!currentUser) { toast('Please log in to leave a review.'); window.showPage('login'); return }
   reviewingId = id
-  document.getElementById('review-modal').classList.add('open')
-  document.getElementById('r-name').value = ''
-  const rEmail = document.getElementById('r-email'); if (rEmail) rEmail.value = ''
+  const name = userProfile?.full_name || currentUser.email
+  document.getElementById('r-name').value = name
+  const asName = document.getElementById('r-as-name'); if (asName) asName.textContent = name
   document.getElementById('r-text').value = ''
   initStarSelects()
+  document.getElementById('review-modal').classList.add('open')
+  // If they've reviewed this tradesman before, load it so they edit rather than duplicate.
+  try {
+    const { data: existing } = await supabase.from('reviews').select('*').eq('listing_id', id).eq('user_id', currentUser.id).maybeSingle()
+    _editingReviewId = existing?.id || null
+    if (existing) {
+      document.getElementById('r-text').value = existing.review_text || ''
+      const set = (sid, v) => { const el = document.getElementById(sid); if (el && v) { el.dataset.selected = v; el.querySelectorAll('span').forEach((s, i) => s.classList.toggle('lit', i < v)) } }
+      set('star-quality', existing.quality); set('star-service', existing.service); set('star-clean', existing.cleanliness)
+      set('star-comms', existing.communication); set('star-value', existing.value)
+    }
+  } catch (_) { _editingReviewId = null }
 }
+let _editingReviewId = null
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 async function renderAdmin() {
