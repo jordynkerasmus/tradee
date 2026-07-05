@@ -34,7 +34,7 @@ window.viewCert = async function (ref) {
 function certLabel(ref, i) { return `${(ref || '').toLowerCase().includes('.pdf') ? 'PDF' : 'IMG'} · Document ${i + 1}` }
 let editTier = 'free'
 let reviewingId = null
-let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = ''
+let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = '', filterAfterHours = false, _favsOnly = false
 let selectedCities = []
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -57,10 +57,12 @@ function updateNavForAuth() {
   if (!authBtn) return
   const adminLink = document.getElementById('nav-admin')
   const mobileAdmin = document.getElementById('nav-mobile-admin')
+  const mobileSaved = document.getElementById('nav-mobile-saved')
   if (currentUser) {
     authBtn.textContent = 'Log Out'
     authBtn.onclick = handleSignOut
     if (dashBtn) dashBtn.style.display = 'inline-flex'
+    if (mobileSaved) mobileSaved.style.display = 'block'
     const isAdmin = ADMIN_EMAILS.includes(currentUser.email)
     if (adminLink) adminLink.style.display = isAdmin ? 'inline' : 'none'
     if (mobileAdmin) mobileAdmin.style.display = isAdmin ? 'block' : 'none'
@@ -68,6 +70,7 @@ function updateNavForAuth() {
     authBtn.textContent = 'My Listing'
     authBtn.onclick = () => window.showPage('login')
     if (dashBtn) dashBtn.style.display = 'none'
+    if (mobileSaved) mobileSaved.style.display = 'none'
     if (adminLink) adminLink.style.display = 'none'
     if (mobileAdmin) mobileAdmin.style.display = 'none'
   }
@@ -877,6 +880,12 @@ window.showPage = function (name, fromRoute) {
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'))
   const el = document.getElementById('nav-' + name)
   if (el) el.classList.add('active')
+  // Leaving the directory clears the saved-only view.
+  if (name !== 'directory') _favsOnly = false
+  // Mobile bottom-nav active state.
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'))
+  const bnav = document.getElementById('bnav-' + name)
+  if (bnav) bnav.classList.add('active')
   window.scrollTo(0, 0)
   if (name === 'home') renderHome()
   if (name === 'directory') renderDirectory()
@@ -938,9 +947,14 @@ function renderHome() {
     <div class="stat-item"><span class="stat-num">${totalReviews}</span><span class="stat-label">Verified Reviews</span></div>
     <div class="stat-item"><span class="stat-num">${provincesCovered}</span><span class="stat-label">Provinces Covered</span></div>`
   const allTrades = [...new Set(listings.map(l => l.trade))].sort()
-  document.getElementById('trade-cats').innerHTML = allTrades.map(t =>
-    `<div class="trade-pill" data-trade="${escHtml(t)}">${escHtml(t)}</div>`).join('')
-  document.getElementById('trade-cats').querySelectorAll('.trade-pill').forEach(el =>
+  const catsEl = document.getElementById('trade-cats')
+  catsEl.classList.add('icon-cats')
+  catsEl.innerHTML = allTrades.map(t =>
+    `<div class="cat-chip" data-trade="${escHtml(t)}">
+      <div class="cat-ico">${tradeIconSVG(t)}</div>
+      <div class="cat-lbl">${escHtml(t.split(' /')[0])}</div>
+    </div>`).join('')
+  catsEl.querySelectorAll('.cat-chip').forEach(el =>
     el.addEventListener('click', () => window.filterByTrade(el.dataset.trade)))
   const allPremiumHome = listings.filter(l => l.tier === 'premium')
   // Rotate featured Premium every 10 minutes so each paid account gets frequent top exposure.
@@ -954,29 +968,103 @@ function renderHome() {
   if (!listings.length) {
     homeCards.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>No Listings Yet</h3><p>Be the first to <a onclick="showPage(\'list\')" style="color:var(--amber);cursor:pointer;">list your business</a>!</p></div>'
   } else {
-    // Premium in a swipe carousel up top, then ALL other listings as a tile grid with "find more". (All screen sizes.)
-    const firstO = others.slice(0, 8)
-    const moreO = others.slice(8)
+    // Premium featured up top, then ALL other listings in a single tile grid with "find more". (All screen sizes.)
     homeCards.innerHTML =
-      (rotatedPremium.length ? `<div class="featured-scroll">${rotatedPremium.map(featuredMiniHTML).join('')}</div>` : '') +
+      (rotatedPremium.length ? `<div class="square-grid" style="margin-bottom:12px;">${rotatedPremium.map(l => squareCardHTML(l, null, true)).join('')}</div>` : '') +
       (others.length
-        ? `<div class="square-grid">${firstO.map(squareCardHTML).join('')}</div>` +
-          (moreO.length
-            ? `<div id="home-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreO.map(squareCardHTML).join('')}</div><div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.getElementById('home-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
+        ? `<div class="square-grid">${others.map((l, i) => squareCardHTML(l, null, false, i >= 8)).join('')}</div>` +
+          (others.length > 8
+            ? `<div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#home-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 22px;cursor:pointer;font-size:13px;">Find more &darr;</span></div>`
             : '')
         : '')
     revealCards(homeCards)
   }
 }
 
-window.filterByTrade = function (trade) { _smartMode = false; filterTrade = trade; document.getElementById('filter-trade').value = trade; showPage('directory') }
-window.updateHeroTrades = function () {
-  const cat = document.getElementById('hero-category').value
-  const tradeSelect = document.getElementById('hero-search')
-  tradeSelect.innerHTML = '<option value="">All Trades</option>'
-  const trades = cat ? TRADE_CATEGORIES[cat] : Object.values(TRADE_CATEGORIES).flat()
-  trades.forEach(t => tradeSelect.add(new Option(t, t)))
+window.filterByTrade = function (trade) { _smartMode = false; _favsOnly = false; filterTrade = trade; const ft = document.getElementById('filter-trade'); if (ft) ft.value = trade; showPage('directory') }
+// Browse the full directory (clears any saved-only view). Used by the Directory nav tabs.
+window.browseDirectory = function () { _favsOnly = false; _smartMode = false; showPage('directory') }
+// Show only the current user's saved listings.
+window.showSaved = function () { _favsOnly = true; _smartMode = false; showPage('directory') }
+
+// ── Trade icons (line SVGs, category-based with a few specific overrides) ───────
+const CAT_ICONS = {
+  'Home & Building': '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+  'Electrical & Tech': '<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>',
+  'Plumbing & HVAC': '<path d="M12 3s6 6 6 10a6 6 0 0 1-12 0c0-4 6-10 6-10z"/>',
+  'Finishing & Interior': '<rect x="4" y="4" width="13" height="6" rx="1"/><path d="M17 7h3v4h-7v3"/><path d="M13 14v3a1 1 0 0 1-1 1 1 1 0 0 0-1 1v3"/>',
+  'Outdoor & Garden': '<path d="M12 22V12M12 12c0-4 2-7 6-8-1 4-2 7-6 8zM12 12c0-3-2-5-5-6 1 3 2 5 5 6z"/>',
+  'Automotive': '<path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13"/><path d="M4 13h16v4H4z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/>',
+  'Appliances & Small Jobs': '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.7-.7-2.5z"/>',
+  'Cleaning': '<path d="M9 3h4v3H9z"/><path d="M13 4h4l1 3h-6z"/><path d="M9 6H7a2 2 0 0 0-2 2v12h8V8a2 2 0 0 0-2-2z"/><path d="M6 12h6"/>',
 }
+const TRADE_ICONS = {
+  'Plumber': '<path d="M9 3v4a3 3 0 0 0 3 3 3 3 0 0 0 3-3V3"/><path d="M12 10v11"/><path d="M8 21h8"/>',
+  'Electrician': '<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>',
+  'Painter': '<path d="M3 21v-3a3 3 0 1 1 3 3H3"/><path d="M20 4a13 13 0 0 0-11 8.5"/><path d="M20 4a13 13 0 0 1-8.5 11"/><path d="M10.5 9a7 7 0 0 1 4 4"/>',
+  'Tiler': '<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  'Carpenter': '<path d="M3 17l14-4 4 4-4 4-3-3"/><path d="M3 17l2-6 2 1 1-3 2 1 1-3 2 1"/>',
+  'Handyman': '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.7-.7-2.5z"/>',
+  'CCTV Installer': '<path d="M3 6l16 3.8l-1 4.4l-16 -3.8z"/><circle cx="4.2" cy="7.7" r="1.15"/><path d="M10.5 13.2l-2 6.3"/><path d="M4.5 19.5h8"/>',
+}
+let _tradeToCat = null
+function tradeIconPaths(trade) {
+  if (!_tradeToCat) {
+    _tradeToCat = {}
+    for (const [c, ts] of Object.entries(TRADE_CATEGORIES)) ts.forEach(t => { _tradeToCat[t] = c })
+  }
+  return TRADE_ICONS[trade] || CAT_ICONS[_tradeToCat[trade]] || '<circle cx="12" cy="12" r="8"/>'
+}
+function tradeIconSVG(trade) {
+  return `<svg viewBox="0 0 24 24">${tradeIconPaths(trade)}</svg>`
+}
+
+// ── Popup search modal ──────────────────────────────────────────────────────
+const POPULAR_TRADES = ['Plumber', 'Electrician', 'Builder / General Contractor', 'Painter', 'Tiler', 'Handyman']
+window.openSearchModal = function () {
+  const sel = document.getElementById('modal-trade')
+  if (sel && sel.options.length <= 1) sel.innerHTML = '<option value="">Any trade</option>' + buildTradeOptgroups()
+  const pop = document.getElementById('modal-popular')
+  if (pop && !pop.dataset.built) {
+    pop.innerHTML = POPULAR_TRADES.map(t =>
+      `<div class="sm-sug" data-trade="${escHtml(t)}">${tradeIconSVG(t)}${escHtml(t.split(' /')[0])}</div>`).join('')
+    pop.querySelectorAll('.sm-sug').forEach(el => el.addEventListener('click', () => {
+      const active = el.classList.contains('active')
+      pop.querySelectorAll('.sm-sug').forEach(s => s.classList.remove('active'))
+      if (!active) { el.classList.add('active'); document.getElementById('modal-trade').value = el.dataset.trade }
+      else document.getElementById('modal-trade').value = ''
+    }))
+    pop.dataset.built = '1'
+  }
+  // reflect current picks when reopening
+  const mt = document.getElementById('modal-trade'); if (mt) mt.value = filterTrade
+  const mp = document.getElementById('modal-province'); if (mp) mp.value = filterProvince
+  const mah = document.getElementById('modal-afterhours'); if (mah) mah.checked = filterAfterHours
+  document.querySelectorAll('#modal-popular .sm-sug').forEach(s => s.classList.toggle('active', s.dataset.trade === filterTrade && !!filterTrade))
+  document.getElementById('search-modal').classList.add('open')
+}
+window.closeSearchModal = function () { document.getElementById('search-modal').classList.remove('open') }
+window.modalSearch = function () {
+  _smartMode = false
+  filterTrade = document.getElementById('modal-trade')?.value || ''
+  filterProvince = document.getElementById('modal-province')?.value || ''
+  filterAfterHours = !!document.getElementById('modal-afterhours')?.checked
+  filterCity = ''
+  const dp = document.getElementById('filter-province'); if (dp) dp.value = filterProvince
+  const dt = document.getElementById('filter-trade'); if (dt) dt.value = filterTrade
+  // reflect the picks on every search pill (home, directory, rankings)
+  document.querySelectorAll('.pill-trade-label').forEach(tl => {
+    tl.textContent = filterTrade ? filterTrade.split(' /')[0] : 'Describe it, or pick a trade…'
+    tl.classList.toggle('set', !!filterTrade)
+  })
+  document.querySelectorAll('.pill-loc-label').forEach(ll => {
+    ll.textContent = filterProvince || 'Any area'
+    ll.classList.toggle('set', !!filterProvince)
+  })
+  closeSearchModal()
+  window.showPage('directory')
+}
+window.updateHeroTrades = function () {}
 window.updateFilterTrades = function () {
   const cat = document.getElementById('filter-category').value
   const tradeSelect = document.getElementById('filter-trade')
@@ -1112,7 +1200,7 @@ function runSmartSearch(query, all) {
 // or input that triggered it; we read the query from the input in the same box.
 window.smartSearch = function (el) {
   let input = null
-  if (el && el.closest) input = el.closest('.smart-search')?.querySelector('.smart-q-input')
+  if (el && el.closest) input = (el.closest('.smart-search') || el.closest('.sm-ai-box'))?.querySelector('.smart-q-input')
   if (!input) input = document.querySelector('.smart-q-input')
   const q = (input?.value || '').trim()
   if (!q) return
@@ -1120,6 +1208,7 @@ window.smartSearch = function (el) {
   _smartMode = true; _smartRanked = res.ranked; _smartQuery = q; _smartInterp = res.interp
   // mirror the query into every box so it shows consistently
   document.querySelectorAll('.smart-q-input').forEach(i => { i.value = q })
+  if (typeof closeSearchModal === 'function') closeSearchModal()
   window.showPage('directory')
 }
 
@@ -1310,15 +1399,15 @@ function populateTradeFilter() {
     const el = document.getElementById(id)
     if (el) el.innerHTML = base + groups
   })
-  document.getElementById('filter-trade').value = filterTrade
+  const ftSel = document.getElementById('filter-trade'); if (ftSel) ftSel.value = filterTrade
   window.updateHeroTrades()
 }
 
 window.applyFilters = function () {
   _smartMode = false
-  filterTrade = document.getElementById('filter-trade').value
-  filterProvince = document.getElementById('filter-province').value
-  filterSort = document.getElementById('filter-sort').value
+  filterTrade = document.getElementById('filter-trade')?.value ?? filterTrade
+  filterProvince = document.getElementById('filter-province')?.value ?? filterProvince
+  filterSort = document.getElementById('filter-sort')?.value ?? filterSort
   renderDirectory()
 }
 
@@ -1488,11 +1577,11 @@ window.toggleAfterHoursFilter = function () {
 function renderDirectory() {
   if (_smartMode) { renderSmartResults(); return }
   populateTradeFilter()
-  document.getElementById('filter-province').value = filterProvince
-  document.getElementById('filter-sort').value = filterSort
+  const fpSel = document.getElementById('filter-province'); if (fpSel) fpSel.value = filterProvince
+  const fsSel = document.getElementById('filter-sort'); if (fsSel) fsSel.value = filterSort
   const tierOrder = { premium: 0, verified: 1, free: 2 }
-  const showFavsOnly = document.getElementById('fav-filter-btn')?.dataset.active === '1'
-  const afterHoursOnly = document.getElementById('afterhours-filter-btn')?.dataset.active === '1'
+  const showFavsOnly = _favsOnly || document.getElementById('fav-filter-btn')?.dataset.active === '1'
+  const afterHoursOnly = filterAfterHours || document.getElementById('afterhours-filter-btn')?.dataset.active === '1'
   let filtered = listings.filter(l => {
     if (showFavsOnly && !isFav(l.id)) return false
     if (afterHoursOnly && !l.after_hours) return false
@@ -1526,8 +1615,10 @@ function renderDirectory() {
   if (dirSearchTerm) titleParts.push(`"${dirSearchTerm}"`)
   if (filterTrade) titleParts.push(filterTrade)
   if (filterProvince) titleParts.push(filterProvince)
-  document.getElementById('dir-title').textContent = titleParts.length ? titleParts.join(' — ') : 'All Tradesmen'
-  document.getElementById('dir-count').textContent = `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
+  document.getElementById('dir-title').textContent = _favsOnly ? 'Saved' : (titleParts.length ? titleParts.join(' — ') : 'All Tradesmen')
+  document.getElementById('dir-count').textContent = _favsOnly
+    ? `${filtered.length} saved listing${filtered.length !== 1 ? 's' : ''}`
+    : `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
 
   // Split premium (featured) from the rest — rotate every 10 minutes so each paid account gets frequent top exposure
   const allPremium = filtered.filter(l => l.tier === 'premium')
@@ -1536,15 +1627,15 @@ function renderDirectory() {
   const featured = [...allPremium.slice(offset), ...allPremium.slice(0, offset)]
   const rest = filtered.filter(l => l.tier !== 'premium')
 
-  const emptyHtml = `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
+  const emptyHtml = _favsOnly
+    ? `<div class="empty-state" style="grid-column:1/-1"><h3>No saved tradesmen yet</h3><p>Tap the heart on any listing to save it here.</p></div>`
+    : `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
   const featLabel = `<div style="grid-column:1/-1;margin-bottom:0.5rem;"><div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span><div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div></div></div>`
   // Featured premium in a swipe carousel, the rest as a tile grid with load-more. (All screen sizes.)
   let html = ''
-  if (featured.length) html += featLabel + `<div class="featured-scroll">${featured.map(featuredMiniHTML).join('')}</div>`
+  if (featured.length) html += featLabel + `<div class="square-grid" style="margin-bottom:12px;">${featured.map(l => squareCardHTML(l, null, true)).join('')}</div>`
   if (rest.length) {
-    const first = rest.slice(0, 12).map(squareCardHTML).join('')
-    const moreItems = rest.slice(12)
-    html += `<div class="square-grid">${first}</div>` + (moreItems.length ? `<div id="dir-more-grid" class="square-grid" style="display:none;margin-top:12px;">${moreItems.map(squareCardHTML).join('')}</div><div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.getElementById('dir-more-grid').style.display='grid';this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${moreItems.length})</span></div>` : '')
+    html += `<div class="square-grid">${rest.map((l, i) => squareCardHTML(l, null, false, i >= 12)).join('')}</div>` + (rest.length > 12 ? `<div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#dir-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${rest.length - 12})</span></div>` : '')
   } else if (!featured.length) html += emptyHtml
 
   document.getElementById('dir-cards').innerHTML = html
@@ -1579,25 +1670,33 @@ function featuredMiniHTML(l) {
 }
 
 // Small square card for the mobile 2-column grid of standard listings.
-function squareCardHTML(l, rankNum) {
+function squareCardHTML(l, rankNum, featured, hidden) {
   const rating = avgRating(l), rd = rating > 0 ? rating.toFixed(1) : null
   const reviewCount = l.reviews ? l.reviews.length : 0
   const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
   const suburb = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || ''
-  const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}" style="width:100%;height:100%;object-fit:cover;">` : initials(l.name)
-  const verifiedBadge = l.verified_approved ? '<span style="margin-left:auto;font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
-  const afterBadge = l.after_hours ? '<span style="' + (l.verified_approved ? '' : 'margin-left:auto;') + 'font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
-  const marker = (verifiedBadge || afterBadge) ? `<div style="display:flex;gap:4px;margin-left:auto;">${verifiedBadge}${afterBadge}</div>` : ''
-  const ratingStr = rd ? `★ ${rd} <span style="color:var(--charcoal-6);">(${reviewCount})</span>` : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
-  return `<div class="square-card" onclick="openProfile(${l.id})">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
-      <div style="width:34px;height:34px;flex:0 0 auto;border-radius:7px;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;color:var(--amber);font-family:'Bebas Neue',sans-serif;font-size:1rem;overflow:hidden;">${av}</div>
-      ${marker}
+  const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}">` : initials(l.name)
+  const featuredBadge = featured ? '<span style="font-size:9px;font-weight:700;background:var(--amber);color:var(--charcoal);border-radius:3px;padding:1px 6px;letter-spacing:0.04em;">FEATURED</span>' : ''
+  const verifiedBadge = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:0.5px solid #22C55E;border-radius:3px;padding:0 4px;">Verified</span>' : ''
+  const afterBadge = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:0.5px solid var(--amber);border-radius:3px;padding:0 4px;">After Hrs</span>' : ''
+  const favBtn = currentUser ? `<button class="fav-btn sc-fav" data-id="${l.id}" onclick="event.stopPropagation();window.toggleFav(${l.id},event)" title="Save" aria-label="Save to your profile" style="color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};">${isFav(l.id) ? FAV_HEART_FILLED : FAV_HEART_EMPTY}</button>` : ''
+  const topRight = (featuredBadge || verifiedBadge || afterBadge || favBtn)
+    ? `<div class="sc-top-right">${featuredBadge}${verifiedBadge}${afterBadge}${favBtn}</div>` : ''
+  const ratingStr = rd
+    ? `<span style="color:var(--amber);">★</span> <span style="color:var(--white);font-weight:700;">${rd}</span> <span style="color:var(--charcoal-6);">(${reviewCount})</span>`
+    : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
+  return `<div class="square-card${featured ? ' square-card--featured' : ''}${hidden ? ' more-hidden' : ''}"${hidden ? ' style="display:none"' : ''} onclick="openProfile(${l.id})">
+    <div class="sc-top">
+      <div class="sc-av2">${av}</div>
+      ${topRight}
     </div>
     <div class="sc-name">${escHtml(l.name)}</div>
-    <div class="sc-line" style="color:var(--charcoal-7);">${escHtml(trade)}</div>
-    <div class="sc-line" style="color:var(--charcoal-6);margin-top:3px;">${escHtml(suburb)}</div>
-    <div class="sc-line" style="color:var(--amber);margin-top:3px;">${ratingStr}</div>
+    <div class="sc-trade2">${escHtml(trade)}</div>
+    <div class="sc-rating2">${ratingStr}</div>
+    <div class="sc-foot">
+      <span class="sc-loc"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>${escHtml(suburb)}</span></span>
+      <span class="sc-view">View →</span>
+    </div>
   </div>`
 }
 
