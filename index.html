@@ -634,6 +634,8 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="acc-name" placeholder="e.g. John Smith"></div>
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="acc-email" type="email" placeholder="you@example.com"><div class="form-hint">If you change this, you may need to confirm the new address by email before it takes effect.</div></div>
         <label class="disclaimer-check" style="margin:8px 0 1rem;"><input type="checkbox" id="acc-marketing"><span>Send me Tradee updates, tips and offers by email. Unsubscribe anytime.</span></label>
+        <div class="form-group"><label class="form-label">WhatsApp number <span style="text-transform:none;letter-spacing:0;color:var(--charcoal-6);font-weight:400;">(optional)</span></label><input class="form-input" id="acc-whatsapp" type="tel" placeholder="e.g. 082 123 4567"></div>
+        <label class="disclaimer-check" style="margin:8px 0 1rem;"><input type="checkbox" id="acc-whatsapp-optin"><span>Send me Tradee updates on WhatsApp at this number. Reply STOP anytime.</span></label>
         <button class="btn btn-primary" style="width:100%;padding:13px;" onclick="saveAccountDetails()">Save changes</button>
       </div>
       <div class="form-card">
@@ -1088,6 +1090,11 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
       <label class="disclaimer-check" style="margin-bottom:1rem;">
         <input type="checkbox" id="signup-marketing">
         <span>Send me occasional Tradee updates, tips and offers by email. Optional — you can unsubscribe anytime.</span>
+      </label>
+      <div class="form-group"><label class="form-label">WhatsApp number <span style="text-transform:none;letter-spacing:0;color:var(--charcoal-6);font-weight:400;">(optional)</span></label><input class="form-input" id="signup-whatsapp" type="tel" placeholder="e.g. 082 123 4567"></div>
+      <label class="disclaimer-check" style="margin-bottom:1rem;">
+        <input type="checkbox" id="signup-whatsapp-optin">
+        <span>I agree to receive occasional Tradee updates on WhatsApp at this number. Optional — reply STOP anytime.</span>
       </label>
       <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="if(window.handleSignup)window.handleSignup();else handleSignup()">Create Account →</button>
       <p style="text-align:center;margin-top:1rem;font-size:14px;color:var(--charcoal-6);">Already have an account? <a onclick="showPage('login')" style="color:var(--amber);cursor:pointer;">Log in</a></p>

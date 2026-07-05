@@ -149,14 +149,17 @@ window.handleSignup = async function () {
   const password2 = document.getElementById('signup-password2').value
   const agreed = document.getElementById('signup-agree')?.checked
   const marketing = !!document.getElementById('signup-marketing')?.checked
+  const whatsapp_number = document.getElementById('signup-whatsapp')?.value.trim() || ''
+  const whatsapp_opt_in = !!document.getElementById('signup-whatsapp-optin')?.checked
   if (!full_name) { toast('Please enter your name.'); return }
   if (!email || !password) { toast('Please fill in all fields.'); return }
   if (password !== password2) { toast('Passwords do not match.'); return }
   if (password.length < 6) { toast('Password must be at least 6 characters.'); return }
   if (!agreed) { toast('Please accept the disclaimer and terms to continue.'); return }
+  if (whatsapp_opt_in && !whatsapp_number) { toast('Please enter your WhatsApp number, or untick the WhatsApp option.'); return }
   const { data, error } = await supabase.auth.signUp({
     email, password,
-    options: { data: { full_name, account_type: signupAccountType, marketing_opt_in: marketing } }
+    options: { data: { full_name, account_type: signupAccountType, marketing_opt_in: marketing, whatsapp_number, whatsapp_opt_in } }
   })
   if (error) { toast('Sign up failed: ' + error.message); return }
   // Send welcome email via Edge Function
@@ -1046,6 +1049,8 @@ function renderAccount() {
   const name = document.getElementById('acc-name'); if (name) name.value = userProfile?.full_name || ''
   const email = document.getElementById('acc-email'); if (email) email.value = currentUser.email || ''
   const mkt = document.getElementById('acc-marketing'); if (mkt) mkt.checked = !!userProfile?.marketing_opt_in
+  const wa = document.getElementById('acc-whatsapp'); if (wa) wa.value = userProfile?.whatsapp_number || ''
+  const waOpt = document.getElementById('acc-whatsapp-optin'); if (waOpt) waOpt.checked = !!userProfile?.whatsapp_opt_in
   const pw = document.getElementById('acc-pw'); if (pw) pw.value = ''
   const pw2 = document.getElementById('acc-pw2'); if (pw2) pw2.value = ''
 }
@@ -1055,17 +1060,23 @@ window.saveAccountDetails = async function () {
   const full_name = document.getElementById('acc-name').value.trim()
   const email = document.getElementById('acc-email').value.trim()
   const marketing = !!document.getElementById('acc-marketing')?.checked
+  const whatsapp_number = document.getElementById('acc-whatsapp')?.value.trim() || ''
+  const whatsapp_opt_in = !!document.getElementById('acc-whatsapp-optin')?.checked
   if (!full_name) { toast('Please enter your name.'); return }
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Please enter a valid email.'); return }
+  if (whatsapp_opt_in && !whatsapp_number) { toast('Please enter your WhatsApp number, or untick the WhatsApp option.'); return }
   toast('Saving…')
   // Profile fields
   try {
     await supabase.from('profiles').update({
       full_name,
       marketing_opt_in: marketing,
-      marketing_opt_in_at: marketing ? (userProfile?.marketing_opt_in ? userProfile.marketing_opt_in_at : new Date().toISOString()) : null
+      marketing_opt_in_at: marketing ? (userProfile?.marketing_opt_in ? userProfile.marketing_opt_in_at : new Date().toISOString()) : null,
+      whatsapp_number: whatsapp_number || null,
+      whatsapp_opt_in,
+      whatsapp_opt_in_at: whatsapp_opt_in ? (userProfile?.whatsapp_opt_in ? userProfile.whatsapp_opt_in_at : new Date().toISOString()) : null
     }).eq('id', currentUser.id)
-    if (userProfile) { userProfile.full_name = full_name; userProfile.marketing_opt_in = marketing }
+    if (userProfile) { userProfile.full_name = full_name; userProfile.marketing_opt_in = marketing; userProfile.whatsapp_number = whatsapp_number; userProfile.whatsapp_opt_in = whatsapp_opt_in }
   } catch (e) { toast('Could not save your details — please try again.'); return }
   // Email change (Supabase auth) — only if it actually changed
   if (email !== currentUser.email) {
