@@ -1039,17 +1039,29 @@ window.openSearchModal = function () {
   // reflect current picks when reopening
   const mt = document.getElementById('modal-trade'); if (mt) mt.value = filterTrade
   const mp = document.getElementById('modal-province'); if (mp) mp.value = filterProvince
+  updateModalCities()
+  const mc = document.getElementById('modal-city'); if (mc) mc.value = filterCity
   const mah = document.getElementById('modal-afterhours'); if (mah) mah.checked = filterAfterHours
   document.querySelectorAll('#modal-popular .sm-sug').forEach(s => s.classList.toggle('active', s.dataset.trade === filterTrade && !!filterTrade))
   document.getElementById('search-modal').classList.add('open')
 }
 window.closeSearchModal = function () { document.getElementById('search-modal').classList.remove('open') }
+// Populate the modal's city dropdown from the chosen province (or all cities).
+window.updateModalCities = function () {
+  const sel = document.getElementById('modal-city')
+  if (!sel) return
+  const prov = document.getElementById('modal-province')?.value || ''
+  const prev = sel.value
+  const cities = prov && PROVINCE_CITIES[prov] ? PROVINCE_CITIES[prov] : Object.values(PROVINCE_CITIES).flat().sort()
+  sel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('')
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev
+}
 window.modalSearch = function () {
   _smartMode = false
   filterTrade = document.getElementById('modal-trade')?.value || ''
   filterProvince = document.getElementById('modal-province')?.value || ''
   filterAfterHours = !!document.getElementById('modal-afterhours')?.checked
-  filterCity = ''
+  filterCity = document.getElementById('modal-city')?.value || ''
   const dp = document.getElementById('filter-province'); if (dp) dp.value = filterProvince
   const dt = document.getElementById('filter-trade'); if (dt) dt.value = filterTrade
   // reflect the picks on every search pill (home, directory, rankings)
@@ -1057,9 +1069,10 @@ window.modalSearch = function () {
     tl.textContent = filterTrade ? filterTrade.split(' /')[0] : 'Describe it, or pick a trade…'
     tl.classList.toggle('set', !!filterTrade)
   })
+  const locLabel = filterCity || filterProvince || 'Any area'
   document.querySelectorAll('.pill-loc-label').forEach(ll => {
-    ll.textContent = filterProvince || 'Any area'
-    ll.classList.toggle('set', !!filterProvince)
+    ll.textContent = locLabel
+    ll.classList.toggle('set', !!(filterCity || filterProvince))
   })
   closeSearchModal()
   window.showPage('directory')
