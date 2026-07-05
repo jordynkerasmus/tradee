@@ -953,6 +953,7 @@ const BNAV_ICONS = {
   messages: '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
   account: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  faq: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.1.9-1.1 1.8"/><path d="M12 17h.01"/></svg>',
 }
 function bnavItem(id, label, icon, onclick, badge) {
   return `<button class="bnav-item" id="bnav-${id}" onclick="${onclick}">${BNAV_ICONS[icon]}<span>${label}</span>${badge ? '<span class="bnav-badge" id="bnav-msg-badge" style="display:none;"></span>' : ''}</button>`
@@ -986,6 +987,7 @@ function renderBottomNav() {
       bnavItem('home', 'Home', 'home', 'goHome()'),
       bnavItem('rankings', 'Rankings', 'rankings', "showPage('rankings')"),
       BNAV_RAISE,
+      bnavItem('faq', 'FAQ', 'faq', "showPage('faq')"),
       account,
     ]
   }
@@ -1179,8 +1181,11 @@ window.goHome = function () {
 window.filterByTrade = function (trade) { _smartMode = false; _favsOnly = false; filterTrade = trade; const ft = document.getElementById('filter-trade'); if (ft) ft.value = trade; showPage('home') }
 // Browse the full directory (clears any saved-only view).
 window.browseDirectory = function () { _favsOnly = false; _smartMode = false; showPage('home') }
-// Show only the current user's saved listings.
-window.showSaved = function () { _favsOnly = true; _smartMode = false; showPage('home') }
+// Show only the current user's saved listings (guests are prompted to log in).
+window.showSaved = function () {
+  if (!currentUser) { toast('Log in to save tradesmen.'); window.showPage('login'); return }
+  _favsOnly = true; _smartMode = false; showPage('home')
+}
 
 // ── Trade icons (line SVGs, category-based with a few specific overrides) ───────
 const CAT_ICONS = {
