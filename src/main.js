@@ -1830,15 +1830,20 @@ function renderDirectory() {
   const rest = filtered.filter(l => l.tier !== 'premium')
 
   const emptyHtml = _favsOnly
-    ? `<div class="empty-state" style="grid-column:1/-1"><h3>No saved tradesmen yet</h3><p>Tap the heart on any listing to save it here.</p></div>`
-    : `<div class="empty-state" style="grid-column:1/-1"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
-  const featLabel = `<div style="grid-column:1/-1;margin-bottom:0.5rem;"><div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;"><span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.06em;color:var(--amber);">Featured Tradesmen</span><div style="flex:1;height:1px;background:linear-gradient(to right,rgba(245,158,11,0.4),transparent);"></div></div></div>`
-  // Featured premium in a swipe carousel, the rest as a tile grid with load-more. (All screen sizes.)
+    ? `<div class="empty-state"><h3>No saved tradesmen yet</h3><p>Tap the heart on any listing to save it here.</p></div>`
+    : `<div class="empty-state"><h3>No Results Found</h3><p>Try adjusting your filters or <a onclick="showPage('list')" style="color:var(--amber);cursor:pointer;">list your business</a> here.</p></div>`
+  // Featured premium first (amber-bordered), then the rest — all in ONE grid so every
+  // card is exactly the same size. Overflow past 12 rest listings hides behind "Load more".
+  const cards = [
+    ...featured.map(l => squareCardHTML(l, null, true)),
+    ...rest.map((l, i) => squareCardHTML(l, null, false, i >= 12)),
+  ]
   let html = ''
-  if (featured.length) html += featLabel + `<div class="square-grid" style="margin-bottom:12px;">${featured.map(l => squareCardHTML(l, null, true)).join('')}</div>`
-  if (rest.length) {
-    html += `<div class="square-grid">${rest.map((l, i) => squareCardHTML(l, null, false, i >= 12)).join('')}</div>` + (rest.length > 12 ? `<div style="grid-column:1/-1;text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#dir-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${rest.length - 12})</span></div>` : '')
-  } else if (!featured.length) html += emptyHtml
+  if (!cards.length) html = emptyHtml
+  else {
+    html = `<div class="square-grid">${cards.join('')}</div>`
+    if (rest.length > 12) html += `<div style="text-align:center;padding:14px 0;"><span onclick="document.querySelectorAll('#dir-cards .more-hidden').forEach(c=>c.style.display='');this.parentNode.remove()" style="color:var(--amber);border:0.5px solid var(--charcoal-3);border-radius:999px;padding:8px 20px;cursor:pointer;font-size:13px;">Load more (${rest.length - 12})</span></div>`
+  }
 
   document.getElementById('dir-cards').innerHTML = html
   revealCards(document.getElementById('dir-cards'))
@@ -1878,9 +1883,10 @@ function squareCardHTML(l, rankNum, featured, hidden) {
   const trade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || ''
   const suburb = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || ''
   const av = l.photo_url ? `<img src="${escHtml(l.photo_url)}">` : initials(l.name)
-  const featuredBadge = featured ? '<span style="font-size:9px;font-weight:700;background:var(--amber);color:var(--charcoal);border-radius:3px;padding:1px 6px;letter-spacing:0.04em;">FEATURED</span>' : ''
-  const verifiedBadge = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:1px solid #22C55E;border-radius:3px;padding:1px 5px;">Verified</span>' : ''
-  const afterBadge = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:1px 5px;">After Hrs</span>' : ''
+  const badgeBase = 'display:inline-flex;align-items:center;font-size:9px;line-height:1;border-radius:3px;padding:3px 6px;'
+  const featuredBadge = featured ? `<span style="${badgeBase}font-weight:700;background:var(--amber);color:var(--charcoal);border:1px solid var(--amber);letter-spacing:0.04em;">FEATURED</span>` : ''
+  const verifiedBadge = l.verified_approved ? `<span style="${badgeBase}color:#22C55E;border:1px solid #22C55E;">Verified</span>` : ''
+  const afterBadge = l.after_hours ? `<span style="${badgeBase}color:var(--amber);border:1px solid var(--amber);">After Hrs</span>` : ''
   const favBtn = currentUser ? `<button class="fav-btn sc-fav" data-id="${l.id}" onclick="event.stopPropagation();window.toggleFav(${l.id},event)" title="Save" aria-label="Save to your profile" style="color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};">${isFav(l.id) ? FAV_HEART_FILLED : FAV_HEART_EMPTY}</button>` : ''
   const topRight = (featuredBadge || verifiedBadge || afterBadge)
     ? `<div class="sc-top-right">${featuredBadge}${verifiedBadge}${afterBadge}</div>` : ''
