@@ -1882,16 +1882,16 @@ function squareCardHTML(l, rankNum, featured, hidden) {
   const verifiedBadge = l.verified_approved ? '<span style="font-size:9px;color:#22C55E;border:1px solid #22C55E;border-radius:3px;padding:1px 5px;">Verified</span>' : ''
   const afterBadge = l.after_hours ? '<span style="font-size:9px;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:1px 5px;">After Hrs</span>' : ''
   const favBtn = currentUser ? `<button class="fav-btn sc-fav" data-id="${l.id}" onclick="event.stopPropagation();window.toggleFav(${l.id},event)" title="Save" aria-label="Save to your profile" style="color:${isFav(l.id) ? 'var(--amber)' : 'var(--charcoal-6)'};">${isFav(l.id) ? FAV_HEART_FILLED : FAV_HEART_EMPTY}</button>` : ''
-  const badgesRow = (featuredBadge || verifiedBadge || afterBadge)
-    ? `<div class="sc-badges-row">${featuredBadge}${verifiedBadge}${afterBadge}</div>` : ''
+  const topRight = (featuredBadge || verifiedBadge || afterBadge)
+    ? `<div class="sc-top-right">${featuredBadge}${verifiedBadge}${afterBadge}</div>` : ''
   const ratingStr = rd
     ? `<span style="color:var(--amber);">★</span> <span style="color:var(--white);font-weight:700;">${rd}</span> <span style="color:var(--charcoal-6);">(${reviewCount})</span>`
     : '<span style="color:var(--amber);">★</span> <span style="color:var(--charcoal-6);">No reviews yet</span>'
   return `<div class="square-card${featured ? ' square-card--featured' : ''}${hidden ? ' more-hidden' : ''}"${hidden ? ' style="display:none"' : ''} onclick="openProfile(${l.id})">
     <div class="sc-top">
       <div class="sc-av2">${av}</div>
+      ${topRight}
     </div>
-    ${badgesRow}
     <div class="sc-name">${escHtml(l.name)}</div>
     <div class="sc-trade2">${escHtml(trade)}</div>
     <div class="sc-rating2">${ratingStr}</div>
