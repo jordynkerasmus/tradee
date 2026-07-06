@@ -22,6 +22,9 @@ const TRADES = [
   ['carpenter', 'Carpenter', 'Carpenter'],
   ['landscaper', 'Landscaper', 'Landscaper'],
   ['locksmith', 'Locksmith', 'Locksmith'],
+  ['pool-service', 'Pool Service', 'Pool Service'],
+  ['air-conditioning', 'Air Conditioning & HVAC', 'Air Conditioning'],
+  ['pest-control', 'Pest Control', 'Pest Control'],
 ]
 // slug -> {name (exact, for filter), label (display), province}
 const CITIES = [
@@ -37,6 +40,9 @@ const CITIES = [
   ['pietermaritzburg', 'Pietermaritzburg', 'Pietermaritzburg', 'KwaZulu-Natal'],
   ['hillcrest', 'Hillcrest', 'Hillcrest', 'KwaZulu-Natal'],
   ['westville', 'Westville', 'Westville', 'KwaZulu-Natal'],
+  ['port-elizabeth', 'Port Elizabeth', 'Port Elizabeth', 'Eastern Cape'],
+  ['east-london', 'East London', 'East London', 'Eastern Cape'],
+  ['bloemfontein', 'Bloemfontein', 'Bloemfontein', 'Free State'],
 ]
 
 const enc = (s) => encodeURIComponent(s)
@@ -59,8 +65,12 @@ function page(trade, city) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
-<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
-<meta property="og:type" content="website"><meta property="og:url" content="${url}">
+<meta name="robots" content="index, follow">
+<meta property="og:site_name" content="Tradee"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
+<meta property="og:type" content="website"><meta property="og:url" content="${url}"><meta property="og:image" content="${BASE}/icon-512.png"><meta property="og:locale" content="en_ZA">
+<meta name="twitter:card" content="summary"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${BASE}/icon-512.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","serviceType":"${esc(tLabel)}","areaServed":{"@type":"City","name":"${esc(cLabel)}"},"provider":{"@type":"Organization","name":"Tradee","url":"${BASE}/"},"url":"${url}"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Tradee","item":"${BASE}/"},{"@type":"ListItem","position":2,"name":"${esc(tLabel)}s in ${esc(cLabel)}","item":"${url}"}]}</script>
 <style>
 :root{--charcoal:#1C1917;--charcoal2:#292524;--charcoal3:#3D3935;--amber:#F59E0B;--white:#FFFDF9;--grey:#A8A29E}
 *{box-sizing:border-box}body{margin:0;background:var(--charcoal);color:var(--white);font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.6}
@@ -84,7 +94,7 @@ ul{color:var(--grey);padding-left:1.2rem}
   <strong>Why use Tradee to find a ${esc(tLabel.toLowerCase())} in ${esc(cLabel)}?</strong>
   <ul>
     <li>Real client reviews and star ratings — choose with confidence</li>
-    <li>Verified tradesmen who've submitted their credentials</li>
+    <li>Verified tradespeople who've submitted their credentials</li>
     <li>Contact them directly by call, WhatsApp or email</li>
     <li>Completely free to use for homeowners</li>
   </ul>
@@ -110,7 +120,7 @@ for (const t of TRADES) {
 }
 
 // sitemap.xml
-const staticUrls = [`${BASE}/`, `${BASE}/faq`]
+const staticUrls = [`${BASE}/`, `${BASE}/how-it-works`, `${BASE}/rankings`, `${BASE}/privacy`, `${BASE}/terms`]
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${[...staticUrls, ...urls].map(u => `  <url><loc>${u}</loc></url>`).join('\n')}

@@ -943,6 +943,23 @@ window.showFaqTab = function (which) {
 // ── Navigation ────────────────────────────────────────────────────────────────
 const PAGE_PATHS = { home: '/', directory: '/directory', rankings: '/rankings', faq: '/how-it-works', privacy: '/privacy', terms: '/terms', list: '/list', login: '/login', signup: '/signup', dashboard: '/dashboard', admin: '/admin', messages: '/messages', account: '/account' }
 
+// ── Per-page SEO meta (title + description) ─────────────────────────────────
+const PAGE_META = {
+  home: ['Tradee — Find Trusted Tradespeople in South Africa', "South Africa's trade directory — find rated, reviewed local plumbers, electricians, builders, painters and more. Free to use."],
+  rankings: ['Top-Rated Tradespeople in South Africa | Tradee', 'See the highest-rated tradespeople on Tradee, ranked purely on verified client reviews — not paid placement.'],
+  faq: ['How Tradee Works | Tradee', 'How Tradee works for homeowners and tradespeople — find trusted local trades, leave reviews, or list your business free.'],
+  list: ['List Your Business Free | Tradee', 'List your trade business free on Tradee and get found by local customers. Set up in under 5 minutes.'],
+  login: ['Log In | Tradee', 'Log in to your Tradee account.'],
+  signup: ['Create an Account | Tradee', 'Join Tradee to save tradespeople, leave reviews, or list your business.'],
+}
+function setMeta(title, description) {
+  if (title) document.title = title
+  if (description) {
+    let m = document.querySelector('meta[name="description"]')
+    if (m) m.setAttribute('content', description)
+  }
+}
+
 // ── Mobile bottom nav (role-based) ──────────────────────────────────────────
 const BNAV_ICONS = {
   home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
@@ -1116,6 +1133,7 @@ window.showPage = function (name, fromRoute) {
   if (el) el.classList.add('active')
   // Leaving the browse page clears the saved-only view.
   if (name !== 'home') _favsOnly = false
+  if (PAGE_META[name]) setMeta(PAGE_META[name][0], PAGE_META[name][1])
   setActiveBottomNav(name)
   window.scrollTo(0, 0)
   if (name === 'home') renderHome()
@@ -2162,6 +2180,10 @@ window.openProfile = async function (id, fromRoute) {
       </div>
     </div>`
   showPage('profile')
+  // Profile-specific SEO title/description.
+  const pTrade = (l.trades && l.trades.length ? l.trades[0] : l.trade) || 'Tradesperson'
+  const pCity = (l.cities && l.cities.length ? l.cities[0] : (l.city || l.province)) || 'South Africa'
+  setMeta(`${l.name} — ${pTrade} in ${pCity} | Tradee`, `${l.name} is a ${pTrade} in ${pCity} listed on Tradee. View ratings, reviews and contact details.`)
 }
 
 window.trackContact = function (id, type) {
