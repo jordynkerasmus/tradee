@@ -1183,7 +1183,7 @@ window.filterByTrade = function (trade) { _smartMode = false; _favsOnly = false;
 window.browseDirectory = function () { _favsOnly = false; _smartMode = false; showPage('home') }
 // Show only the current user's saved listings (guests are prompted to log in).
 window.showSaved = function () {
-  if (!currentUser) { toast('Log in to save tradesmen.'); window.showPage('login'); return }
+  if (!currentUser) { toast('Log in to save tradespeople.'); window.showPage('login'); return }
   _favsOnly = true; _smartMode = false; showPage('home')
 }
 
@@ -1761,7 +1761,7 @@ window.toggleNearMe = function () {
     _userLat = pos.coords.latitude; _userLng = pos.coords.longitude
     _nearMeActive = true
     if (check) check.checked = true
-    if (status) { status.style.display = 'block'; status.textContent = 'Showing tradesmen who cover your area.' }
+    if (status) { status.style.display = 'block'; status.textContent = 'Showing tradespeople who cover your area.' }
     window.setDirView('map')
     renderDirectory()
   }, () => {
@@ -1833,7 +1833,7 @@ function renderDirectory() {
   if (dirSearchTerm) titleParts.push(`"${dirSearchTerm}"`)
   if (filterTrade) titleParts.push(filterTrade)
   if (filterProvince) titleParts.push(filterProvince)
-  document.getElementById('dir-title').textContent = _favsOnly ? 'Saved' : (titleParts.length ? titleParts.join(' — ') : 'All Tradesmen')
+  document.getElementById('dir-title').textContent = _favsOnly ? 'Saved' : (titleParts.length ? titleParts.join(' — ') : 'All Trades')
   document.getElementById('dir-count').textContent = _favsOnly
     ? `${filtered.length} saved listing${filtered.length !== 1 ? 's' : ''}`
     : `${filtered.length} listing${filtered.length !== 1 ? 's' : ''}`
@@ -2246,7 +2246,7 @@ window.renderRankings = function () {
   const maxAvg = ranked.length ? ranked[0].avg : 5
   const rankList = document.getElementById('rank-list')
   if (!ranked.length) {
-    rankList.innerHTML = '<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradesmen yet.</p>'
+    rankList.innerHTML = '<p style="color:var(--charcoal-6);padding:2rem 0;">No ranked tradespeople yet.</p>'
   } else {
     // Same square tiles as home/directory, in ranked order (with a rank number prefix). All screen sizes.
     rankList.innerHTML = `<div class="square-grid">${ranked.map((l, i) => squareCardHTML(l, i + 1)).join('')}</div>`
