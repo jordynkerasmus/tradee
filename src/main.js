@@ -36,6 +36,8 @@ let editTier = 'free'
 let reviewingId = null
 let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = '', filterAfterHours = false, _favsOnly = false
 let selectedCities = []
+// Meta Pixel conversion helper — safe no-op if the pixel is blocked/not loaded.
+function fbTrack(event, params) { try { if (window.fbq) window.fbq('track', event, params || {}) } catch (_) {} }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 // The signed-in user's account profile (account_type, full_name, marketing_opt_in).
@@ -162,6 +164,7 @@ window.handleSignup = async function () {
     options: { data: { full_name, account_type: signupAccountType, marketing_opt_in: marketing, whatsapp_number, whatsapp_opt_in } }
   })
   if (error) { toast('Sign up failed: ' + error.message); return }
+  fbTrack('CompleteRegistration', { content_name: signupAccountType })
   // Send welcome email via Edge Function
   supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {})
   if (!data.session) {
@@ -2352,7 +2355,7 @@ window.goToStep2 = async function () {
     }
     toast('Account error: ' + signUpErr.message); return
   }
-  if (signUpData?.user) { currentUser = signUpData.user; supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {}) }
+  if (signUpData?.user) { currentUser = signUpData.user; fbTrack('CompleteRegistration', { content_name: 'tradesman' }); supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {}) }
   proceed()
 }
 
@@ -2487,6 +2490,7 @@ window.submitListing = async function () {
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
     if (signUpError) { toast('Account error: ' + signUpError.message); return }
     userId = data.user?.id ?? null
+    fbTrack('CompleteRegistration', { content_name: 'tradesman' })
     supabase.functions.invoke('welcome-email', { body: { email } }).catch(() => {})
   }
 
@@ -2522,6 +2526,7 @@ window.submitListing = async function () {
     user_id: userId, certificate_urls, photo_url, lat, lng, service_radius, after_hours
   })
   if (error) { toast('Error saving listing. Please try again.'); console.error(error); return }
+  fbTrack('Lead', { content_name: 'listing_published', content_category: trade })
   // Creating a listing makes this account a tradesman — flip the profile + nav.
   try {
     await supabase.from('profiles').update({ account_type: 'tradesman' }).eq('id', userId)
