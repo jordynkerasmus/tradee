@@ -623,9 +623,6 @@ nav { background: var(--charcoal-2); border-bottom: 1px solid var(--charcoal-3);
         <h2>Rankings</h2>
         <div style="font-size:13px;color:var(--charcoal-6);margin-top:4px;">Based purely on verified client reviews — not paid placement.</div>
       </div>
-      <select id="rank-trade-filter" onchange="renderRankings()" style="background:var(--charcoal-2);border:1px solid var(--charcoal-4);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 32px 8px 12px;border-radius:var(--radius);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2710%27 height=%2710%27 viewBox=%270 0 10 10%27%3E%3Cpolygon points=%270,2 10,2 5,8%27 fill=%27%23A8A29E%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 10px center;">
-        <option value="">All Trades</option>
-      </select>
     </div>
     <div class="search-pill" onclick="openSearchModal()" style="margin:0 auto 1.5rem;">
       <div class="search-pill-f">
@@ -1965,7 +1962,7 @@ function adminDeleteListing() { toast('Please use the live site.'); }
 function adminDeleteReview() { toast('Please use the live site.'); }
 
 function renderRankings() {
-  const tradeFilt=document.getElementById('rank-trade-filter').value;
+  const tradeFilt=document.getElementById('rank-trade-filter')?.value||'';
   let ranked=listings.filter(l=>!tradeFilt||l.trade===tradeFilt).filter(l=>l.reviews.length>0)
     .map(l=>({...l,avg:avgRating(l)})).sort((a,b)=>b.avg-a.avg||b.reviews.length-a.reviews.length);
   const maxAvg=ranked.length?ranked[0].avg:5;

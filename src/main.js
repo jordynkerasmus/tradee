@@ -34,7 +34,7 @@ window.viewCert = async function (ref) {
 function certLabel(ref, i) { return `${(ref || '').toLowerCase().includes('.pdf') ? 'PDF' : 'IMG'} · Document ${i + 1}` }
 let editTier = 'free'
 let reviewingId = null
-let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = '', filterAfterHours = false, _favsOnly = false
+let filterTrade = '', filterProvince = '', filterCity = '', filterSort = 'rating', dirSearchTerm = '', filterAfterHours = false, _favsOnly = false, _rankTrade = ''
 let selectedCities = []
 // Meta Pixel conversion helper — safe no-op if the pixel is blocked/not loaded.
 function fbTrack(event, params) { try { if (window.fbq) window.fbq('track', event, params || {}) } catch (_) {} }
@@ -1140,7 +1140,7 @@ window.showPage = function (name, fromRoute) {
   setActiveBottomNav(name)
   window.scrollTo(0, 0)
   if (name === 'home') renderHome()
-  if (name === 'rankings') renderRankings()
+  if (name === 'rankings') { _rankTrade = ''; renderRankings() }
   if (name === 'dashboard') renderDashboard()
   if (name === 'messages') renderMessages()
   if (name === 'account') renderAccount()
@@ -1296,7 +1296,14 @@ window.modalSearch = function () {
     ll.classList.toggle('set', !!(filterCity || filterProvince))
   })
   closeSearchModal()
-  window.showPage('directory')
+  // If the search was opened from the Rankings page, filter the leaderboard by
+  // the chosen trade and stay on Rankings; otherwise go to the browse directory.
+  if (document.getElementById('page-rankings')?.classList.contains('active')) {
+    _rankTrade = filterTrade
+    renderRankings()
+  } else {
+    window.showPage('directory')
+  }
 }
 window.updateHeroTrades = function () {}
 window.updateFilterTrades = function () {
@@ -1629,7 +1636,7 @@ function populateTradeFilter() {
   populateCategorySelects()
   const groups = buildTradeOptgroups()
   const base = '<option value="">All Trades</option>'
-  ;['filter-trade', 'rank-trade-filter'].forEach(id => {
+  ;['filter-trade'].forEach(id => {
     const el = document.getElementById(id)
     if (el) el.innerHTML = base + groups
   })
@@ -2262,7 +2269,7 @@ window.submitReview = async function () {
 
 // ── Rankings ──────────────────────────────────────────────────────────────────
 window.renderRankings = function () {
-  const tradeFilt = document.getElementById('rank-trade-filter').value
+  const tradeFilt = _rankTrade
   let ranked = listings
     .filter(l => !tradeFilt || l.trade === tradeFilt)
     .filter(l => l.reviews && l.reviews.length > 0)
