@@ -1543,8 +1543,8 @@ function renderCityList(province) {
   const allCities = [...baseCities, ...customCities]
   list.innerHTML = allCities.map(c => `
     <label style="display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:4px;cursor:pointer;font-size:14px;transition:background 0.1s;" onmouseover="this.style.background='var(--charcoal-3)'" onmouseout="this.style.background='transparent'">
-      <input type="checkbox" value="${c}" ${selectedCities.includes(c) ? 'checked' : ''} onchange="window.toggleCity('${c}')" style="accent-color:var(--amber);width:16px;height:16px;">
-      ${c}${!baseCities.includes(c) ? ' <span style="font-size:10px;color:var(--amber);margin-left:4px;">(custom)</span>' : ''}
+      <input type="checkbox" value="${escHtml(c)}" ${selectedCities.includes(c) ? 'checked' : ''} onchange="window.toggleCity(this.value)" style="accent-color:var(--amber);width:16px;height:16px;">
+      ${escHtml(c)}${!baseCities.includes(c) ? ' <span style="font-size:10px;color:var(--amber);margin-left:4px;">(custom)</span>' : ''}
     </label>`).join('') + `
   <div style="border-top:1px solid var(--charcoal-3);margin-top:6px;padding-top:6px;">
     <div style="display:flex;gap:6px;padding:4px 8px;">
@@ -2154,8 +2154,8 @@ window.openProfile = async function (id, fromRoute) {
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           ${l.phone ? `<a href="https://wa.me/${(d => d.startsWith('0') ? '27' + d.slice(1) : d.startsWith('+') ? d.slice(1) : d)(l.phone.replace(/\D/g,''))}" target="_blank" onclick="trackContact(${l.id},'whatsapp')" class="btn btn-primary btn-sm" style="background:#25D366;text-decoration:none;">WhatsApp</a>` : ''}
-          ${l.phone ? `<a href="tel:${l.phone}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">Call</a>` : ''}
-          ${l.email ? `<a href="mailto:${l.email}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">Email</a>` : ''}
+          ${l.phone ? `<a href="tel:${escHtml(l.phone)}" onclick="trackContact(${l.id},'phone')" class="btn btn-outline btn-sm" style="text-decoration:none;">Call</a>` : ''}
+          ${l.email ? `<a href="mailto:${escHtml(l.email)}" onclick="trackContact(${l.id},'email')" class="btn btn-outline btn-sm" style="text-decoration:none;">Email</a>` : ''}
           <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.id})">Leave a Review</button>
           <button class="btn btn-outline btn-sm" onclick="copyProfileLink(${l.id})">Share</button>
           <button class="btn btn-outline btn-sm" onclick="goBack()">Back</button>
@@ -2173,7 +2173,7 @@ window.openProfile = async function (id, fromRoute) {
       <p style="font-size:15px;line-height:1.7;color:var(--charcoal-7);">${escHtml(fixBio(l.description)) || 'No description provided.'}</p>
       <div style="margin-top:1rem;display:flex;gap:8px;align-items:center;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span style="font-size:14px;color:var(--charcoal-6);">${l.city}, ${l.province}</span>
+        <span style="font-size:14px;color:var(--charcoal-6);">${escHtml(l.city)}, ${escHtml(l.province)}</span>
       </div>
     </div>
     <div class="profile-section">
@@ -2699,8 +2699,8 @@ async function renderAdmin() {
           ${l.pending_trades.map((t, i) => `
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
               <input id="pend-${l.id}-${i}" class="form-input" value="${escHtml(t)}" style="flex:1;min-width:160px;font-size:14px;padding:6px 10px;" title="Edit the trade text before approving">
-              <button class="btn btn-outline btn-sm" style="color:#22C55E;border-color:#22C55E;" onclick="approvePendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}','pend-${l.id}-${i}')">Approve</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="rejectPendingTrade(${l.id},'${escHtml(t).replace(/'/g, "\\'")}')">Reject</button>
+              <button class="btn btn-outline btn-sm" style="color:#22C55E;border-color:#22C55E;" onclick="approvePendingTrade(${l.id},${i})">Approve</button>
+              <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger);" onclick="rejectPendingTrade(${l.id},${i})">Reject</button>
             </div>`).join('')}
         </div>`).join('')}
     </div>` : ''
@@ -3021,12 +3021,16 @@ window.addTradeFromList = function (sel) {
   sel.value = ''
 }
 
-window.approvePendingTrade = async function (id, trade, inputId) {
+window.approvePendingTrade = async function (id, index) {
   const l = listings.find(x => x.id === id)
   if (!l) return
+  // Resolve the trade from data by index — never from an interpolated string.
+  const trade = (l.pending_trades || [])[index]
+  if (trade == null) return
   // Use the admin's edited text (if any), otherwise the original.
   let finalTrade = trade
-  if (inputId) { const el = document.getElementById(inputId); if (el && el.value.trim()) finalTrade = el.value.trim() }
+  const el = document.getElementById(`pend-${id}-${index}`)
+  if (el && el.value.trim()) finalTrade = el.value.trim()
   const pending = (l.pending_trades || []).filter(t => t !== trade)
   const trades = [...(l.trades || []).filter(t => t && t !== 'Pending review'), finalTrade]
   const primary = (l.trade && l.trade !== 'Pending review') ? l.trade : finalTrade
@@ -3037,10 +3041,12 @@ window.approvePendingTrade = async function (id, trade, inputId) {
   renderAdmin()
 }
 
-window.rejectPendingTrade = async function (id, trade) {
-  if (!confirm(`Reject and remove “${trade}”? The tradesman will need to pick a listed trade instead.`)) return
+window.rejectPendingTrade = async function (id, index) {
   const l = listings.find(x => x.id === id)
   if (!l) return
+  const trade = (l.pending_trades || [])[index]
+  if (trade == null) return
+  if (!confirm(`Reject and remove “${trade}”? The tradesman will need to pick a listed trade instead.`)) return
   const pending = (l.pending_trades || []).filter(t => t !== trade)
   const { error } = await supabase.from('listings').update({ pending_trades: pending }).eq('id', id)
   if (error) { toast('Could not reject: ' + error.message); return }

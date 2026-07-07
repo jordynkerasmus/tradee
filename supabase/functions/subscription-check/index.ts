@@ -46,7 +46,8 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 Deno.serve(async (req) => {
-  if (CRON_SECRET && req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
+  // Fail closed: if the secret is unset the endpoint stays locked, never public.
+  if (!CRON_SECRET || req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
   }
   try {

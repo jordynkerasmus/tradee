@@ -1,10 +1,16 @@
-// Security: requires a valid Supabase JWT (anon or user) so only requests from
-// the Tradee frontend can trigger this. Accepts listing_id and looks up the
-// owner email server-side — prevents this function being used as an email relay
-// to arbitrary addresses.
+// Security: requires a valid authenticated USER JWT (reviews require login), so
+// the public anon key alone cannot trigger notification emails. Accepts
+// listing_id and looks up the owner email server-side — prevents this function
+// being used as an email relay to arbitrary addresses. All caller-supplied
+// display text is escaped before it enters the email HTML and subject.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
+
+// Escape any user-supplied value before it enters email HTML or the subject.
+const esc = (s: unknown) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
@@ -23,11 +29,10 @@ Deno.serve(async (req) => {
       })
     }
     const supaAnon = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!)
-    const { error: jwtErr } = await supaAnon.auth.getUser(token)
-    // anon key won't resolve to a user but that's OK — we just need a valid project JWT
-    // If the token is completely invalid (not from this project), getUser will error
-    // We only block on a hard JWT parse failure (not simply "no user")
-    if (jwtErr && jwtErr.status === 401) {
+    const { data: authData, error: jwtErr } = await supaAnon.auth.getUser(token)
+    // Reviews require login, so this endpoint requires a real authenticated USER.
+    // The public anon key alone must not be able to trigger notification emails.
+    if (jwtErr || !authData?.user?.id) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
       })
@@ -51,8 +56,11 @@ Deno.serve(async (req) => {
     }
 
     const { email, name: tradeName } = listing
-    const starsStr = '★'.repeat(stars) + '☆'.repeat(5 - stars)
-    const displayName = tradeName || 'there'
+    // Clamp stars to a safe 0–5 integer and escape all display text.
+    const s = Math.max(0, Math.min(5, parseInt(String(stars), 10) || 0))
+    const starsStr = '★'.repeat(s) + '☆'.repeat(5 - s)
+    const displayName = esc(tradeName || 'there')
+    const safeReviewer = esc(reviewerName)
 
     const html = `
 <!DOCTYPE html>
@@ -73,7 +81,7 @@ Deno.serve(async (req) => {
       <h1 style="color:#FFFDF9;margin:0 0 8px;font-size:1.4rem;font-weight:700;">New review for ${displayName}</h1>
       <div style="font-size:1.8rem;color:#F59E0B;margin:12px 0;">${starsStr}</div>
       <p style="color:#A8A29E;font-size:15px;margin:0 0 1.5rem;">
-        <strong style="color:#FFFDF9;">${reviewerName}</strong> just left you a ${stars}-star review on Tradee.
+        <strong style="color:#FFFDF9;">${safeReviewer}</strong> just left you a ${s}-star review on Tradee.
       </p>
       <a href="https://www.tradee.org/dashboard" style="display:inline-block;background:#F59E0B;color:#1C1917;font-weight:700;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:15px;">View &amp; Reply →</a>
     </div>
@@ -100,7 +108,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: 'Tradee <reviews@tradee.org>',
         to: [email],
-        subject: `New ${stars}★ review from ${reviewerName}`,
+        subject: `New ${s}★ review from ${String(reviewerName ?? '').replace(/[\r\n]+/g, ' ').slice(0, 100)}`,
         html,
       }),
     })

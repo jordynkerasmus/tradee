@@ -8,8 +8,14 @@ const supabase = createClient(
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 
+// Escape any user-supplied value before it enters email HTML.
+const esc = (s: unknown) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
 Deno.serve(async (req) => {
-  if (CRON_SECRET && req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
+  // Fail closed: never serve if the cron secret is unset.
+  if (!CRON_SECRET || req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
   }
   try {
@@ -76,8 +82,8 @@ Deno.serve(async (req) => {
         ? monthReviews.map(r => `
           <div style="background:#3D3935;border-radius:6px;padding:12px 16px;margin-bottom:8px;">
             <div style="color:#F59E0B;font-size:14px;margin-bottom:4px;">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
-            <div style="font-size:13px;color:#D6D3D1;">"${r.review_text}"</div>
-            <div style="font-size:12px;color:#A8A29E;margin-top:4px;">— ${r.reviewer_name}</div>
+            <div style="font-size:13px;color:#D6D3D1;">"${esc(r.review_text)}"</div>
+            <div style="font-size:12px;color:#A8A29E;margin-top:4px;">— ${esc(r.reviewer_name)}</div>
           </div>`).join('')
         : '<p style="color:#78716C;font-size:14px;">No reviews this month yet — share your profile link to get more!</p>'
 
@@ -98,7 +104,7 @@ Deno.serve(async (req) => {
 
     <!-- Greeting -->
     <div style="background:#292524;border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
-      <h2 style="color:#FFFDF9;margin:0 0 6px;font-size:1.3rem;">Hi ${listing.name} 👋</h2>
+      <h2 style="color:#FFFDF9;margin:0 0 6px;font-size:1.3rem;">Hi ${esc(listing.name)} 👋</h2>
       <p style="color:#A8A29E;margin:0;font-size:14px;line-height:1.6;">
         Here's how your Tradee listing performed in ${monthName}. Keep building your reputation — every review counts!
       </p>

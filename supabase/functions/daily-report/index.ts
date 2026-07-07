@@ -12,7 +12,8 @@ const REPORT_TO = 'jordynkerasmus@gmail.com'
 const PROMO_LIMIT = 100
 
 Deno.serve(async (req) => {
-  if (CRON_SECRET && req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
+  // Fail closed: never serve if the cron secret is unset.
+  if (!CRON_SECRET || req.headers.get('X-Cron-Secret') !== CRON_SECRET) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
   }
   try {
