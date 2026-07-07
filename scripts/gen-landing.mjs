@@ -126,6 +126,60 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 ${[...staticUrls, ...urls].map(u => `  <url><loc>${u}</loc></url>`).join('\n')}
 </urlset>`
 writeFileSync(resolve(DIST, 'sitemap.xml'), sitemap)
-writeFileSync(resolve(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${BASE}/sitemap.xml\n`)
 
-console.log(`gen-landing: wrote ${count} landing pages + sitemap.xml + robots.txt`)
+// robots.txt — allow everyone, plus explicitly welcome the AI answer-engine
+// crawlers so ChatGPT, Claude, Perplexity, Gemini and Copilot can read and cite us.
+const AI_BOTS = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-Web',
+  'anthropic-ai', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Bingbot',
+  'Applebot-Extended', 'CCBot']
+const robots = `User-agent: *
+Allow: /
+
+${AI_BOTS.map(b => `User-agent: ${b}\nAllow: /`).join('\n\n')}
+
+Sitemap: ${BASE}/sitemap.xml
+`
+writeFileSync(resolve(DIST, 'robots.txt'), robots)
+
+// llms.txt — the emerging standard "cheat sheet" AI engines look for: a plain
+// statement of what Tradee is, who it serves, and links to the key pages.
+const tradeList = TRADES.map(t => t[2]).join(', ')
+const cityList = CITIES.map(c => c[2]).join(', ')
+const findLinks = TRADES.slice(0, 6).flatMap(t => CITIES.slice(0, 4)
+  .map(c => `- [${t[2]} in ${c[2]}](${BASE}/find/${t[0]}-in-${c[0]}/)`)).join('\n')
+const llms = `# Tradee
+
+> Tradee is a South African trade directory that connects homeowners and businesses with trusted, rated and reviewed local tradespeople. Free to use for customers, free to list for tradespeople, no booking fees and no commission.
+
+## What Tradee does
+
+- Homeowners and businesses search for local tradespeople by trade, city and province, then contact them directly by call, WhatsApp or email.
+- Tradespeople list their business for free, collect verified customer reviews and climb the rankings.
+- Tradee verifies the identity of listed tradespeople (ID document checked).
+- Every listing shows star ratings and real client reviews across categories like reliability, responsiveness and professionalism.
+
+## Trades covered
+
+${tradeList}
+
+## Cities and areas covered
+
+${cityList} (plus nationwide listings across all nine provinces of South Africa)
+
+## Key pages
+
+- [Tradee home](${BASE}/)
+- [Trade rankings and leaderboards](${BASE}/rankings)
+- [How Tradee works](${BASE}/how-it-works)
+
+## Find a trade in a city
+
+${findLinks}
+
+## For tradespeople
+
+Are you a tradesperson in South Africa? List your business free on Tradee at ${BASE}/ to get found by local customers.
+`
+writeFileSync(resolve(DIST, 'llms.txt'), llms)
+
+console.log(`gen-landing: wrote ${count} landing pages + sitemap.xml + robots.txt + llms.txt`)
