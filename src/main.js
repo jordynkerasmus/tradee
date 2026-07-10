@@ -21,6 +21,15 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL || '').split(',').map(e =
 const BUCKET_PUBLIC = 'certifications-registrations'
 const BUCKET_CERTS = 'certifications'
 
+// SA phone normaliser: accepts 076..., 27 76..., +27 76... and always yields +2776...
+function normalizeSAPhone(digits) {
+  let d = digits.replace(/\D/g, '')
+  if (d.startsWith('27')) d = d.slice(2)
+  else if (d.startsWith('0')) d = d.slice(1)
+  return '+27' + d
+}
+
+
 // Open a private certificate via a freshly-minted signed URL.
 // Legacy entries were stored as full public URLs — open those directly.
 window.viewCert = async function (ref) {
@@ -702,7 +711,7 @@ window.saveListing = async function (id) {
   window.editCertFiles = []
 
   const phoneEditRaw = document.getElementById('edit-phone')?.value.trim().replace(/\D/g,'') || ''
-  const phone = phoneEditRaw ? '+27' + (phoneEditRaw.startsWith('0') ? phoneEditRaw.slice(1) : phoneEditRaw) : ''
+  const phone = phoneEditRaw ? normalizeSAPhone(phoneEditRaw) : ''
   const email = document.getElementById('edit-email')?.value.trim() || ''
   const lat = parseFloat(document.getElementById('edit-lat')?.value) || null
   const lng = parseFloat(document.getElementById('edit-lng')?.value) || null
@@ -2457,7 +2466,7 @@ window.submitListing = async function () {
   const contact_name = document.getElementById('f-name').value.trim()
   const name = titleCase(document.getElementById('f-business').value.trim() || contact_name)
   const phoneRaw = document.getElementById('f-phone')?.value.trim().replace(/\D/g, '') || ''
-  const phone = phoneRaw ? '+27' + (phoneRaw.startsWith('0') ? phoneRaw.slice(1) : phoneRaw) : ''
+  const phone = phoneRaw ? normalizeSAPhone(phoneRaw) : ''
   // Split into standard trades (go live now) and custom trades (held for admin approval).
   const standardTrades = selectedTrades.filter(t => TRADES_LIST.includes(t))
   const pending_trades = selectedTrades.filter(t => !TRADES_LIST.includes(t))
@@ -3112,7 +3121,7 @@ window.adminSaveListing = async function () {
   const name = document.getElementById('aem-name').value.trim()
   const contact_name = document.getElementById('aem-contact').value.trim()
   const phoneRaw = document.getElementById('aem-phone').value.trim().replace(/\D/g,'')
-  const phone = phoneRaw ? '+27' + (phoneRaw.startsWith('0') ? phoneRaw.slice(1) : phoneRaw) : ''
+  const phone = phoneRaw ? normalizeSAPhone(phoneRaw) : ''
   const email = document.getElementById('aem-email').value.trim()
   const trade = document.getElementById('aem-trade').value.trim()
   const rateRaw = document.getElementById('aem-rate').value.trim()
