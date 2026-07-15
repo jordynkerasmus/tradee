@@ -57,6 +57,15 @@ async function loadUserProfile() {
     const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single()
     userProfile = data || null
   } catch (_) { userProfile = null }
+  // Accounts created before the profiles table existed have no row. A user
+  // who owns a listing is always a tradesman — fall back to that check so
+  // early signups still get their Dashboard.
+  if (!userProfile || userProfile.account_type !== 'tradesman') {
+    try {
+      const { data: own } = await supabase.from('listings').select('id').eq('user_id', currentUser.id).limit(1)
+      if (own && own.length) userProfile = { ...(userProfile || {}), account_type: 'tradesman' }
+    } catch (_) {}
+  }
 }
 // 'guest' | 'customer' | 'tradesman'. A user with a listing is always a tradesman.
 function accountType() {
